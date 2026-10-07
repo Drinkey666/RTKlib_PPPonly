@@ -1,0 +1,343 @@
+{
+  "audit_date": "2026-10-08",
+  "audited_root": "E:\\GNSS\\PPP_only",
+  "client_cwd": "E:\\GNSS\\rtklib_only\\rtklib_only\\rtklib_Project2",
+  "baseline_commit": "97a57a92552d6d7efe7c855c82b9809e28a5bd17",
+  "baseline_branch": "main",
+  "baseline_status_at_audit_start": "clean (checked before writing documents)",
+  "original_commit": "12b044ae443e9bd78565b43c93eefcc9ed44e1cf",
+  "original_status": "D .vs/rtklib_Project2/FileContentIndex/0127b622-9bb6-4d4c-9469-0ffdbac351b9.vsidx\n D .vs/rtklib_Project2/FileContentIndex/2a3c2022-140e-4282-89db-0af98a64a543.vsidx\n D .vs/rtklib_Project2/FileContentIndex/3d40da2d-5500-4dc5-956a-31b624d34701.vsidx\n D .vs/rtklib_Project2/FileContentIndex/81530f2e-8b02-4e32-a4e1-c966062973c8.vsidx\n D .vs/rtklib_Project2/FileContentIndex/f9222ff2-1814-4ada-984e-6009f8be7c77.vsidx\n M .vs/rtklib_Project2/v17/.suo\n M .vs/rtklib_Project2/v17/Browse.VC.db\n M .vs/rtklib_Project2/v17/DocumentLayout.backup.json\n M .vs/rtklib_Project2/v17/DocumentLayout.json\n M .vs/rtklib_Project2/v17/ipch/AutoPCH/17e84358b20bbf90/RT17.ipch\n M .vs/rtklib_Project2/v17/ipch/AutoPCH/273fb8c7edc212be/UBLOX.ipch\n M .vs/rtklib_Project2/v17/ipch/AutoPCH/361d935e1d7d9548/JAVAD.ipch\n M .vs/rtklib_Project2/v17/ipch/AutoPCH/58e7bbbfe85e306c/RTKPOS.ipch\n M .vs/rtklib_Project2/v17/ipch/AutoPCH/5de714ebc9b52a6f/POSTPOS.ipch\n M .vs/rtklib_Project2/v17/ipch/AutoPCH/5ebacda86f36e898/RNX2RTKP.ipch\n M .vs/rtklib_Project2/v17/ipch/AutoPCH/62835cf5b4470b04/RTKCMN.ipch\n M .vs/rtklib_Project2/v17/ipch/AutoPCH/6c278ab4b3356da7/PPP.ipch\n M .vs/rtklib_Project2/v17/ipch/AutoPCH/8adef0530e158b18/CONVGPX.ipch\n M .vs/rtklib_Project2/v17/ipch/AutoPCH/a06f5abc8f0e985/OPTIONS.ipch\n M .vs/rtklib_Project2/v17/ipch/AutoPCH/a1e16fbfcc1a4e32/TIDES.ipch\n M .vs/rtklib_Project2/v17/ipch/AutoPCH/c50222818f127c6/PRECEPH.ipch\n M .vs/rtklib_Project2/v17/ipch/AutoPCH/f7eacfe7db1a5e50/LAMBDA.ipch\n D rtklib_Project2.sln\n D rtklib_Project2/rtklib_Project2.vcxproj\n D rtklib_Project2/rtklib_Project2.vcxproj.filters\n D rtklib_Project2/rtklib_Project2.vcxproj.user\n M rtklib_Project2/x64/Debug/binex.obj\n M rtklib_Project2/x64/Debug/convgpx.obj\n M rtklib_Project2/x64/Debug/convkml.obj\n M rtklib_Project2/x64/Debug/convrnx.obj\n M rtklib_Project2/x64/Debug/crescent.obj\n M rtklib_Project2/x64/Debug/datum.obj\n M rtklib_Project2/x64/Debug/download.obj\n M rtklib_Project2/x64/Debug/ephemeris.obj\n M rtklib_Project2/x64/Debug/geoid.obj\n M rtklib_Project2/x64/Debug/gis.obj\n M rtklib_Project2/x64/Debug/ionex.obj\n M rtklib_Project2/x64/Debug/javad.obj\n M rtklib_Project2/x64/Debug/lambda.obj\n M rtklib_Project2/x64/Debug/novatel.obj\n M rtklib_Project2/x64/Debug/nvs.obj\n M rtklib_Project2/x64/Debug/options.obj\n M rtklib_Project2/x64/Debug/pntpos.obj\n M rtklib_Project2/x64/Debug/postpos.obj\n M rtklib_Project2/x64/Debug/ppp.obj\n M rtklib_Project2/x64/Debug/ppp_ar.obj\n M rtklib_Project2/x64/Debug/preceph.obj\n M rtklib_Project2/x64/Debug/rcvraw.obj\n M rtklib_Project2/x64/Debug/rinex.obj\n M rtklib_Project2/x64/Debug/rnx2rtkp.obj\n M rtklib_Project2/x64/Debug/rt17.obj\n M rtklib_Project2/x64/Debug/rtcm.obj\n M rtklib_Project2/x64/Debug/rtcm2.obj\n M rtklib_Project2/x64/Debug/rtcm3.obj\n M rtklib_Project2/x64/Debug/rtcm3e.obj\n M rtklib_Project2/x64/Debug/rtkcmn.obj\n M rtklib_Project2/x64/Debug/rtklib_Project2.ilk\n M rtklib_Project2/x64/Debug/rtklib_Project2.log\n M rtklib_Project2/x64/Debug/rtklib_Project2.tlog/CL.command.1.tlog\n M rtklib_Project2/x64/Debug/rtklib_Project2.tlog/CL.read.1.tlog\n M rtklib_Project2/x64/Debug/rtklib_Project2.tlog/CL.write.1.tlog\n M rtklib_Project2/x64/Debug/rtklib_Project2.tlog/Cl.items.tlog\n M rtklib_Project2/x64/Debug/rtklib_Project2.tlog/link.command.1.tlog\n M rtklib_Project2/x64/Debug/rtklib_Project2.tlog/link.read.1.tlog\n M rtklib_Project2/x64/Debug/rtklib_Project2.tlog/link.secondary.1.tlog\n M rtklib_Project2/x64/Debug/rtklib_Project2.tlog/link.write.1.tlog\n M rtklib_Project2/x64/Debug/rtkpos.obj\n M rtklib_Project2/x64/Debug/rtksvr.obj\n M rtklib_Project2/x64/Debug/sbas.obj\n M rtklib_Project2/x64/Debug/septentrio.obj\n M rtklib_Project2/x64/Debug/skytraq.obj\n M rtklib_Project2/x64/Debug/sofa.obj\n M rtklib_Project2/x64/Debug/solution.obj\n M rtklib_Project2/x64/Debug/stream.obj\n M rtklib_Project2/x64/Debug/streamsvr.obj\n M rtklib_Project2/x64/Debug/swiftnav.obj\n M rtklib_Project2/x64/Debug/tides.obj\n M rtklib_Project2/x64/Debug/tle.obj\n M rtklib_Project2/x64/Debug/trace.obj\n M rtklib_Project2/x64/Debug/ublox.obj\n M rtklib_Project2/x64/Debug/unicore.obj\n M rtklib_Project2/x64/Debug/vc143.idb\n M rtklib_Project2/x64/Debug/vc143.pdb\n M src/ppp.c\n M x64/Debug/rtklib_Project2.exe\n M x64/Debug/rtklib_Project2.pdb\n?? PPP_only.sln\n?? gnss_replay/all_signal_usage/\n?? gnss_replay/antex_fix_audit/\n?? gnss_replay/bds_b1_product_search/\n?? gnss_replay/bds_b1c_implementation_smoke/\n?? gnss_replay/cci_baseline_audit/\n?? gnss_replay/cci_deion_experiment/\n?? gnss_replay/cci_diag_guard/\n?? gnss_replay/cci_experiment/\n?? gnss_replay/cci_multi_experiment/\n?? gnss_replay/coarse_experiment/\n?? gnss_replay/config_unification/\n?? gnss_replay/file_picker_audit/\n?? gnss_replay/glonass_experiment/\n?? gnss_replay/height_bias_audit/\n?? gnss_replay/innovation_experiment/\n?? gnss_replay/live_view_audit/\n?? gnss_replay/loo_experiment/\n?? gnss_replay/loo_smoke/\n?? gnss_replay/observation_source_audit/\n?? gnss_replay/pc_system_audit_20261002/\n?? gnss_replay/postfit_experiment/\n?? gnss_replay/postfit_smoke/\n?? gnss_replay/ppp_321_truth_benchmark/\n?? gnss_replay/ppp_321_truth_smoke/\n?? gnss_replay/signal_quality_audit/\n?? gnss_replay/startup_qc_audit/\n?? gnss_replay/statistical_model_audit/\n?? gnss_replay/two_pass_BASELINE_smoke.out\n?? gnss_replay/two_pass_BASELINE_smoke/\n?? gnss_replay/two_pass_CODE_ONLY_smoke.out\n?? gnss_replay/two_pass_CODE_ONLY_smoke/\n?? gnss_replay/two_pass_PHASE_ONLY_smoke.out\n?? gnss_replay/two_pass_PHASE_ONLY_smoke/\n?? gnss_replay/two_pass_audit_smoke/\n?? gnss_replay/two_pass_experiment/\n?? gnss_replay/two_pass_mechanism_experiment/\n?? gnss_replay/two_pass_stability_experiment/\n?? gnss_replay/two_pass_stability_smoke/\n?? gnss_replay/two_pass_weight_experiment/\n?? gnss_replay/two_pass_weight_smoke/\n?? gnss_replay/warmup_0.pos\n?? gnss_replay/warmup_0.pos.stat\n?? gnss_replay/warmup_0_events.pos\n?? gnss_replay/warmup_default_verify.pos\n?? gnss_replay/warmup_default_verify.pos.stat\n?? gnss_replay/warmup_default_verify_events.pos\n?? \"h -u origin HEAD\"\n?? rtklib_Project2/.gitignore\n?? rtklib_Project2/PPP_ONLY.md\n?? rtklib_Project2/PPP_only.vcxproj\n?? rtklib_Project2/PPP_only.vcxproj.filters\n?? rtklib_Project2/ppp_position.c\n?? tests/cci_test_arc.csv\n?? tests/cci_test_model.csv\n?? tests/cci_test_observations.csv\n?? tests/cci_test_signal.csv\n?? tests/innovation_test.csv\n?? tests/loo_diag.csv\n?? tests/loo_epoch.csv\n?? tests/postfit_clock.csv\n?? tests/postfit_diag.csv",
+  "tracked_baseline_files": [
+    {
+      "path": "E:\\GNSS\\PPP_only\\.gitignore",
+      "bytes": 94,
+      "sha256": "DAD6A92BC6CE081FCF086840076187C5E866831FE8771A57ADCA65B09B22F3E3"
+    },
+    {
+      "path": "E:\\GNSS\\PPP_only\\PPP_only.sln",
+      "bytes": 1448,
+      "sha256": "8B788DC67A255069DD030AA5F25B764D26E073FAAA828F684B25C003FF056634"
+    },
+    {
+      "path": "E:\\GNSS\\PPP_only\\PPP_only\\PPP_only.vcxproj",
+      "bytes": 9619,
+      "sha256": "E23D5FB750C5585651859B23B8E9EA2224315548CAC69232A1033EF12FC307E5"
+    },
+    {
+      "path": "E:\\GNSS\\PPP_only\\PPP_only\\PPP_only.vcxproj.filters",
+      "bytes": 4565,
+      "sha256": "D1A7EE2CB62691442E89E435487B9797BFD7C51B1945E88D5963FF2A01ED7FF0"
+    },
+    {
+      "path": "E:\\GNSS\\PPP_only\\PPP_only\\ppp_position.c",
+      "bytes": 12457,
+      "sha256": "14E838F922A15C697C3BE89E0023869AAB467D4CF21A4164C7FEC67019A0A585"
+    },
+    {
+      "path": "E:\\GNSS\\PPP_only\\README.md",
+      "bytes": 1407,
+      "sha256": "67369DA2A36AF74A932F3DD1DBE53CBDDF52616B8566989F6059B93226E355EB"
+    },
+    {
+      "path": "E:\\GNSS\\PPP_only\\src\\ephemeris.c",
+      "bytes": 44200,
+      "sha256": "3DED8B35B178A05727BACF1BB5E642F2DF96582BA7BB270B12A58EF30D45211D"
+    },
+    {
+      "path": "E:\\GNSS\\PPP_only\\src\\geoid.c",
+      "bytes": 606210,
+      "sha256": "E01969BF760748EFAF306ADD92CED0D15AFA23C324595ADBAEBE8BD45BD7FCE3"
+    },
+    {
+      "path": "E:\\GNSS\\PPP_only\\src\\gnss_adapter.c",
+      "bytes": 11539,
+      "sha256": "4659886DA37E49C4071DC8A0570AE87484190168590260F43740E0EB2E553CCA"
+    },
+    {
+      "path": "E:\\GNSS\\PPP_only\\src\\gnss_adapter.h",
+      "bytes": 1354,
+      "sha256": "5FB66A10C6A6495EAE61C7BCE304D03777DF43362F6AEBFD289CBDAB14157FA1"
+    },
+    {
+      "path": "E:\\GNSS\\PPP_only\\src\\gnss_raw.h",
+      "bytes": 1208,
+      "sha256": "C5C1683AEEF0E1B61DCB65F519ECC42269029B1B3CAF737A2A859069D935D9A1"
+    },
+    {
+      "path": "E:\\GNSS\\PPP_only\\src\\gnss_replay.c",
+      "bytes": 50905,
+      "sha256": "5CC9F2F3D167D84A463EFF658A3642737AE1A64C52761989492C5970C4AD6D84"
+    },
+    {
+      "path": "E:\\GNSS\\PPP_only\\src\\gnss_replay.h",
+      "bytes": 784,
+      "sha256": "0A34E02AE9C5568DB56C19D7B45BE0785F5F97EEB5952F3C76D377326BC694C6"
+    },
+    {
+      "path": "E:\\GNSS\\PPP_only\\src\\gnss_signal_policy.c",
+      "bytes": 1411,
+      "sha256": "26C87C7DB35274A49F2FDBB44A8B7AAD5994EC2D4FC8DDFDC616248E82A74D5D"
+    },
+    {
+      "path": "E:\\GNSS\\PPP_only\\src\\gnss_signal_policy.h",
+      "bytes": 546,
+      "sha256": "D69B5738E1E248E76E3B0CBB2B8C4F62A3DF7E2E0397E44632B09343E50B663E"
+    },
+    {
+      "path": "E:\\GNSS\\PPP_only\\src\\ionex.c",
+      "bytes": 17034,
+      "sha256": "469A6F518FB9CC5F4646DC3AFCFD78989CDEFFB35E72150164657E5006514F87"
+    },
+    {
+      "path": "E:\\GNSS\\PPP_only\\src\\options.c",
+      "bytes": 24076,
+      "sha256": "624B7A172586C07E9635B036D38E2CB05E25D29C56295CDAAF99CA33C41A0CFB"
+    },
+    {
+      "path": "E:\\GNSS\\PPP_only\\src\\pc_file_picker.c",
+      "bytes": 17729,
+      "sha256": "CC62CD9E2040CCC7F461B43B28D4F4026EFEBDE9C31A8CC7700D0A7E10E7D505"
+    },
+    {
+      "path": "E:\\GNSS\\PPP_only\\src\\pc_file_picker.h",
+      "bytes": 814,
+      "sha256": "63140FA25CCF70EF42F03CB612807833A4A8C1D7CBD88E458ADB0F590EF412A4"
+    },
+    {
+      "path": "E:\\GNSS\\PPP_only\\src\\pc_live_view.c",
+      "bytes": 10829,
+      "sha256": "3892199595C9191A41388B8DD613113C207E3A367E3F21405CD937A7629238B6"
+    },
+    {
+      "path": "E:\\GNSS\\PPP_only\\src\\pc_live_view.h",
+      "bytes": 312,
+      "sha256": "32BBCBC09C68AEE5C3D5E870C60B4B39D14376AEAEA6965CA829071329A0EE12"
+    },
+    {
+      "path": "E:\\GNSS\\PPP_only\\src\\pc_txt_replay.c",
+      "bytes": 2514,
+      "sha256": "3960D614C496C6213C3B4C121BC1B26E6E279986246ED6836442661A023FEF19"
+    },
+    {
+      "path": "E:\\GNSS\\PPP_only\\src\\pc_txt_replay.h",
+      "bytes": 503,
+      "sha256": "9B48ABF3949E12C4CF9E26435185539C8B916B3809E262F149FE3D43CA5BC447"
+    },
+    {
+      "path": "E:\\GNSS\\PPP_only\\src\\pntpos.c",
+      "bytes": 41089,
+      "sha256": "109480D6261EED0B3C9C59FF27AA671BA772B31CDF15BEE010BCB5F14707E6FF"
+    },
+    {
+      "path": "E:\\GNSS\\PPP_only\\src\\postpos.c",
+      "bytes": 72991,
+      "sha256": "B0229C154FBCC35BD79B28929EA4C997DC0226FA0713E743F256EEA1E28AFE0D"
+    },
+    {
+      "path": "E:\\GNSS\\PPP_only\\src\\ppp.c",
+      "bytes": 190029,
+      "sha256": "3DD71F3B778E62D42149AD43A67037FB5105142C12CAD1118FC427B9B0BF3CC1"
+    },
+    {
+      "path": "E:\\GNSS\\PPP_only\\src\\ppp_ar.c",
+      "bytes": 769,
+      "sha256": "3F51766E7DEAD974A997D824166A5219049FDD9A47F4443D133BF69648113DAF"
+    },
+    {
+      "path": "E:\\GNSS\\PPP_only\\src\\preceph.c",
+      "bytes": 45052,
+      "sha256": "9740C35DEB0F3C3A6389D17885CAD828AE2FFCC7C12BB7FF1943E41AC0F71F2C"
+    },
+    {
+      "path": "E:\\GNSS\\PPP_only\\src\\rinex.c",
+      "bytes": 116758,
+      "sha256": "58CF22463E7235601DDCB013778583F282DE22329D731CDBE084874B7DA46A1D"
+    },
+    {
+      "path": "E:\\GNSS\\PPP_only\\src\\rnx2rtkp.c",
+      "bytes": 31684,
+      "sha256": "7A56D486B9673924A2211322FB93485B4516B11A103AB7702F0414C9E9340009"
+    },
+    {
+      "path": "E:\\GNSS\\PPP_only\\src\\rtcm.c",
+      "bytes": 18127,
+      "sha256": "D54DCD8B85A6A6CB58648CEC7DAD1223C57D51CC41A48D57D755E88D0A4C399E"
+    },
+    {
+      "path": "E:\\GNSS\\PPP_only\\src\\rtcm2.c",
+      "bytes": 15415,
+      "sha256": "4CD5996B7D05EB6FE6E77D2821D8DB724823EC54C60136BBD37A49C640DB60F6"
+    },
+    {
+      "path": "E:\\GNSS\\PPP_only\\src\\rtcm3.c",
+      "bytes": 108146,
+      "sha256": "DD93FCB0D278FC0ADE0ABE77934BA78E2CD56A44080CF550898F009A844EFDA2"
+    },
+    {
+      "path": "E:\\GNSS\\PPP_only\\src\\rtcm3e.c",
+      "bytes": 110046,
+      "sha256": "B401D39CECEEAAB7BA591FC506B07120E24DCCBAF6F3C019CA06719418C17010"
+    },
+    {
+      "path": "E:\\GNSS\\PPP_only\\src\\rtkcmn.c",
+      "bytes": 169631,
+      "sha256": "3C0EC00B1470E9B71126ABC503C4EDDC7D41102072720B2A90EADDC87F44F004"
+    },
+    {
+      "path": "E:\\GNSS\\PPP_only\\src\\rtklib.h",
+      "bytes": 107328,
+      "sha256": "006B362C28EEA695E63AE07DB367815BC54686F0C583F4A4ED96BFA1828265EA"
+    },
+    {
+      "path": "E:\\GNSS\\PPP_only\\src\\sbas.c",
+      "bytes": 36024,
+      "sha256": "B596C1302375C5B7FB6DD3452C51765E40B504D13909F07CF912188B148FCF6D"
+    },
+    {
+      "path": "E:\\GNSS\\PPP_only\\src\\smartphone_ppp_config.c",
+      "bytes": 4617,
+      "sha256": "B08D55887DE820E45CA6F242953761FDCD2711F9A74AAD3C2E02981DD0AFF1D0"
+    },
+    {
+      "path": "E:\\GNSS\\PPP_only\\src\\smartphone_ppp_config.h",
+      "bytes": 976,
+      "sha256": "D3CCF1ADE859A1CEDE0C5669780B5903EBFAA534ACCC935F1274A8800AAC8D8E"
+    },
+    {
+      "path": "E:\\GNSS\\PPP_only\\src\\sofa.c",
+      "bytes": 176104,
+      "sha256": "CAC2C821F3F04E8D9ABE0433D897201453BE2D1473FB9929D3089D1D0C27F3A6"
+    },
+    {
+      "path": "E:\\GNSS\\PPP_only\\src\\solution.c",
+      "bytes": 66336,
+      "sha256": "11F694EDC1CE405CF98204C67BE757352C6543EAF56C16F8885836A517A24B58"
+    },
+    {
+      "path": "E:\\GNSS\\PPP_only\\src\\tides.c",
+      "bytes": 53153,
+      "sha256": "0F60DBCA2441F5ADF5BB1F8D8A601A976908A9CFBB41F58C90558BE6F1937441"
+    },
+    {
+      "path": "E:\\GNSS\\PPP_only\\src\\trace.c",
+      "bytes": 6756,
+      "sha256": "6461B52EF91A0BECC9B69CD2EBE5A7DF6C43EE46F2FB1F2278AC5CA945744204"
+    }
+  ],
+  "original_ppp": {
+    "path": "E:\\GNSS\\rtklib_only\\rtklib_only\\src\\ppp.c",
+    "bytes": 190029,
+    "sha256": "3DD71F3B778E62D42149AD43A67037FB5105142C12CAD1118FC427B9B0BF3CC1"
+  },
+  "proposal": {
+    "path": "E:\\大论文撰写\\开题报告\\智能手机实时PPP抗差自适应滤波开题报告_v6_原技术路线图版.docx",
+    "bytes": 374496,
+    "sha256": "17E36BA402F9F673FA128390587111D90A1C68039BDE30AA55D0B70E12ADE808"
+  },
+  "existing_production_exe": {
+    "path": "E:\\GNSS\\PPP_only\\x64\\Release\\PPP_only.exe",
+    "bytes": 889344,
+    "sha256": "958FEE6BE1EBC21846BEAAABB82A3D90F9C2A6CCA4E6B2CBD96F40DF196C079A"
+  },
+  "probe_and_external_references": [
+    {
+      "path": "E:\\GNSS\\PPP_only\\validation\\audit\\audit_probe.c",
+      "bytes": 2228,
+      "sha256": "00DBAB6A85084F69A6E77B8C8B770CF7ACB74FEB7D8A270D3DBB00B1329A668F"
+    },
+    {
+      "path": "E:\\GNSS\\PPP_only\\validation\\audit\\compile.cmd",
+      "bytes": 205,
+      "sha256": "4A21787A5BCE03487F1B94BA0E2C30DC981E1B04159A44972F286851AFC8C484"
+    },
+    {
+      "path": "E:\\GNSS\\PPP_only\\validation\\audit\\compile.rsp",
+      "bytes": 883,
+      "sha256": "9FC831675E8F3191954716080D7DA85B95EA9A5F49C05EE62A9BD50ACFCF2B5E"
+    },
+    {
+      "path": "E:\\GNSS\\PPP_only\\validation\\audit\\probe_results.txt",
+      "bytes": 219,
+      "sha256": "C322E56111C4BB8D2BA326AE456CAD7AAE0F9FDF84023E55658F9B4637862ECA"
+    },
+    {
+      "path": "E:\\GNSS\\PPP_only\\validation\\audit\\upstream_ppp_b34.c",
+      "bytes": 42501,
+      "sha256": "1BE8D7328F75E7CEB7DEBF880BD4B259DD18A9721AFD87295CD4657E01179B8D"
+    },
+    {
+      "path": "E:\\GNSS\\PPP_only\\validation\\audit\\official_vmf3.m",
+      "bytes": 80750,
+      "sha256": "79AFF5C58066BCC517DF093B460483F7823202812C97E4380F8CB9CC204EF8A6"
+    }
+  ],
+  "probe_linked_objects": [
+    {
+      "path": "E:\\GNSS\\PPP_only\\build\\PPP_only\\x64\\Release\\rtkcmn.obj",
+      "bytes": 469430,
+      "sha256": "B2D225F9B95BA70620F661A8D2EFBF485118AF568F3C6A9709A8DE209CC4FCFE"
+    },
+    {
+      "path": "E:\\GNSS\\PPP_only\\build\\PPP_only\\x64\\Release\\trace.obj",
+      "bytes": 72355,
+      "sha256": "FAD6A7BDFA739AC44BF718297EA22AF6E68128DDDF1C0B4CC0A37E3FE73F12C0"
+    },
+    {
+      "path": "E:\\GNSS\\PPP_only\\build\\PPP_only\\x64\\Release\\preceph.obj",
+      "bytes": 111926,
+      "sha256": "F4D4BD0DAE9E713469B5EA65434C16EDD5F881AED997C4000AA8A8F381318BD8"
+    },
+    {
+      "path": "E:\\GNSS\\PPP_only\\build\\PPP_only\\x64\\Release\\ephemeris.obj",
+      "bytes": 117570,
+      "sha256": "D5A8E1F72A371C7DC0FA95D83E76C25232D7AA41B89BC1461F144450C0A7EA7E"
+    },
+    {
+      "path": "E:\\GNSS\\PPP_only\\build\\PPP_only\\x64\\Release\\ionex.obj",
+      "bytes": 78529,
+      "sha256": "32D24F7FC6D0384DFFA88DA11E2E9F1AE78ACC1DD4413FF15CC88EE477F6786F"
+    },
+    {
+      "path": "E:\\GNSS\\PPP_only\\build\\PPP_only\\x64\\Release\\sbas.obj",
+      "bytes": 132275,
+      "sha256": "1B74D9DE783E7EFFEE199E0ED5AAB2F3EE0568B771E7136399BEB5447FC41D14"
+    },
+    {
+      "path": "E:\\GNSS\\PPP_only\\build\\PPP_only\\x64\\Release\\sofa.obj",
+      "bytes": 90128,
+      "sha256": "67022268F31B59FD24E5919938FC8F7F21DD7599BD048062D761830D01E63A6E"
+    },
+    {
+      "path": "E:\\GNSS\\PPP_only\\build\\PPP_only\\x64\\Release\\tides.obj",
+      "bytes": 136490,
+      "sha256": "9376CF5688F6AFB4715929424D4F461458504573E82C328C02B9B43F66CFA59E"
+    },
+    {
+      "path": "E:\\GNSS\\PPP_only\\build\\PPP_only\\x64\\Release\\pntpos.obj",
+      "bytes": 122503,
+      "sha256": "818586DFCF1DB3D12B9EBCF134956F7DF89B79FE653C34C140D5FEA2543F281E"
+    },
+    {
+      "path": "E:\\GNSS\\PPP_only\\build\\PPP_only\\x64\\Release\\ppp_ar.obj",
+      "bytes": 34088,
+      "sha256": "50553F4AD48A7EE49ABEE419936074ECFFA4D8643653AE31A05D8B8A4B82F23C"
+    },
+    {
+      "path": "E:\\GNSS\\PPP_only\\build\\PPP_only\\x64\\Release\\ppp_position.obj",
+      "bytes": 70517,
+      "sha256": "D9C757A313D5244174E8922E2B661906309C235C2876E1B477C2F8505D92AE44"
+    },
+    {
+      "path": "E:\\GNSS\\PPP_only\\build\\PPP_only\\x64\\Release\\smartphone_ppp_config.obj",
+      "bytes": 46637,
+      "sha256": "20E38EB35F95EA5BC5E18CF708880A2AD3968D512E4C7A23E9642D92BB47B982"
+    }
+  ],
+  "numeric_occurrences": 11497,
+  "production_source_changes_this_audit": false,
+  "android_jni": "Deferred at user request; not verified",
+  "upstream_urls": [
+    "https://raw.githubusercontent.com/tomojitakasu/RTKLIB/v2.4.3-b34/src/ppp.c",
+    "https://vmf.geo.tuwien.ac.at/codes/vmf3.m"
+  ]
+}
