@@ -1,0 +1,13 @@
+.vs/
+build/
+x64/
+validation/
+*.user
+*.obj
+*.pdb
+*.ilk
+*.exe
+*.trace
+*.stat
+*.pos
+__pycache__/
