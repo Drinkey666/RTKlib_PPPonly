@@ -102,6 +102,8 @@ static const char* help[] = {
 "RTK_PPP_NAV, RTK_PPP_SP3, RTK_PPP_CLK, RTK_PPP_BIA, RTK_PPP_IONEX,",
 "RTK_PPP_VMF_FIRST, RTK_PPP_VMF_SECOND, RTK_PPP_OROGRAPHY, RTK_PPP_ATX.",
 "RTK_PPP_OUTPUT and RTK_PPP_TRACE select diagnostic output files.",
+"RTK_PPP_BASELINE=A|B selects CLEAN|LEGACY (default B). C/D are unavailable.",
+"RTK_PPP_LIFECYCLE=CORRECTED enables fixed arcs/history in B; default LEGACY.",
 "Existing RTK_PPP_NF/SYSTEMS/GLO/EXSATS/OPTS options are unchanged.",
 "An explicit RTK_PPP_OBS retains legacy unattended behavior.",
 };
@@ -428,6 +430,11 @@ int main(int argc, char **argv) {
 
     {
         char config_error[256];
+        if (!smartphone_ppp_select(&prcopt,getenv("RTK_PPP_BASELINE"),
+            getenv("RTK_PPP_LIFECYCLE"),config_error,sizeof(config_error))) {
+            fprintf(stderr,"PPP configuration error: %s\n",config_error);
+            return -1;
+        }
         /* 对所有覆盖后的最终参数做结构/取值检查，不只检查默认配置。
          * 检查通过不代表观测质量/精度合格，仍需查看真实结果及trace。 */
         if (!smartphone_ppp_validate(&prcopt, config_error, sizeof(config_error))) {

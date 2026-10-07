@@ -3,6 +3,7 @@
  */
 #include <stdarg.h>
 #include "rtklib.h"
+#include "smartphone_ppp_config.h"
 
 #define STD_PREC_VAR_THRESH 0
 #define NF(opt) ((opt)->ionoopt==IONOOPT_IFLC?1:(opt)->nf)
@@ -151,6 +152,7 @@ extern void rtkinit(rtk_t* rtk, const prcopt_t* opt)
     rtk->na = pppnx(&rtk->opt);
     rtk->tt = 0.0;
     rtk->epoch = 0;
+    rtk->ppp_failure = 0;
     rtk->ppp_start_time.time = 0;
     rtk->ppp_start_time.sec = 0.0;
     rtk->ppp_zwd_prior_time.time = 0;
@@ -199,6 +201,7 @@ extern int pntpos_startup(const obsd_t *obs,int n,const nav_t *nav,
 static int startup_qc_enabled(const prcopt_t *opt)
 {
     const char *p;double pre=0.0,start=1.0;
+    if(!smartphone_ppp_policy(opt).startup_qc)return 0;
     if((p=strstr(opt->pppopt,"-PREPROC=")))sscanf(p+9,"%lf",&pre);
     if((p=strstr(opt->pppopt,"-STARTQC=")))sscanf(p+9,"%lf",&start);
     if(!isfinite(pre))pre=0.0;
@@ -244,14 +247,34 @@ extern int rtkpos(rtk_t* rtk, const obsd_t* obs, int n, const nav_t* nav)
     char msg[128] = "";
 
     char tstr[40];
-    if(!obs||n<=0||opt->mode<PMODE_PPP_KINEMA||opt->mode>PMODE_PPP_FIXED){rtk->sol.stat=SOLQ_NONE;return 0;}
+    rtk->ppp_failure=0;
+    if(!obs||!nav||n<=0||opt->mode<PMODE_PPP_KINEMA||opt->mode>PMODE_PPP_FIXED){rtk->sol.stat=SOLQ_NONE;return 0;}
+    if(n>MAXOBS || opt->nf<1 || opt->nf>NFREQ || rtk->nx!=pppnx(opt) ||
+        opt->ppp_baseline<0 || opt->ppp_baseline>PPP_BASELINE_A_CLEAN) {
+        rtk->ppp_failure=FILTER_BAD_DIM;rtk->sol.stat=SOLQ_NONE;
+        trace(2,"$PPP_FAILURE,reason=BAD_DIM,stage=ENTRY\n");return 0;
+    }
+    for(i=0;i<n;i++) {
+        int f;
+        if(!isfinite(obs[i].time.sec)) {
+            rtk->ppp_failure=FILTER_NAN_INPUT;rtk->sol.stat=SOLQ_NONE;
+            trace(2,"$PPP_FAILURE,reason=NAN_INPUT,stage=OBS_TIME\n");return 0;
+        }
+        for(f=0;f<NFREQ+NEXOBS;f++) if(!isfinite(obs[i].P[f]) ||
+            !isfinite(obs[i].L[f]) || !isfinite(obs[i].D[f])) {
+            rtk->ppp_failure=FILTER_NAN_INPUT;rtk->sol.stat=SOLQ_NONE;
+            trace(2,"$PPP_FAILURE,reason=NAN_INPUT,stage=RAW_OBS,sat=%d,F%d\n",obs[i].sat,f+1);
+            ppp_input_failure_arcs(rtk,obs,n);
+            return 0;
+        }
+    }
     startup_qc=startup_qc_enabled(opt);
-    if(startup_qc) {
+    { /* Input bounds protection applies to every baseline. */
         n=sanitize_ppp_input(obs,n,clean_obs);obs=clean_obs;
         if(n<=0){rtk->sol.stat=SOLQ_NONE;return 0;}
         /* The timer must also run with DOPPWARM=0. Do not enable warm-up or
          * set ppp_start_valid (used separately by the existing bias model). */
-        if(!rtk->ppp_start_time.time) {
+        if(startup_qc && !rtk->ppp_start_time.time) {
             rtk->ppp_start_time=obs[0].time;
             trace(2,"$START_QC_CONFIG,window_sec=30,spp_min_dof=2,spp_abs_gate_m=30,spp_z_gate=6,spatial_min_peers=5,code_pair_min_peers=4,spatial_MAD_factor=6\n");
         }
@@ -318,16 +341,18 @@ extern int rtkpos(rtk_t* rtk, const obsd_t* obs, int n, const nav_t* nav)
     /* precise point positioning */
     if (opt->mode >= PMODE_PPP_KINEMA) {
         pppos(rtk, obs, nu, nav);
-        /* relpos() saves raw phase history, but PPP returned before that code.
-         * Enable history for the requested startup window only. Activating
-         * previously dormant steady-state tests is a separate model-quality
-         * change and must not be bundled into this startup fix. */
-        if(startup_qc)for(i=0;i<nu&&i<MAXOBS;i++) {
+        /* Corrected lifecycle keeps valid carrier history at every epoch.
+         * LEGACY deliberately reproduces the old 30-second startup window. */
+        if(startup_qc || smartphone_ppp_policy(opt).corrected_lifecycle)for(i=0;i<nu&&i<MAXOBS;i++) {
             int f,sat=obs[i].sat;
             for(f=0;f<opt->nf&&f<NFREQ;f++) {
-                if(fabs(timediff(obs[i].time,rtk->ppp_start_time))<=30.0) {
-                    rtk->ssat[sat-1].pt[0][f]=obs[i].time;
-                    rtk->ssat[sat-1].ph[0][f]=isfinite(obs[i].L[f])?obs[i].L[f]:0.0;
+                if(smartphone_ppp_policy(opt).corrected_lifecycle ||
+                    fabs(timediff(obs[i].time,rtk->ppp_start_time))<=30.0) {
+                    if(!smartphone_ppp_policy(opt).corrected_lifecycle ||
+                        (obs[i].L[f]!=0.0 && isfinite(obs[i].L[f]))) {
+                        rtk->ssat[sat-1].pt[0][f]=obs[i].time;
+                        rtk->ssat[sat-1].ph[0][f]=obs[i].L[f];
+                    }
                 }
                 else {
                     rtk->ssat[sat-1].pt[0][f].time=0;
@@ -337,7 +362,7 @@ extern int rtkpos(rtk_t* rtk, const obsd_t* obs, int n, const nav_t* nav)
             }
         }
         outsolstat(rtk, nav);
-        return 1;
+        return rtk->ppp_failure ? 0 : 1;
     }
     return 0;
 }

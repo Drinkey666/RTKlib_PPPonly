@@ -1102,6 +1102,8 @@ typedef struct {        /* processing options type */
     double odisp[2][2][11][3]; // Ocean tide loading parameters {rov,base}{amp,phase}
     int  freqopt;       /* disable L2-AR */
     char pppopt[256];   /* ppp option */
+    int ppp_baseline;   /* PPP_BASELINE_*; zero preserves historical defaults */
+    int ppp_lifecycle;  /* PPP_LIFECYCLE_*; A always uses corrected arcs/history */
 } prcopt_t;
 
 typedef struct {        /* solution options type */
@@ -1259,6 +1261,9 @@ typedef struct {        /* satellite status type */
     double ppp_diag_cmc_last[NFREQ];
     uint8_t ppp_diag_cmc_code[NFREQ];
     uint8_t ppp_diag_cmc_half_invalid[NFREQ];
+    uint8_t ppp_arc_pending[NFREQ]; /* ambiguity invalid until a finite seed exists */
+    uint8_t ppp_arc_reset[NFREQ];   /* reset occurred in current prediction */
+    uint8_t ppp_slip_evidence[NFREQ]; /* PPP_EVIDENCE_* for current epoch */
 } ssat_t;
 
 typedef struct {        /* ambiguity control type */
@@ -1295,6 +1300,7 @@ typedef struct {        /* RTK control/result type */
     unsigned char ppp_start_valid;
     unsigned char ppp_code_warmup;
     unsigned char ppp_phase_started;
+    int ppp_failure;    /* FILTER_* or PPP_FAILURE_*; current epoch only */
     int intpres_nb;     // Time interpolation of residuals, number of previous base observations.
     obsd_t intpres_obsb[MAXOBS]; // Time interpolation of residuals, previous base observations.
 } rtk_t;
@@ -1501,6 +1507,23 @@ EXPORT int  solve (const char *tr, const double *A, const double *Y, int n,
                    int m, double *X);
 EXPORT int  lsq   (const double *A, const double *y, int n, int m, double *x,
                    double *Q);
+#define FILTER_NAN_INPUT (-10)
+#define FILTER_NAN_STATE (-11)
+#define FILTER_NAN_COV   (-12)
+#define FILTER_BAD_COV   (-13)
+#define FILTER_BAD_DIM   (-14)
+#define FILTER_NO_ACTIVE (-15)
+#define PPP_FAILURE_NO_OBS (-20)
+#define PPP_FAILURE_EDIT_LIMIT (-21)
+#define PPP_EVIDENCE_LLI 1
+#define PPP_EVIDENCE_GF 2
+#define PPP_EVIDENCE_MW 4
+#define PPP_EVIDENCE_DOPPLER 8
+#define PPP_EVIDENCE_GAP 16
+EXPORT void ppp_input_failure_arcs(rtk_t *rtk, const obsd_t *obs, int n);
+EXPORT int numeric_finite(const double *a, size_t count);
+EXPORT int numeric_covariance(const double *P, int n);
+EXPORT const char *filter_reason(int info);
 EXPORT int  filter(double *x, double *P, const double *H, const double *v,
                    const double *R, int n, int m);
 EXPORT int  smoother(const double *xf, const double *Qf, const double *xb,

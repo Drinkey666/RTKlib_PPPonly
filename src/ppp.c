@@ -61,6 +61,7 @@
 *                           use E1-E5b for Galileo iono-free LC
 *-----------------------------------------------------------------------------*/
 #include "rtklib.h"
+#include "smartphone_ppp_config.h"
 
 /* =============================================================================
  * 中文阅读指南：当前项目的手机多系统、多频非组合 PPP
@@ -848,6 +849,7 @@ static double signal_weight_ppp(int sys, uint8_t signal, int type,
         sys == SYS_SBS ? 'S' : sys == SYS_IRN ? 'I' : '?';
     double code_factor, phase_factor;
     int consumed;
+    if (!smartphone_ppp_policy(opt).legacy_weighting) return 1.0;
     if (!p || !obs || !*obs) return 1.0;
     p += 6;
     while (*p && *p != ' ') {
@@ -912,6 +914,7 @@ static double varerr(unsigned char sat, int sys, double el, double snr_dbhz,
     a = fact * opt->err[1];
     b = fact * opt->err[2];
     var = a * a + b * b / (sinel * sinel);
+    if(!isfinite(var))return var; /* never let MAX(NaN,floor) mask an invalid R0 */
 
     /* Li et al., Sensors 2022, 22, 2804, Eq. (7)-(8). The polynomial is
      * device-specific (Xiaomi MI8); allow calibration without recompiling.
@@ -919,7 +922,7 @@ static double varerr(unsigned char sat, int sys, double el, double snr_dbhz,
      * as sigma0^2 so code and phase stay on their original noise scales.
      * f=0 covers L1/G1/B1/E1; f=2 is L5/E5a only for GPS/Galileo.
      * Other bands and missing C/N0 retain the tested baseline model. */
-    if ((p = strstr(opt->pppopt, "-WGTELCN="))) {
+    if (smartphone_ppp_policy(opt).legacy_weighting && (p = strstr(opt->pppopt, "-WGTELCN="))) {
         if (sscanf(p, "-WGTELCN=%d", &combined) != 1) combined = 0;
     }
     if ((combined == 1 || combined == 2) && snr_dbhz > 0.0 &&
@@ -970,7 +973,9 @@ static double varerr(unsigned char sat, int sys, double el, double snr_dbhz,
     }
     else snr_weight = 4.0;
 
-    return MAX(var * snr_weight, type ? SQR(1.0) : SQR(0.01));
+    var *= snr_weight;
+    if(!isfinite(var))return var;
+    return MAX(var, type ? SQR(1.0) : SQR(0.01));
 }
 /* =============================================================================
  * 功能：初始化一个状态参数及其协方差，不是初始化整个滤波器。
@@ -985,6 +990,40 @@ static inline void initx(rtk_t* rtk, double xi, double var, int i)
     for (j = 0; j < rtk->nx; j++) rtk->P[i + j * rtk->nx] = 0.0;
     for (j = 0; j < rtk->nx; j++) rtk->P[j + i * rtk->nx] = 0.0;
     rtk->P[i + i * rtk->nx] = var;
+}
+static void invalidate_arc_ppp(rtk_t *rtk, int sat, int f, const char *reason)
+{
+    ssat_t *ss=&rtk->ssat[sat-1];
+    int j=IB(sat,f,&rtk->opt);
+    char str[40];
+    if(j<0 || j>=rtk->nx)return;
+    if(!ss->ppp_arc_reset[f]) {
+        trace(2,"$ARC_RESET,%s,sat=%d,F%d,reason=%s,old=%.9f\n",
+            time2str(rtk->sol.time,str,2),sat,f+1,reason,rtk->x[j]);
+        if(ss->slip[f]&LLI_SLIP)ss->slipc[f]++;
+    }
+    initx(rtk,0.0,0.0,j); /* also discard every old cross covariance */
+    ss->ppp_arc_pending[f]=ss->ppp_arc_reset[f]=1;
+    ss->psmvalid[f]=0;
+    memset(&rtk->ambc[sat-1],0,sizeof(rtk->ambc[sat-1]));
+}
+/* A rejected packet can still contain a confirmed lock-loss event. Preserve
+ * that event without admitting any invalid measurement into a state seed. */
+extern void ppp_input_failure_arcs(rtk_t *rtk,const obsd_t *obs,int n)
+{
+    int i,f,sat;
+    if(!obs || n<1 || n>MAXOBS || !smartphone_ppp_policy(&rtk->opt).corrected_lifecycle)return;
+    for(i=0;i<n;i++) {
+        sat=obs[i].sat;
+        if(sat<1 || sat>MAXSAT)continue;
+        for(f=0;f<rtk->opt.nf && f<NFREQ;f++)if(obs[i].LLI[f]&LLI_SLIP) {
+            int arc=rtk->opt.ionoopt==IONOOPT_IFLC?0:f;
+            rtk->ssat[sat-1].slip[arc]|=LLI_SLIP;
+            rtk->ssat[sat-1].ppp_slip_evidence[f]|=PPP_EVIDENCE_LLI;
+            invalidate_arc_ppp(rtk,sat,arc,"LLI_ON_REJECTED_INPUT");
+            trace(2,"$ARC_PENDING_INIT,sat=%d,F%d,reason=INVALID_INPUT\n",sat,arc+1);
+        }
+    }
 }
 /* =============================================================================
  * 功能：计算几何无关组合 (Geometry-Free, GF)
@@ -1127,6 +1166,7 @@ static double doppsm_factor(const prcopt_t *opt)
 {
     const char *p;
     double factor = 0.0;
+    if (!smartphone_ppp_policy(opt).smoothing) return 0.0;
 
     if (opt && (p = strstr(opt->pppopt, "-DOPPSM="))) {
         if (sscanf(p, "-DOPPSM=%lf", &factor) != 1 || !isfinite(factor)) factor = 0.0;
@@ -1171,6 +1211,7 @@ static double pppopt_number(const prcopt_t *opt, const char *key,
  * 这里是近似统计处理，不是完整的有色噪声滤波或产品误差相关模型。 */
 static int statistical_model_ppp(const prcopt_t *opt)
 {
+    if (!smartphone_ppp_policy(opt).legacy_weighting) return 0;
     return (int)pppopt_number(opt, "-STATMOD=", 3.0, 0.0, 7.0);
 }
 
@@ -1401,7 +1442,8 @@ static void prepare_signal_quality_ppp(rtk_t *rtk, const obsd_t *obs, int n)
             for (k = 0; k < 2; k++) {
                 ppp_signal_quality_t *q = &ss->ppp_res_quality[f][k];
                 double gap = q->time.time ? timediff(obs[i].time, q->time) : 0.0;
-                if (pppopt_number(&rtk->opt,"-SIGQC=",1.0,0.0,1.0)<0.5 ||
+                if (!smartphone_ppp_policy(&rtk->opt).quality_learning ||
+                    pppopt_number(&rtk->opt,"-SIGQC=",1.0,0.0,1.0)<0.5 ||
                     (q->time.time && (gap < 0.0 || gap > 10.0))) {
                     if (q->weak) {
                         satno2id(sat,sid);time2str(obs[i].time,str,2);
@@ -1419,8 +1461,8 @@ static void prepare_signal_quality_ppp(rtk_t *rtk, const obsd_t *obs, int n)
                 signal_noise_index_ppp(satsys(sat,NULL),new_code,f)+1,
                 signal_weight_ppp(satsys(sat,NULL),new_code,1,&rtk->opt),
                 signal_weight_ppp(satsys(sat,NULL),new_code,0,&rtk->opt),
-                pppopt_number(&rtk->opt,"-SIGQC=",1.0,0.0,1.0)>=0.5,
-                pppopt_number(&rtk->opt,"-SIGQCPH=",0.0,0.0,1.0)>=0.5);
+                smartphone_ppp_policy(&rtk->opt).quality_learning && pppopt_number(&rtk->opt,"-SIGQC=",1.0,0.0,1.0)>=0.5,
+                smartphone_ppp_policy(&rtk->opt).quality_learning && pppopt_number(&rtk->opt,"-SIGQCPH=",0.0,0.0,1.0)>=0.5);
             if (old_code != CODE_NONE) {
                 j = IB(sat, f, &rtk->opt);
                 if (j >= 0 && j < rtk->nx) initx(rtk, 0.0, 0.0, j);
@@ -1477,7 +1519,9 @@ static void detslp_ll(rtk_t* rtk, const obsd_t* obs, int n)
         int half_invalid, slip;
         if (!ppp_signal_supported(satsys(obs[i].sat, NULL), j,
                                   obs[i].code[j], &rtk->opt)) continue;
-        if (obs[i].L[j] == 0.0) continue;
+        if (obs[i].L[j] == 0.0 &&
+            !(smartphone_ppp_policy(&rtk->opt).corrected_lifecycle &&
+              (obs[i].LLI[j]&LLI_SLIP))) continue;
 
         half_invalid = (obs[i].LLI[j] & LLI_HALFC) != 0;
         slip = (obs[i].LLI[j] & LLI_SLIP) != 0 ||
@@ -1485,6 +1529,7 @@ static void detslp_ll(rtk_t* rtk, const obsd_t* obs, int n)
              ss->ppp_half_invalid[j] != half_invalid);
         ss->ppp_half_seen[j] = 1;
         ss->ppp_half_invalid[j] = (uint8_t)half_invalid;
+        ss->ppp_slip_evidence[j] |= PPP_EVIDENCE_LLI;
         if (!slip) continue;
 
         trace(3, "detslp_ll: slip detected sat=%2d f=%d lli=%d half=%d\n",
@@ -1496,10 +1541,11 @@ static void detslp_ll(rtk_t* rtk, const obsd_t* obs, int n)
 /* =============================================================================
  * 功能：利用 GF 组合 (Geometry-Free) 探测周跳，阈值为 thresslip（米）。
  * 对每个次频与首频分别检测；无合适的单信号检测依据时标记组合的两频。
- * 若 PREPROC/DOPPSLIP 已开启且两频有可用 Doppler 历史，GF 跳变交给
- * 单信号连续性检测归因，避免一条坏次频把正常首频模糊度一起重置。
+ * CORRECTED 只向本历元确实执行过的两条 Doppler 检测让渡。
+ * LEGACY 保留原来的 Doppler-ready 判断，供历史复现。
  * ============================================================================= */
-static void detslp_gf(rtk_t* rtk, const obsd_t* obs, int n, const nav_t* nav)
+static void detslp_gf(rtk_t* rtk, const obsd_t* obs, int n, const nav_t* nav,
+    const unsigned char tested[MAXSAT][NFREQ])
 {
     double g0, g1, thres = rtk->opt.thresslip;
     int i, f, sat;
@@ -1514,6 +1560,10 @@ static void detslp_gf(rtk_t* rtk, const obsd_t* obs, int n, const nav_t* nav)
             if ((g1 = gfmeas(obs + i, nav, f)) == 0.0) continue;
             g0 = rtk->ssat[sat - 1].gf[f - 1];
             rtk->ssat[sat - 1].gf[f - 1] = g1;
+            if (g0 != 0.0) {
+                rtk->ssat[sat-1].ppp_slip_evidence[0] |= PPP_EVIDENCE_GF;
+                rtk->ssat[sat-1].ppp_slip_evidence[f] |= PPP_EVIDENCE_GF;
+            }
             if (g0 != 0.0 && fabs(g1 - g0) > thres) {
                 ssat_t *ss = rtk->ssat + sat - 1;
                 double dt0 = timediff(obs[i].time, ss->ppp_dop_time[0]);
@@ -1522,15 +1572,18 @@ static void detslp_gf(rtk_t* rtk, const obsd_t* obs, int n, const nav_t* nav)
                 /* When both single-signal Doppler continuity tests can run,
                  * let them attribute the jump. A noisy secondary signal must
                  * not automatically reset the good primary ambiguity. */
-                if (pppopt_number(&rtk->opt, "-PREPROC=", 0.0, 0.0, 1.0) >= 0.5 &&
+                if ((smartphone_ppp_policy(&rtk->opt).corrected_lifecycle ?
+                    (tested && tested[sat-1][0] && tested[sat-1][f]) :
+                    (pppopt_number(&rtk->opt, "-PREPROC=", 0.0, 0.0, 1.0) >= 0.5 &&
                     pppopt_number(&rtk->opt, "-DOPPSLIP=", 0.0, 0.0, 10.0) > 0.0 &&
                     ss->ppp_dop_valid[0] && ss->ppp_dop_valid[f] &&
                     obs[i].D[0] != 0.0 && obs[i].D[f] != 0.0 &&
                     fabs(obs[i].D[0]) < 20000.0 &&
                     fabs(obs[i].D[f]) < 20000.0 &&
-                    dt0 >= 0.2 && dt0 <= 5.0 && dtf >= 0.2 && dtf <= 5.0) {
-                    trace(3, "$GF_DEFER,sat=%d,F%d,dGF=%.3f,reason=DOPPLER_READY\n",
-                          sat, f + 1, g1 - g0);
+                    dt0 >= 0.2 && dt0 <= 5.0 && dtf >= 0.2 && dtf <= 5.0))) {
+                    trace(3, "$GF_DEFER,sat=%d,F%d,dGF=%.3f,reason=%s\n",
+                          sat, f + 1, g1 - g0,smartphone_ppp_policy(&rtk->opt).corrected_lifecycle?
+                          "DOPPLER_TESTED":"LEGACY_DOPPLER_READY");
                     continue;
                 }
                 rtk->ssat[sat - 1].slip[0] |= LLI_SLIP;
@@ -1571,6 +1624,8 @@ static void detslp_mw(rtk_t* rtk, const obsd_t* obs, int n, const nav_t* nav,
                 (ss->slip[0] & LLI_SLIP) || (ss->slip[f] & LLI_SLIP)) {
                 continue;
             }
+            ss->ppp_slip_evidence[0] |= PPP_EVIDENCE_MW;
+            ss->ppp_slip_evidence[f] |= PPP_EVIDENCE_MW;
             if (fabs(g1 - g0) > thres) {
                 /* MW also contains noisy phone code. If BOTH independent
                  * carrier/Doppler tests ran, use their per-signal attribution
@@ -1619,8 +1674,7 @@ static double ppp_median(double *a, int n)
  *    同组码相共同大跳变则清平滑的旧钟差基准，不硬改 GNSS 观测值。
  * 5. MW 作为补充；最后才推进 Doppler 历史，避免“当前减当前”的伪检测。
  * 仅用当前/过去观测，不访问未来历元或参考真值；缺历史不能完成此类检测。
- * STARTQC 启用时 30 s 之后清理旧 pt/ph 的规则按当前代码保留，
- * 此处只描述其行为，不在加注释任务中调整历史采样策略。 */
+ * CORRECTED 历史持续保存，与 STARTQC 窗口无关；LEGACY 保留原窗口。 */
 static void precheck_obs_ppp(rtk_t *rtk, const obsd_t *obs, int n,
                              const nav_t *nav)
 {
@@ -1632,22 +1686,40 @@ static void precheck_obs_ppp(rtk_t *rtk, const obsd_t *obs, int n,
     unsigned char pseen[NCLK_PPP][MAXSAT]={{0}},cseen[NCLK_PPP][MAXSAT]={{0}};
     unsigned char dop_tested[MAXSAT][NFREQ]={{0}};
     int i, f, q, sat, sys, grp, np = 0, nc = 0;
-    int history_done=pppopt_number(&rtk->opt,"-STARTQC=",1.0,0.0,1.0)>=0.5 &&
+    int corrected=smartphone_ppp_policy(&rtk->opt).corrected_lifecycle;
+    int history_done=!corrected && pppopt_number(&rtk->opt,"-STARTQC=",1.0,0.0,1.0)>=0.5 &&
         rtk->ppp_start_time.time && fabs(timediff(obs[0].time,rtk->ppp_start_time))>30.0;
 
     phase_thres = pppopt_number(&rtk->opt, "-DOPPSLIP=", 0.0, 0.0, 10.0);
     code_thres = pppopt_number(&rtk->opt, "-CODEJUMP=", 0.0, 0.0, 1000.0);
+    if(!smartphone_ppp_policy(&rtk->opt).empirical_guards)code_thres=0.0;
 
     for (sat = 0; sat < MAXSAT; sat++) for (f = 0; f < NFREQ; f++) {
         rtk->ssat[sat].slip[f] = 0;
         rtk->ssat[sat].ppp_code_bad[f] = 0;
+        rtk->ssat[sat].ppp_slip_evidence[f] = 0;
+        rtk->ssat[sat].ppp_arc_reset[f] = 0;
         if(history_done) {
             rtk->ssat[sat].pt[0][f].time=0;rtk->ssat[sat].pt[0][f].sec=0.0;
             rtk->ssat[sat].ph[0][f]=0.0;
         }
     }
     detslp_ll(rtk, obs, n);
-    detslp_gf(rtk, obs, n, nav);
+    if (corrected) for(i=0;i<n && i<MAXOBS;i++) {
+        ssat_t *ss=&rtk->ssat[obs[i].sat-1];
+        for(f=0;f<rtk->opt.nf && f<NFREQ;f++) {
+            double gap=ss->pt[0][f].time?timediff(obs[i].time,ss->pt[0][f]):0.0;
+            if (obs[i].L[f]!=0.0 && ss->pt[0][f].time &&
+                (gap<0.0 || gap>smartphone_ppp_policy(&rtk->opt).arc_gap_seconds)) {
+                ss->slip[f] |= LLI_SLIP;
+                ss->ppp_slip_evidence[f] |= PPP_EVIDENCE_GAP;
+                ss->psmvalid[f]=ss->ppp_dop_valid[f]=0;
+                if(f==0) memset(ss->gf,0,sizeof(ss->gf)),memset(ss->mw,0,sizeof(ss->mw));
+                else ss->gf[f-1]=ss->mw[f-1]=0.0;
+            }
+        }
+    }
+    else detslp_gf(rtk, obs, n, nav,NULL);
 
     if (phase_thres > 0.0 || code_thres > 0.0) {
         for (i = 0; i < n && i < MAXOBS; i++) {
@@ -1708,6 +1780,7 @@ static void precheck_obs_ppp(rtk_t *rtk, const obsd_t *obs, int n,
         for (i = 0; i < np; i++) if (pcnt[pgrp[i]] >= 3) {
             sat = obs[poi[i]].sat; f = pof[i];
             dop_tested[sat-1][f]=1;
+            rtk->ssat[sat-1].ppp_slip_evidence[f] |= PPP_EVIDENCE_DOPPLER;
             if(fabs(piv[i]-medp[pgrp[i]])<=phase_thres)continue;
             rtk->ssat[sat - 1].slip[f] |= LLI_SLIP;
             rtk->ssat[sat - 1].psmvalid[f] = 0;
@@ -1723,7 +1796,17 @@ static void precheck_obs_ppp(rtk_t *rtk, const obsd_t *obs, int n,
                 sat, f + 1, civ[i] - medc[cgrp[i]], medc[cgrp[i]], code_thres);
         }
     }
+    if (corrected) detslp_gf(rtk,obs,n,nav,dop_tested);
     detslp_mw(rtk, obs, n, nav,dop_tested);
+    for(i=0;i<n && i<MAXOBS;i++) for(f=0;f<rtk->opt.nf && f<NFREQ;f++) {
+        ssat_t *ss=&rtk->ssat[obs[i].sat-1];
+        unsigned int e=ss->ppp_slip_evidence[f];
+        if(obs[i].code[f]==CODE_NONE)continue;
+        trace(2,"$SLIP_CHECK,sat=%d,F%d,LLI_ADR=%d,GF=%d,MW=%d,Doppler=%d,gap=%d,slip=%d,lifecycle=%s\n",
+            obs[i].sat,f+1,!!(e&PPP_EVIDENCE_LLI),!!(e&PPP_EVIDENCE_GF),
+            !!(e&PPP_EVIDENCE_MW),!!(e&PPP_EVIDENCE_DOPPLER),!!(e&PPP_EVIDENCE_GAP),
+            !!(ss->slip[f]&LLI_SLIP),corrected?"CORRECTED":"LEGACY");
+    }
 
     /* Advance Doppler history only after all innovations have been formed. */
     for (i = 0; i < n && i < MAXOBS; i++) {
@@ -1984,7 +2067,7 @@ static void udtrop_ppp(rtk_t* rtk, gtime_t epoch)
     if (rtk->x[i] == 0.0) {
         ecef2pos(rtk->sol.rr, pos);
         time2str(prior_time, tstr, 0);
-        if (vmf3_ztd_prior(prior_time, pos, &ztd)) {
+        if (smartphone_ppp_policy(&rtk->opt).atmosphere_constraints && vmf3_ztd_prior(prior_time, pos, &ztd)) {
             /* Start at the external forecast, but retain a conservative
              * variance because this is a 5-degree forecast grid. */
             var = SQR(vmf3_init_sigma(&rtk->opt));
@@ -2151,7 +2234,8 @@ static void udiono_ppp(rtk_t* rtk, const obsd_t* obs, int n, const nav_t* nav)
             /* First choice: initialize from the same IONEX product that will be
              * used as a soft constraint. This avoids noisy phone code-difference
              * initialization being contaminated by receiver IFB/code noise. */
-            if (ionex_vertical_prior(obs[i].time, nav, pos, azel, &rtk->opt, &ion, &vari)) {
+            if (smartphone_ppp_policy(&rtk->opt).atmosphere_constraints &&
+                ionex_vertical_prior(obs[i].time, nav, pos, azel, &rtk->opt, &ion, &vari)) {
                 if (fabs(ion) < 1E-8) ion = 1E-6; /* RTKLIB filter active-state sentinel */
                 initx(rtk, ion, vari, j);
                 if (statistical_model_ppp(&rtk->opt)&2)
@@ -2165,7 +2249,11 @@ static void udiono_ppp(rtk_t* rtk, const obsd_t* obs, int n, const nav_t* nav)
                 double mapf = ppp_iono_mapf(nav, pos, azel);
                 if (mapf <= 0.0) continue;
                 ion = ionmodel(obs[i].time, nav->ion_gps, pos, azel) / mapf;
-                if (ion != ion || fabs(ion) > 1E4) ion = 1E-6;
+                if (!isfinite(ion)) {rtk->ppp_failure=FILTER_NAN_INPUT;continue;}
+                if (fabs(ion) > 1E4) {
+                    if(smartphone_ppp_policy(&rtk->opt).empirical_guards)ion=1E-6;
+                    else continue;
+                }
                 if (fabs(ion) < 1E-8) ion = 1E-6;
                 initx(rtk, ion, VAR_IONO, j);
                 trace(3, "ion init BRDC: sat=%d Iv=%.4f sig=%.3f\n",
@@ -2230,14 +2318,15 @@ static void udbias_ppp(rtk_t* rtk, const obsd_t* obs, int n, const nav_t* nav)
     if (rtk->opt.posopt[5]) {
         clk_jump = ROUND(time2gpst(obs[0].time, NULL) * 10) % 864000 == 0;
     }
-    if (pppopt_number(&rtk->opt, "-PREPROC=", 0.0, 0.0, 1.0) < 0.5) {
+    if (!smartphone_ppp_policy(&rtk->opt).corrected_lifecycle &&
+        pppopt_number(&rtk->opt, "-PREPROC=", 0.0, 0.0, 1.0) < 0.5) {
         /* Legacy path retained for exact A/B comparison. */
         for (i = 0; i < MAXSAT; i++) for (j = 0; j < rtk->opt.nf; j++) {
             rtk->ssat[i].slip[j] = 0;
             rtk->ssat[i].ppp_code_bad[j] = 0;
         }
         detslp_ll(rtk, obs, n);
-        detslp_gf(rtk, obs, n, nav);
+        detslp_gf(rtk, obs, n, nav,NULL);
     }
     ecef2pos(rtk->sol.rr, pos);
     id_ifb = -1;
@@ -2264,7 +2353,12 @@ static void udbias_ppp(rtk_t* rtk, const obsd_t* obs, int n, const nav_t* nav)
                         (unsigned int)outc, rtk->x[j],
                         SQRT(rtk->P[j + j * rtk->nx]));
                 }
-                if (j >= 0 && j < rtk->nx) initx(rtk, 0.0, 0.0, j);
+                if (j>=0 && j<rtk->nx) {
+                    if (smartphone_ppp_policy(&rtk->opt).corrected_lifecycle &&
+                        rtk->x[j]!=0.0)
+                        invalidate_arc_ppp(rtk,i+1,f,clk_jump?"CLOCKJUMP":reset_inst?"INSTANT_AR":"OUTAGE");
+                    else initx(rtk,0.0,0.0,j);
+                }
             }
         }
 
@@ -2272,9 +2366,18 @@ static void udbias_ppp(rtk_t* rtk, const obsd_t* obs, int n, const nav_t* nav)
             sat = obs[i].sat;
             bias[i] = 0.0;
             slip[i] = 0;
+            if (smartphone_ppp_policy(&rtk->opt).corrected_lifecycle) {
+                int confirmed=rtk->ssat[sat-1].slip[f]&LLI_SLIP;
+                if (rtk->opt.ionoopt==IONOOPT_IFLC) {
+                    f2=seliflc(rtk->opt.nf,satsys(sat,NULL));
+                    if(f2>0 && f2<NFREQ)confirmed|=rtk->ssat[sat-1].slip[f2]&LLI_SLIP;
+                }
+                if(confirmed) invalidate_arc_ppp(rtk,sat,f,"CONFIRMED_SLIP");
+            }
             if (!ppp_signal_supported(satsys(sat, NULL), f,
                                       obs[i].code[f], &rtk->opt)) continue;
-            if (ppp_phase_quarantined(&rtk->ssat[sat - 1], f, obs[i].time)) continue;
+            if (smartphone_ppp_policy(&rtk->opt).quality_learning &&
+                ppp_phase_quarantined(&rtk->ssat[sat - 1], f, obs[i].time)) continue;
             j = IB(sat, f, &rtk->opt);
             slip[i] = rtk->ssat[sat - 1].slip[f] & LLI_SLIP;
 
@@ -2345,7 +2448,8 @@ static void udbias_ppp(rtk_t* rtk, const obsd_t* obs, int n, const nav_t* nav)
 
         /* 传统码相共同大跳变保护：需至少两个已有模糊度，门限为 0.5 ms*c。
          * 这是异常量级的共同偏移处理，不是把普通米级残差平均后改坐标。 */
-        if (k >= 2 && fabs(offset / k) > 0.0005 * CLIGHT) {
+        if (smartphone_ppp_policy(&rtk->opt).empirical_guards &&
+            k >= 2 && fabs(offset / k) > 0.0005 * CLIGHT) {
             for (i = 0; i < MAXSAT; i++) {
                 j = IB(i + 1, f, &rtk->opt);
                 if (j >= 0 && j < rtk->nx && rtk->x[j] != 0.0) rtk->x[j] += offset / k;
@@ -2356,14 +2460,25 @@ static void udbias_ppp(rtk_t* rtk, const obsd_t* obs, int n, const nav_t* nav)
 
         for (i = 0; i < n && i < MAXOBS; i++) {
             sat = obs[i].sat;
-            if (ppp_phase_quarantined(&rtk->ssat[sat - 1], f, obs[i].time)) continue;
+            if (smartphone_ppp_policy(&rtk->opt).quality_learning &&
+                ppp_phase_quarantined(&rtk->ssat[sat - 1], f, obs[i].time)) continue;
             j = IB(sat, f, &rtk->opt);
             if (j < 0 || j >= rtk->nx) continue;
 
             if (rtk->P[j + j * rtk->nx] > 0.0) {
                 rtk->P[j + j * rtk->nx] += SQR(rtk->opt.prn[0]) * fabs(rtk->tt);
             }
-            if (bias[i] == 0.0) continue;
+            if (!isfinite(bias[i])) {
+                rtk->ppp_failure=FILTER_NAN_INPUT;
+                continue;
+            }
+            if (bias[i] == 0.0) {
+                if (rtk->ssat[sat-1].ppp_arc_pending[f] &&
+                    (obs[i].code[f]!=CODE_NONE || rtk->ssat[sat-1].ppp_track_code[f]!=CODE_NONE))
+                    trace(2,"$ARC_PENDING_INIT,%s,sat=%d,F%d,reason=NO_VALID_SEED\n",
+                        time2str(rtk->sol.time,tstr,2),sat,f+1);
+                continue;
+            }
 
             /* A confirmed cycle slip changes the ambiguity itself. Reinitialize
                from this epoch instead of retaining the old value. */
@@ -2379,8 +2494,9 @@ static void udbias_ppp(rtk_t* rtk, const obsd_t* obs, int n, const nav_t* nav)
                         time2str(rtk->sol.time, tstr, 2), sid, f + 1,
                         (unsigned int)rtk->ssat[sat - 1].outc[f],
                         old_bias, old_std, bias[i]);
-                    /* udbias_ppp clears the slip flag below, so count it here. */
-                    rtk->ssat[sat - 1].slipc[f]++;
+                    /* Legacy clears slip below; corrected counts at invalidation. */
+                    if(!smartphone_ppp_policy(&rtk->opt).corrected_lifecycle)
+                        rtk->ssat[sat - 1].slipc[f]++;
                 }
                 else {
                     trace(4, "$AMBINIT,%s,%s,F%d,bias=%.4f\n",
@@ -2388,7 +2504,12 @@ static void udbias_ppp(rtk_t* rtk, const obsd_t* obs, int n, const nav_t* nav)
                 }
 
                 initx(rtk, bias[i], VAR_BIAS, j);
-                rtk->ssat[sat - 1].slip[f] &= (uint8_t)~LLI_SLIP;
+                if(smartphone_ppp_policy(&rtk->opt).corrected_lifecycle) {
+                    rtk->ssat[sat-1].ppp_arc_pending[f]=0;
+                    trace(2,"$ARC_REINITIALIZED,%s,sat=%d,F%d,bias=%.9f\n",
+                        time2str(rtk->sol.time,tstr,2),sat,f+1,bias[i]);
+                }
+                else rtk->ssat[sat - 1].slip[f] &= (uint8_t)~LLI_SLIP;
                 for (k = 0; k < MAXSAT; k++) rtk->ambc[sat - 1].flags[k] = 0;
             }
         }
@@ -2778,6 +2899,32 @@ static void update_cmc_quality_ppp(rtk_t *rtk, const obsd_t *obs, int n,
  * sigma 变大”掩盖粗差证据；验后按原物理标准化残差选最坏的一条编辑。
  * ============================================================================= */
  /* phase and code residuals --------------------------------------------------*/
+/* This adapter deliberately retains
+ * the historical multiplication order for bit-for-bit B comparisons. The
+ * return value is the current-epoch robust weight only. Historical CMC and
+ * quality factors are a separate B-only layer; smoothing is a random-model
+ * adjustment, never presented as current-epoch robust evidence.
+ * No C/D algorithm or learned noise scale is implemented here. */
+static double apply_legacy_robust_ppp(const prcopt_t *opt, const ssat_t *ss,
+    int frq, int code, double z0, double *R_eff)
+{
+    double penalty=1.0;
+    if(!smartphone_ppp_policy(opt).legacy_weighting)return 1.0;
+    if(code && ss->ppp_cmc_code_weak[frq])*R_eff*=4.0;
+    *R_eff*=persistent_variance_factor_ppp(opt,&ss->ppp_res_quality[frq][code],code);
+    if(z0>THRES_ROBUST) {
+        penalty=SQR(z0/THRES_ROBUST);
+        if(penalty>25.0)penalty=25.0;
+        *R_eff*=penalty;
+    }
+    return 1.0 / penalty;
+}
+/* Rejection is independent of the robust weight; retain the existing fixed
+ * post-fit gate for A/B. This is not standardized-innovation C rejection. */
+static int reject_postfit_ppp(int post, double z0)
+{
+    return post && z0>THRES_REJECT;
+}
 static int ppp_res(int post, const obsd_t* obs, int n, const double* rs,
     const double* dts, const double* var_rs, const int* svh,
     const double* dr, int* exc, unsigned char* mexc, const nav_t* nav,
@@ -2824,6 +2971,10 @@ static int ppp_res(int post, const obsd_t* obs, int n, const double* rs,
         bds_code_warm = 0.0;
     }
     bds_code_warm = MIN(600.0, MAX(0.0, bds_code_warm));
+    if (!smartphone_ppp_policy(opt).empirical_guards) {
+        code_only_factor=bds_code_factor=1.0;bds_code_warm=0.0;
+    }
+
     /* Code is valuable while position and ambiguities are being initialized.
      * Increase the BeiDou code variance smoothly only after phase arcs have
      * begun to form, avoiding an abrupt information change in the EKF. */
@@ -2909,7 +3060,7 @@ static int ppp_res(int post, const obsd_t* obs, int n, const double* rs,
         /* stack phase and code residuals {L1,P1,L2,P2,...} */
         for (j = 0; j < 2 * NF(opt); j++) {
             int midx = i * 2 * NFREQ + j;
-            double snr_real, sigma0, z0, penalty = 1.0;
+            double snr_real,sigma0,z0,R0,robust_weight,base_obs_var,legacy_random,legacy_time_add,history_weight;
             double ifb_used = 0.0;
 
             if (mexc && midx >= 0 && midx < MAXOBS * 2 * NFREQ && mexc[midx]) {
@@ -2933,7 +3084,7 @@ static int ppp_res(int post, const obsd_t* obs, int n, const double* rs,
                 continue;
             }
 
-            if (!code && ppp_phase_quarantined(&rtk->ssat[sat - 1], frq,
+            if (!code && smartphone_ppp_policy(opt).quality_learning && ppp_phase_quarantined(&rtk->ssat[sat - 1], frq,
                 obs[i].time)) continue;
 
             /* raPPPid-style startup: first solve a code+Doppler-smoothed
@@ -3013,6 +3164,7 @@ static int ppp_res(int post, const obsd_t* obs, int n, const double* rs,
              * dcb 只在码行非零，bias 只在相位行非零；残差 res 单位米。
              * 初始化模糊度时采用的 RCB/电离层符号必须与这一行一致。 */
             res = y - (r + cdtr - CLIGHT * dts[i * 2] + dtrp + C * dion + dcb + bias);
+            if (!isfinite(res)) {rtk->ppp_failure=FILTER_NAN_INPUT;return FILTER_NAN_INPUT;}
             if (v) v[nv] = res;
             if (diag && frq < NFREQ) {
                 ppp_diag_signal_t* d = &diag->obs[i][frq];
@@ -3036,9 +3188,12 @@ static int ppp_res(int post, const obsd_t* obs, int n, const double* rs,
              * erase the evidence used by the post-fit outlier detector.
              */
             snr_real = (frq < NFREQ) ? obs[i].SNR[frq] * SNR_UNIT : 35.0;
-            var[nv] = varerr(sat, sys, azel[1 + i * 2], snr_real,
-                signal_noise_index_ppp(sys,obs[i].code[frq],frq),code,opt) *
-                signal_weight_ppp(sys,obs[i].code[frq],code,opt);
+            base_obs_var=varerr(sat,sys,azel[1+i*2],snr_real,
+                signal_noise_index_ppp(sys,obs[i].code[frq],frq),code,opt);
+            R0=base_obs_var;
+            R0+=vart+SQR(C)*vari+var_rs[i];
+            if(sys==SYS_GLO && code==1)R0+=VAR_GLO_IFB;
+            var[nv]=base_obs_var*signal_weight_ppp(sys,obs[i].code[frq],code,opt);
             if (sys == SYS_CMP && code) var[nv] *= bds_code_factor;
             if (code && !sat_has_phase && !rtk->ppp_code_warmup) {
                 var[nv] *= code_only_factor;
@@ -3051,8 +3206,14 @@ static int ppp_res(int post, const obsd_t* obs, int n, const double* rs,
 
             /* 此时冻结原物理 sigma0 和 z0。后面即使 R 被持续惩罚/抗差放大，
              * 硬拒绝仍使用 z0，不允许同一粗差靠不断膨胀 sigma 逃过检测。 */
+            if(!isfinite(var[nv]) || var[nv]<0.0) {
+                rtk->ppp_failure=isfinite(var[nv])?FILTER_BAD_COV:FILTER_NAN_COV;
+                return rtk->ppp_failure;
+            }
+            legacy_random=var[nv];
             sigma0 = sqrt(MAX(var[nv], 1E-12));
             z0 = fabs(res) / sigma0;
+            if(!isfinite(z0)) {rtk->ppp_failure=FILTER_NAN_INPUT;return FILTER_NAN_INPUT;}
             if (diag && frq < NFREQ)
                 diag->obs[i][frq].physical_sigma[code]=sigma0;
             /* Never claim the white-noise variance reduction as independent
@@ -3074,26 +3235,17 @@ static int ppp_res(int post, const obsd_t* obs, int n, const double* rs,
                     var[nv]+=(effective-raw)*scale;
                 }
             }
-            /* Persistent penalties affect R, never erase the physical
-             * standardized residual used for detection/hard rejection. */
-            if (code && rtk->ssat[sat - 1].ppp_cmc_code_weak[frq]) var[nv]*=4.0;
-            var[nv]*=persistent_variance_factor_ppp(opt,
-                &rtk->ssat[sat-1].ppp_res_quality[frq][code],code);
-            trace(4,"$SIG_WEIGHT,%s,sat=%d,sig=%s,F%d,type=%s,noise_band=%d,cal_var=%.3f,persistent_var=%d,physical_sigma=%.4f\n",
-                str,sat,code2obs(obs[i].code[frq]),frq+1,code?"CODE":"PHASE",
-                signal_noise_index_ppp(sys,obs[i].code[frq],frq)+1,
-                signal_weight_ppp(sys,obs[i].code[frq],code,opt),
-                persistent_variance_factor_ppp(opt,&rtk->ssat[sat-1].ppp_res_quality[frq][code],code),sigma0);
-
-            if (z0 > THRES_ROBUST) {
-                penalty = SQR(z0 / THRES_ROBUST);
-                if (penalty > 25.0) penalty = 25.0;
-                var[nv] *= penalty;
-
-                trace(3,
-                    "robust down-weight: sat=%d %s%d z0=%.2f penalty=%.2f sigma0=%.3f sigma=%.3f\n",
-                    sat, code ? "P" : "L", frq + 1, z0, penalty,
-                    sigma0, sqrt(var[nv]));
+            legacy_time_add=var[nv]-legacy_random;
+            history_weight=smartphone_ppp_policy(opt).legacy_weighting?
+                1.0/(code && rtk->ssat[sat-1].ppp_cmc_code_weak[frq]?4.0:1.0)/
+                persistent_variance_factor_ppp(opt,&rtk->ssat[sat-1].ppp_res_quality[frq][code],code):1.0;
+            robust_weight=apply_legacy_robust_ppp(opt,&rtk->ssat[sat-1],
+                frq,code,z0,&var[nv]);
+            trace(3,"$PPP_R,%s,sat=%d,F%d,type=%s,R0=%.17g,legacy_random=%.17g,legacy_time_add=%.17g,w_history=%.17g,w=%.17g,eta=1,R_eff=%.17g\n",
+                str,sat,frq+1,code?"CODE":"PHASE",R0,legacy_random,legacy_time_add,history_weight,robust_weight,var[nv]);
+            if(!isfinite(var[nv]) || var[nv]<0.0) {
+                rtk->ppp_failure=isfinite(var[nv])?FILTER_BAD_COV:FILTER_NAN_COV;
+                return rtk->ppp_failure;
             }
 
             trace(3, "%s sat=%2d %s%d res=%9.4f sig0=%8.4f sig=%8.4f z0=%6.2f el=%4.1f snr=%4.1f ifb=%8.3f\n",
@@ -3105,7 +3257,7 @@ static int ppp_res(int post, const obsd_t* obs, int n, const double* rs,
              * Candidate ranking also uses standardized residual z0 instead of
              * raw metres, otherwise code measurements always dominate phase.
              */
-            if (post && z0 > THRES_REJECT && ne < MAXOBS * 2 * NFREQ) {
+            if (reject_postfit_ppp(post,z0) && ne < MAXOBS * 2 * NFREQ) {
                 obsi[ne] = i;
                 frqi[ne] = j;
                 ve[ne] = res;
@@ -3137,7 +3289,8 @@ static int ppp_res(int post, const obsd_t* obs, int n, const double* rs,
      * 设计矩阵仅该星 II 列为 1；单位与状态一致：v=Iv_product-Iv_state。
      * STATMOD 位2使初始化已用过的本历元先验不再加入；后续按 dt 分配信息。
      * product_use 只记试算里用了哪些先验，成功提交 xp/Pp 后才更新使用时间。 */
-    if (!post && opt->ionoopt == IONOOPT_EST && v && H) {
+    if (smartphone_ppp_policy(opt).atmosphere_constraints &&
+        !post && opt->ionoopt == IONOOPT_EST && v && H) {
         unsigned char used[MAXSAT] = { 0 };
         int logged_interval = 0;
 
@@ -3222,7 +3375,7 @@ static int ppp_res(int post, const obsd_t* obs, int n, const double* rs,
      * 这与约束 ZTD 到 ZHD+ZWD 在固定产品 ZHD 时等价；不另建一个独立 ZWD。
      * VMF3ZWDSIG<=0 或产品时间/空间不可用时不追加此行，不强行改写状态。
      * 有效 R 还乘重复信息与抗差因子；产品偏离大时软化，不当作无误差真值。 */
-    if (!post && v && H &&
+    if (smartphone_ppp_policy(opt).atmosphere_constraints && !post && v && H &&
         (opt->tropopt == TROPOPT_EST || opt->tropopt == TROPOPT_ESTG)) {
         double sig_zwd = vmf3_zwd_constraint_sigma(opt);
         double ah, aw, zhd_vmf, zwd_vmf, dt, interval, zc, penalty = 1.0;
@@ -3611,7 +3764,8 @@ static void update_stat(rtk_t* rtk, const obsd_t* obs, int n, int stat)
         rtk->ssat[obs[i].sat - 1].snr_base[j] = 0;
     }
     for (i = 0; i < MAXSAT; i++) for (j = 0; j < opt->nf; j++) {
-        if (rtk->ssat[i].slip[j] & (LLI_SLIP | LLI_HALFC)) rtk->ssat[i].slipc[j]++;
+        if (!smartphone_ppp_policy(opt).corrected_lifecycle &&
+            (rtk->ssat[i].slip[j] & (LLI_SLIP | LLI_HALFC))) rtk->ssat[i].slipc[j]++;
         if (rtk->ssat[i].fix[j] == 2 && stat != SOLQ_FIX) rtk->ssat[i].fix[j] = 1;
     }
 }
@@ -3653,7 +3807,9 @@ static int test_hold_amb(rtk_t* rtk)
 extern void pppos(rtk_t* rtk, const obsd_t* obs, int n, const nav_t* nav)
 {
     const prcopt_t* opt = &rtk->opt;
-    double* rs, * dts, * var, * v, * H, * R, * azel, * xp, * Pp, dr[3] = { 0 }, std[3];
+    double *rs=NULL,*dts=NULL,*var=NULL,*v=NULL,*H=NULL,*R=NULL,*azel=NULL,
+        *xp=NULL,*Pp=NULL,*xprior=NULL,*Pprior=NULL,dr[3]={0},std[3];
+    gtime_t zwd_prior,ion_prior[MAXSAT];
     char str[40];
     const char* diag_opt;
     ppp_diag_epoch_t diag, evidence;
@@ -3662,6 +3818,29 @@ extern void pppos(rtk_t* rtk, const obsd_t* obs, int n, const nav_t* nav)
         svh[MAXOBS], exc[MAXOBS] = { 0 }, stat = SOLQ_SINGLE;
     unsigned char mexc[MAXOBS * 2 * NFREQ] = { 0 };
     memset(&evidence,0,sizeof(evidence));
+    rtk->ppp_failure=0;
+    if(!obs || !nav || n<=0 || n>MAXOBS || opt->nf<1 || opt->nf>NFREQ ||
+        rtk->nx!=pppnx(opt) || opt->ppp_baseline<0 || opt->ppp_baseline>PPP_BASELINE_A_CLEAN) {
+        rtk->ppp_failure=FILTER_BAD_DIM;rtk->sol.stat=SOLQ_NONE;
+        trace(2,"$PPP_FAILURE,reason=BAD_DIM,stage=PPP_ENTRY\n");return;
+    }
+    for(i=0;i<n;i++) {
+        if(obs[i].sat<1 || obs[i].sat>MAXSAT || !isfinite(obs[i].time.sec)) {
+            rtk->ppp_failure=FILTER_BAD_DIM;rtk->sol.stat=SOLQ_NONE;return;
+        }
+        for(j=0;j<NFREQ;j++)if(!isfinite(obs[i].P[j]) ||
+            !isfinite(obs[i].L[j]) || !isfinite(obs[i].D[j])) {
+            rtk->ppp_failure=FILTER_NAN_INPUT;rtk->sol.stat=SOLQ_NONE;
+            ppp_input_failure_arcs(rtk,obs,n);
+            trace(2,"$PPP_FAILURE,reason=NAN_INPUT,stage=PPP_ENTRY\n");return;
+        }
+    }
+    if(!numeric_finite(rtk->x,rtk->nx))rtk->ppp_failure=FILTER_NAN_STATE;
+    else rtk->ppp_failure=numeric_covariance(rtk->P,rtk->nx);
+    if(rtk->ppp_failure) {
+        rtk->sol.stat=SOLQ_NONE;
+        trace(2,"$PPP_FAILURE,reason=%s,stage=PRIOR\n",filter_reason(rtk->ppp_failure));return;
+    }
 
     time2str(obs[0].time, str, 2);
     if ((diag_opt = strstr(opt->pppopt, "-PPPDIAG="))) {
@@ -3685,6 +3864,10 @@ extern void pppos(rtk_t* rtk, const obsd_t* obs, int n, const nav_t* nav)
     prepare_signal_quality_ppp(rtk, obs, n);
     /* Ephemerides depend only on the input epoch/nav, not predicted states. */
     satposs(obs[0].time,obs,n,nav,opt->sateph,rs,dts,var,svh);
+    if(!numeric_finite(rs,(size_t)6*n) || !numeric_finite(dts,(size_t)2*n) ||
+        !numeric_finite(var,n)) {
+        rtk->ppp_failure=FILTER_NAN_INPUT;goto cleanup;
+    }
 
     /* Update the causal code smoother before ambiguity initialization and
      * residual formation. This runs once per epoch, never inside the
@@ -3693,9 +3876,11 @@ extern void pppos(rtk_t* rtk, const obsd_t* obs, int n, const nav_t* nav)
      * prediction, so rejected code and detected slips never seed PPP states. */
     /* 第 2 步：只依赖当前/历史数据的粗差和周跳预检；先标坏再建立平滑。
      * LLI 等 slip 标记通知重建模糊度；code_bad 阻止坏码参与初值/滤波。 */
-    if (pppopt_number(opt, "-PREPROC=", 0.0, 0.0, 1.0) >= 0.5) {
+    if (smartphone_ppp_policy(opt).corrected_lifecycle ||
+        pppopt_number(opt, "-PREPROC=", 0.0, 0.0, 1.0) >= 0.5) {
         precheck_obs_ppp(rtk, obs, n, nav);
-        precheck_startup_code_ppp(rtk,obs,n,nav,rs,dts,var,svh);
+        if (smartphone_ppp_policy(opt).startup_qc)
+            precheck_startup_code_ppp(rtk,obs,n,nav,rs,dts,var,svh);
     }
     /* 第 3 步：平滑及可选码阶段选择，各执行一次；严禁移进残差编辑循环，
      * 否则同一 epoch 会重复平滑和增加历史计数，fast/realtime 也可能不等价。 */
@@ -3708,7 +3893,28 @@ extern void pppos(rtk_t* rtk, const obsd_t* obs, int n, const nav_t* nav)
 
     /* 第 4 步：形成本历元的预测状态 rtk->x/P。
      * 模糊度最后初始化，使用已平滑码及一致的电离层/RCB 模型。 */
+    xprior=mat(rtk->nx,1);Pprior=mat(rtk->nx,rtk->nx);
+    matcpy(xprior,rtk->x,rtk->nx,1);matcpy(Pprior,rtk->P,rtk->nx,rtk->nx);
+    zwd_prior=rtk->ppp_zwd_prior_time;
+    for(j=0;j<MAXSAT;j++)ion_prior[j]=rtk->ssat[j].ppp_ion_prior_time;
     udstate_ppp(rtk, obs, n, nav);
+    info=!numeric_finite(rtk->x,rtk->nx)?FILTER_NAN_STATE:
+        numeric_covariance(rtk->P,rtk->nx);
+    if(info) {
+        rtk->ppp_failure=info;
+        matcpy(rtk->x,xprior,rtk->nx,1);matcpy(rtk->P,Pprior,rtk->nx,rtk->nx);
+        rtk->ppp_zwd_prior_time=zwd_prior;
+        for(j=0;j<MAXSAT;j++) {
+            int f;
+            rtk->ssat[j].ppp_ion_prior_time=ion_prior[j];
+            /* Rollback must never resurrect a confirmed old arc. */
+            if(smartphone_ppp_policy(opt).corrected_lifecycle)
+                for(f=0;f<NF(opt);f++)if(rtk->ssat[j].ppp_arc_reset[f])
+                    invalidate_arc_ppp(rtk,j+1,f,"PREDICTION_ROLLBACK");
+        }
+        goto cleanup;
+    }
+    if(rtk->ppp_failure)goto cleanup;
 
     /* Satellite positions/clocks were computed before startup code checks. */
 
@@ -3799,13 +4005,15 @@ extern void pppos(rtk_t* rtk, const obsd_t* obs, int n, const nav_t* nav)
         matcpy(Pp, rtk->P, rtk->nx, rtk->nx);
 
         /* prefit residuals */
-        if (!(nv = ppp_res(0, obs, n, rs, dts, var, svh, dr, exc, mexc, nav, xp, rtk, v, H, R, azel, NULL, product_use))) {
+        if ((nv = ppp_res(0, obs, n, rs, dts, var, svh, dr, exc, mexc, nav, xp, rtk, v, H, R, azel, NULL, product_use))<=0) {
+            if(!rtk->ppp_failure)rtk->ppp_failure=PPP_FAILURE_NO_OBS;
             trace(2, "%s ppp (%d) no valid obs data\n", str, i + 1);
             break;
         }
         /* filter 在 rtkcmn 中完成 EKF 测量更新：根据 v/H/R 算增益，更新
          * xp/Pp。info!=0 为数值更新失败，不能把该试算状态提交成有效 PPP。 */
         if ((info = filter(xp, Pp, H, v, R, rtk->nx, nv))) {
+            rtk->ppp_failure=info;
             trace(2, "%s ppp (%d) filter error info=%d\n", str, i + 1, info);
             break;
         }
@@ -3819,7 +4027,15 @@ extern void pppos(rtk_t* rtk, const obsd_t* obs, int n, const nav_t* nav)
         /* 第一份验后证据只用于持续质量检测，包含后续可能被剔除的观测。
          * 最终输出/CMC 使用验后通过的 diag；两份快照的含义不能混淆。 */
         if(i==0)evidence=diag;
-        if (post_ok) {
+        if(post_ok<0) {rtk->ppp_failure=post_ok;break;}
+        if (post_ok>0) {
+            /* Final transaction gate: post-fit model checks plus the exact
+             * pre-fit innovation/H/R actually used in this filter trial. */
+            info=!numeric_finite(xp,rtk->nx)?FILTER_NAN_STATE:
+                numeric_covariance(Pp,rtk->nx);
+            if(!info && (!numeric_finite(v,nv) || !numeric_finite(H,(size_t)rtk->nx*nv)))info=FILTER_NAN_INPUT;
+            if(!info)info=numeric_covariance(R,nv);
+            if(info) {rtk->ppp_failure=info;break;}
             /* 仅验后通过才提交测量更新；成功使用的产品先验时间也在此提交。
              * 初值已消耗的先验和编辑失败的试算不会被当作额外独立信息。 */
             matcpy(rtk->x, xp, rtk->nx, 1);
@@ -3837,6 +4053,7 @@ extern void pppos(rtk_t* rtk, const obsd_t* obs, int n, const nav_t* nav)
         }
     }
     if (i >= MAX_ITER) {
+        rtk->ppp_failure=PPP_FAILURE_EDIT_LIMIT;
         trace(2, "%s ppp (%d) iteration overflows\n", str, i);
     }
     trace(2, "$PPP_PRODUCT_USE,%s,ionex_constraints=%d,vmf3_zwd_constraints=%d\n",
@@ -3864,7 +4081,8 @@ extern void pppos(rtk_t* rtk, const obsd_t* obs, int n, const nav_t* nav)
 
         if (opt->modear != ARMODE_OFF &&
             ppp_ar(rtk, obs, n, exc, nav, azel, xp, Pp) &&
-            ppp_res(9, obs, n, rs, dts, var, svh, dr, exc, mexc, nav, xp, rtk, NULL, NULL, NULL, azel, NULL, NULL)) {
+            ppp_res(9, obs, n, rs, dts, var, svh, dr, exc, mexc, nav, xp, rtk, NULL, NULL, NULL, azel, NULL, NULL)>0 &&
+            numeric_finite(xp,rtk->nx) && !numeric_covariance(Pp,rtk->nx)) {
 
             matcpy(rtk->xa, xp, rtk->nx, 1);
             matcpy(rtk->Pa, Pp, rtk->nx, rtk->nx);
@@ -3878,7 +4096,8 @@ extern void pppos(rtk_t* rtk, const obsd_t* obs, int n, const nav_t* nav)
         /* 把状态复制为 rtk->sol，按实际通过的载波卫星数决定最终 Q/ns；
          * 隔离只跨历元更新一次，不随前面的试算次数增加。 */
         update_stat(rtk, obs, n, stat);
-        update_phase_quarantine_ppp(rtk, obs, n, mexc, &diag);
+        if (smartphone_ppp_policy(opt).quality_learning)
+            update_phase_quarantine_ppp(rtk, obs, n, mexc, &diag);
 
         /* A successful code-only/mixed update is useful for continuity but
          * is not a carrier PPP solution. Label it degraded (Q=5), never Q=6.
@@ -3913,7 +4132,7 @@ extern void pppos(rtk_t* rtk, const obsd_t* obs, int n, const nav_t* nav)
     }
     /* 第 9 步：在已成功的滤波历元末更新质量历史，影响后续历元；
      * CMC 基于最终通过的码相对，持续残差检测基于首次验后的 evidence。 */
-    if (stat == SOLQ_PPP || stat == SOLQ_FIX) {
+    if (smartphone_ppp_policy(opt).quality_learning && (stat == SOLQ_PPP || stat == SOLQ_FIX)) {
         update_cmc_quality_ppp(rtk, obs, n, &diag);
         update_signal_quality_ppp(rtk, obs, n, &evidence);
     }
@@ -3923,6 +4142,16 @@ extern void pppos(rtk_t* rtk, const obsd_t* obs, int n, const nav_t* nav)
     }
     /* 第 10 步：仅释放本历元临时数组；rtk_t 的 x/P/ssat 和 nav 产品
      * 都由调用层持续保留，整个会话结束才 rtkfree/释放产品。 */
+cleanup:
+    if(rtk->ppp_failure) {
+        rtk->sol.stat=SOLQ_NONE;
+        trace(2,"$PPP_FAILURE,%s,reason=%s,code=%d,posterior_committed=0,state_policy=FINITE_PREDICTION_OR_PRIOR\n",
+            str,filter_reason(rtk->ppp_failure),rtk->ppp_failure);
+    }
+    trace(2,"$PPP_STATE,%s,Q=%d,failure=%d,x=%.12f,y=%.12f,z=%.12f,clock_m=%.12f,ZTD=%.12f\n",
+        str,rtk->sol.stat,rtk->ppp_failure,rtk->x[0],rtk->x[1],rtk->x[2],
+        rtk->x[IC(0,opt)],NT(opt)?rtk->x[IT(opt)]:0.0);
+    free(xprior);free(Pprior);
     free(rs); free(dts); free(var); free(azel);
     free(xp); free(Pp); free(v); free(H); free(R);
 }

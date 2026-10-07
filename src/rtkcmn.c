@@ -1456,6 +1456,44 @@ extern int lsq(const double *A, const double *y, int n, int m, double *x,
 * notes  : matrix stored by column-major order (fortran convention)
 *          if state x[i]==0.0, not updates state x[i]/P[i+i*n]
 *-----------------------------------------------------------------------------*/
+extern int numeric_finite(const double *a, size_t count)
+{
+    size_t i;
+    if (!a) return 0;
+    for (i=0;i<count;i++) if (!isfinite(a[i])) return 0;
+    return 1;
+}
+extern int numeric_covariance(const double *P, int n)
+{
+    int i,j;
+    double scale=1.0;
+    if (n<=0 || !P) return FILTER_BAD_DIM;
+    if (!numeric_finite(P,(size_t)n*n)) return FILTER_NAN_COV;
+    for (i=0;i<n;i++) {
+        if (P[i+i*n]<0.0) return FILTER_BAD_COV;
+        if (P[i+i*n]>scale) scale=P[i+i*n];
+    }
+    /* Basic roundoff-tolerant symmetry gate, not a PSD proof or repair.
+     * No entries are symmetrized or clipped: accepted arithmetic is unchanged. */
+    for (j=0;j<n;j++) for(i=0;i<j;i++)
+        if (fabs(P[i+j*n]-P[j+i*n])>1E-7*scale) return FILTER_BAD_COV;
+    return 0;
+}
+extern const char *filter_reason(int info)
+{
+    switch(info) {
+        case 0:return "OK";
+        case FILTER_NAN_INPUT:return "NAN_INPUT";
+        case FILTER_NAN_STATE:return "NAN_STATE";
+        case FILTER_NAN_COV:return "NAN_COV";
+        case FILTER_BAD_COV:return "BAD_COV";
+        case FILTER_BAD_DIM:return "BAD_DIM";
+        case FILTER_NO_ACTIVE:return "NO_ACTIVE_STATE";
+        case PPP_FAILURE_NO_OBS:return "NO_VALID_OBS";
+        case PPP_FAILURE_EDIT_LIMIT:return "EDIT_LIMIT";
+        default:return "SINGULAR_INNOVATION_COV";
+    }
+}
 static int filter_(const double *x, const double *P, const double *H,
                    const double *v, const double *R, int n, int m,
                    double *xp, double *Pp)
@@ -1467,11 +1505,14 @@ static int filter_(const double *x, const double *P, const double *H,
     matcpy(xp,x,n,1);
     matmul("NN",n,m,n,P,H,F);       /* Q=H'*P*H+R */
     matmulp("TN",m,m,n,H,F,Q);
-    if (!(info=matinv(Q,m))) {
+    info=numeric_finite(F,(size_t)n*m)?numeric_covariance(Q,m):FILTER_NAN_COV;
+    if (!info && !(info=matinv(Q,m))) {
         matmul("NN",n,m,m,F,Q,K);   /* K=P*H*Q^-1 */
         matmulp("NN",n,1,m,K,v,xp);  /* xp=x+K*v */
         matmulm("NT",n,n,m,K,H,I);  /* Pp=(I-K*H')*P */
         matmul("NN",n,n,n,I,P,Pp);
+        if (!numeric_finite(xp,n)) info=FILTER_NAN_STATE;
+        else info=numeric_covariance(Pp,n);
     }
     free(F); free(Q); free(K); free(I);
     return info;
@@ -1482,8 +1523,15 @@ extern int filter(double *x, double *P, const double *H, const double *v,
     double *x_,*xp_,*P_,*Pp_,*H_;
     int i,j,k,info,*ix;
 
+    if (n<=0 || m<=0 || !x || !P || !H || !v || !R) return FILTER_BAD_DIM;
+    if (!numeric_finite(v,m) || !numeric_finite(H,(size_t)n*m))
+        return FILTER_NAN_INPUT;
+    if (!numeric_finite(x,n)) return FILTER_NAN_STATE;
+    if ((info=numeric_covariance(P,n)) || (info=numeric_covariance(R,m))) return info;
+
     /* create list of non-zero states */
     ix=imat(n,1); for (i=k=0;i<n;i++) if (x[i]!=0.0&&P[i+i*n]>0.0) ix[k++]=i;
+    if (!k) {free(ix);return FILTER_NO_ACTIVE;}
     x_=mat(k,1); xp_=mat(k,1); P_=mat(k,k); Pp_=mat(k,k); H_=mat(k,m);
     /* compress array by removing zero elements to save computation time */
     for (i=0;i<k;i++) {
@@ -1494,7 +1542,7 @@ extern int filter(double *x, double *P, const double *H, const double *v,
     /* do kalman filter state update on compressed arrays */
     info=filter_(x_,P_,H_,v,R,k,m,xp_,Pp_);
     /* copy values from compressed arrays back to full arrays */
-    for (i=0;i<k;i++) {
+    for (i=0;!info && i<k;i++) {
         x[ix[i]]=xp_[i];
         for (j=0;j<k;j++) P[ix[i]+ix[j]*n]=Pp_[i+j*k];
     }

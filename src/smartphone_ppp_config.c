@@ -17,6 +17,47 @@
 typedef char profile_options_fit[
     sizeof(PROFILE_OPTIONS) <= sizeof(((prcopt_t *)0)->pppopt) ? 1 : -1];
 
+ppp_policy_t smartphone_ppp_policy(const prcopt_t *opt)
+{
+    int legacy = opt && opt->ppp_baseline == PPP_BASELINE_B_LEGACY;
+    ppp_policy_t policy = {0};
+    const char *gap;
+    double seconds;
+    policy.legacy_weighting = policy.quality_learning = legacy;
+    policy.smoothing = policy.atmosphere_constraints = legacy;
+    policy.empirical_guards = policy.startup_qc = legacy;
+    policy.corrected_lifecycle = !legacy ||
+        opt->ppp_lifecycle == PPP_LIFECYCLE_CORRECTED;
+    policy.arc_gap_seconds=PPP_ARC_GAP_SECONDS_DEFAULT;
+    if(opt && (gap=strstr(opt->pppopt,"-ARCGAP=")) &&
+        sscanf(gap+8,"%lf",&seconds)==1 && isfinite(seconds) && seconds>0.0)
+        policy.arc_gap_seconds=seconds;
+    return policy;
+}
+
+int smartphone_ppp_select(prcopt_t *opt, const char *baseline,
+    const char *lifecycle, char *error, size_t capacity)
+{
+    const char *problem = NULL;
+    if (baseline && *baseline) {
+        if (!strcmp(baseline,"A") || !strcmp(baseline,"CLEAN_BASELINE"))
+            opt->ppp_baseline = PPP_BASELINE_A_CLEAN;
+        else if (!strcmp(baseline,"B") || !strcmp(baseline,"LEGACY_BASELINE"))
+            opt->ppp_baseline = PPP_BASELINE_B_LEGACY;
+        else problem = "baseline must be A or B; C/D are reserved and unavailable";
+    }
+    if (!problem && lifecycle && *lifecycle) {
+        if (!strcmp(lifecycle,"LEGACY")) opt->ppp_lifecycle=PPP_LIFECYCLE_LEGACY;
+        else if (!strcmp(lifecycle,"CORRECTED")) opt->ppp_lifecycle=PPP_LIFECYCLE_CORRECTED;
+        else problem = "lifecycle must be LEGACY or CORRECTED";
+        if (!problem && opt->ppp_baseline==PPP_BASELINE_A_CLEAN &&
+            opt->ppp_lifecycle==PPP_LIFECYCLE_LEGACY)
+            problem = "A requires CORRECTED lifecycle";
+    }
+    if (error && capacity) snprintf(error,capacity,"%s",problem?problem:"");
+    return !problem;
+}
+
 void smartphone_ppp_configure(prcopt_t *opt, solopt_t *sol)
 {
     *opt = prcopt_default;
@@ -56,12 +97,24 @@ int smartphone_ppp_validate(const prcopt_t *opt, char *error, size_t capacity)
     if (NSATCMP) supported |= SYS_CMP;
     if (NSATQZS) supported |= SYS_QZS;
     if (!opt) problem = "null processing options";
+    else if (opt->ppp_baseline < 0 || opt->ppp_baseline > PPP_BASELINE_A_CLEAN)
+        problem = "C/D algorithms are not implemented in Phase 1";
+    else if (opt->ppp_lifecycle < 0 || opt->ppp_lifecycle > PPP_LIFECYCLE_CORRECTED)
+        problem = "invalid PPP lifecycle";
     else if (opt->nf < 1 || opt->nf > NFREQ)
         problem = "processing frequency count exceeds compiled observation layout";
     else if (!opt->navsys || (opt->navsys & ~supported))
         problem = "requested satellite system is not compiled";
     else if (!memchr(opt->pppopt, 0, sizeof(opt->pppopt)))
         problem = "PPP option string is not terminated";
+    else if (!numeric_finite(opt->err,8) || !numeric_finite(opt->eratio,NFREQ) ||
+        !numeric_finite(opt->prn,6) || !isfinite(opt->thresslip) || !isfinite(opt->elmin))
+        problem = "nonfinite PPP stochastic model parameter";
+    if (!problem) {
+        const char *gap=strstr(opt->pppopt,"-ARCGAP=");double seconds;
+        if(gap && (sscanf(gap+8,"%lf",&seconds)!=1 || !isfinite(seconds) || seconds<=0))
+            problem="ARCGAP must be a positive finite interval in seconds";
+    }
     if (error && capacity) snprintf(error, capacity, "%s", problem ? problem : "");
     return problem == NULL;
 }
@@ -73,7 +126,7 @@ unsigned int smartphone_ppp_describe(const prcopt_t *opt, char *out, size_t capa
     unsigned int hash = 2166136261u;
     const unsigned char *p;
     snprintf(text, sizeof(text),
-        "profile=%s NFREQ=%d MAXSAT=%d NSATGLO=%d NSATQZS=%d "
+        "baseline=%s lifecycle=%s arc_gap_sec=%.9g eta=1 profile=%s NFREQ=%d MAXSAT=%d NSATGLO=%d NSATQZS=%d "
         "mode=%d soltype=%d nf=%d navsys=%d dynamics=%d sateph=%d "
         "iono=%d trop=%d ar=%d elmin=%.9g maxout=%d tide=%d "
         "err=%.9g,%.9g,%.9g,%.9g,%.9g,%.9g,%.9g,%.9g "
@@ -82,6 +135,9 @@ unsigned int smartphone_ppp_describe(const prcopt_t *opt, char *out, size_t capa
         "std=%.9g,%.9g,%.9g slip=%.9g dop=%.9g "
         "maxinno=%.9g,%.9g niter=%d codesmooth=%d "
         "posopt=%d,%d,%d,%d,%d,%d snrmask=%d,%d pppopt=%s",
+        opt->ppp_baseline==PPP_BASELINE_A_CLEAN?"A_CLEAN":"B_LEGACY",
+        smartphone_ppp_policy(opt).corrected_lifecycle?"CORRECTED":"LEGACY",
+        smartphone_ppp_policy(opt).arc_gap_seconds,
         SMARTPHONE_PPP_PROFILE, NFREQ, MAXSAT, NSATGLO, NSATQZS,
         opt->mode, opt->soltype, opt->nf, opt->navsys, opt->dynamics,
         opt->sateph, opt->ionoopt, opt->tropopt, opt->modear,
@@ -105,7 +161,11 @@ unsigned int smartphone_ppp_describe(const prcopt_t *opt, char *out, size_t capa
 void smartphone_ppp_log(const char *entry, const prcopt_t *opt)
 {
     char description[2048];
+    ppp_policy_t p=smartphone_ppp_policy(opt);
     smartphone_ppp_describe(opt, description, sizeof(description));
     fprintf(stderr, "%s,entry=%s\n", description, entry);
     trace(2, "%s,entry=%s\n", description, entry);
+    fprintf(stderr,"PPP_POLICY,legacy_weighting=%d,quality_learning=%d,smoothing=%d,atmosphere_constraints=%d,empirical_guards=%d,startup_qc=%d,corrected_lifecycle=%d,eta=1\n",
+        p.legacy_weighting,p.quality_learning,p.smoothing,p.atmosphere_constraints,
+        p.empirical_guards,p.startup_qc,p.corrected_lifecycle);
 }

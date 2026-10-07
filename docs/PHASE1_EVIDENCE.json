@@ -1,0 +1,484 @@
+{
+  "date": "2026-10-08",
+  "baseline_commit": "97a57a92552d6d7efe7c855c82b9809e28a5bd17",
+  "audit_commit": "e634352",
+  "branch": "codex/phase1-baselines",
+  "numerical_tests": {
+    "result": "44 passed; 0 failed",
+    "source": "tests/phase1_regression.c",
+    "reference": "tests/filter_reference_97a57a9.c",
+    "log_sha256": "cc71ffab4fac1945e42667f535cdc7879a051aa96d02373be0d67f046da03f6a"
+  },
+  "txt_fast": {
+    "input_files": [
+      {
+        "path": "E:\\RTKLIB_Data\\OBS\\RawData_20260922_141724.txt",
+        "sha256": "4897740c30fa8385eaddc3b8f2f7205ee9d43ab0b0a9f6b2a418f50c0db04625"
+      },
+      {
+        "path": "E:\\RTKLIB_Data\\NAV\\BRDC00WRD_S_20262650000_01D_MN.rnx",
+        "sha256": "7e9a8d95414098a0a4d37521f6852d7052449b0abcb3b1eae546ce0c9aa2645c"
+      },
+      {
+        "path": "E:\\RTKLIB_Data\\SP3\\WUM0MGXNRT_20262641000_02D_05M_ORB.SP3",
+        "sha256": "802bfb0921ad93c9b6570bc30dc8817d4e019e0404fb7e889e274c817516259a"
+      },
+      {
+        "path": "E:\\RTKLIB_Data\\CLK\\WUM0MGXNRT_20262641000_02D_05M_CLK.CLK",
+        "sha256": "716f3219ddbb90ee0a57ab7fe32c4cd900de0d9fcde1ebd360946aa29a24611e"
+      },
+      {
+        "path": "E:\\RTKLIB_Data\\BIA\\WUM0MGXRTS_20262650000_01D_05M_OSB.BIA",
+        "sha256": "a44ae401ed51dac7b1893eed3c597b348428de6992a5359fff3349ad7d165652"
+      },
+      {
+        "path": "E:\\RTKLIB_Data\\IONEX\\COD0OPSP0D_20262650000_01D_01H_GIM.INX",
+        "sha256": "8bb16f814f24367ca198db37fb1b9246314ae8823cd679e08ea1c37388e057aa"
+      },
+      {
+        "path": "E:\\RTKLIB_Data\\tro\\VMF3_20260922.H06",
+        "sha256": "d63cf6e212c59d017a37f2dda5b7114612e6811435a29f9c7ffbc6352265f426"
+      },
+      {
+        "path": "E:\\RTKLIB_Data\\tro\\VMF3_20260922.H12",
+        "sha256": "4cfa860730f20fc90a6bce19dad55bd1b6c6193fe88a5fc6639dd67c5b351810"
+      },
+      {
+        "path": "E:\\RTKLIB_Data\\tro\\orography_ell_5x5",
+        "sha256": "2da6f83db2f5ac382b6c20d6ce3fc824aa6a5b573c16ba5a7c5737ca54c271ed"
+      },
+      {
+        "path": "E:\\RTKLIB_Data\\Tables\\igs20.atx",
+        "sha256": "fd9955ae17d759291e62e144db8e47a3d4f38bb1d8aae7a8e093fbc6cad0b79f"
+      }
+    ],
+    "runs": [
+      {
+        "name": "legacy_97a57a9",
+        "epochs": 180,
+        "valid": 180,
+        "Q": {
+          "5": 1,
+          "6": 179
+        },
+        "last": [
+          "2437",
+          "195645.001000064",
+          "6",
+          "17",
+          "27",
+          "-1332886.258245340",
+          "5325267.376114380",
+          "3237400.948236974",
+          "30.698202086303",
+          "104.052134779116",
+          "456.363710",
+          "0.212909",
+          "0.475143",
+          "0.258386"
+        ],
+        "nonfinite_numeric_fields": 0,
+        "failure_epochs": 0,
+        "failure_reasons": {},
+        "reject_events": 111,
+        "slip_checks": 0,
+        "legacy_slip_reinitializations": 20,
+        "arc_reset": 0,
+        "arc_pending": 0,
+        "arc_reinitialized": 0,
+        "detector_slip_events": 20,
+        "state_dump_sha256": "efb44f0a4dde0d5bb42f47fcb74bce14c455607bdafb40d4b81afb4903e15f65",
+        "obs_dump_sha256": "4f891cf4c7172ccc00d657e8a4b426b6c218d8997022d839109afb5726dccaa4",
+        "last_main_state": null,
+        "R_rows": 0,
+        "all_R_rows_clean": false,
+        "wall_seconds": 2.125,
+        "executable_sha256": "958fee6be1ebc21846beaaabb82a3d90f9c2a6cca4e6b2cbd96f40df196c079a",
+        "command": [
+          "E:\\GNSS\\PPP_only\\validation\\phase1\\PPP_only_97a57a9.exe",
+          "--source",
+          "txt-fast",
+          "--no-gui",
+          "--max-epochs",
+          "180"
+        ]
+      },
+      {
+        "name": "B_legacy",
+        "epochs": 180,
+        "valid": 180,
+        "Q": {
+          "5": 1,
+          "6": 179
+        },
+        "last": [
+          "2437",
+          "195645.001000064",
+          "6",
+          "17",
+          "27",
+          "-1332886.258245340",
+          "5325267.376114380",
+          "3237400.948236974",
+          "30.698202086303",
+          "104.052134779116",
+          "456.363710",
+          "0.212909",
+          "0.475143",
+          "0.258386"
+        ],
+        "nonfinite_numeric_fields": 0,
+        "failure_epochs": 0,
+        "failure_reasons": {},
+        "reject_events": 111,
+        "slip_checks": 7137,
+        "legacy_slip_reinitializations": 20,
+        "arc_reset": 0,
+        "arc_pending": 0,
+        "arc_reinitialized": 0,
+        "detector_slip_events": 20,
+        "state_dump_sha256": "efb44f0a4dde0d5bb42f47fcb74bce14c455607bdafb40d4b81afb4903e15f65",
+        "obs_dump_sha256": "4f891cf4c7172ccc00d657e8a4b426b6c218d8997022d839109afb5726dccaa4",
+        "last_main_state": "$PPP_STATE,2026/09/22 06:20:45.00,Q=6,failure=0,x=-1332886.258245340316,y=5325267.376114379615,z=3237400.948236974422,clock_m=45447.671596078799,ZTD=2.796243490802",
+        "R_rows": 33390,
+        "all_R_rows_clean": false,
+        "wall_seconds": 3.7030000000013388,
+        "executable_sha256": "39239e7bf9be538c0fc0207274c9d1d1e2428b28303bbde6637979f5cc23181e",
+        "command": [
+          "E:\\GNSS\\PPP_only\\x64\\Release\\PPP_only.exe",
+          "--source",
+          "txt-fast",
+          "--no-gui",
+          "--max-epochs",
+          "180"
+        ]
+      },
+      {
+        "name": "A_repeat1",
+        "epochs": 180,
+        "valid": 180,
+        "Q": {
+          "5": 1,
+          "6": 179
+        },
+        "last": [
+          "2437",
+          "195645.001000064",
+          "6",
+          "17",
+          "27",
+          "-1332883.371554185",
+          "5325278.632981899",
+          "3237401.837651132",
+          "30.698161929889",
+          "104.052077024342",
+          "465.604859",
+          "0.557711",
+          "1.260992",
+          "0.559312"
+        ],
+        "nonfinite_numeric_fields": 0,
+        "failure_epochs": 0,
+        "failure_reasons": {},
+        "reject_events": 0,
+        "slip_checks": 7137,
+        "legacy_slip_reinitializations": 30,
+        "arc_reset": 33,
+        "arc_pending": 14,
+        "arc_reinitialized": 54,
+        "detector_slip_events": 25,
+        "state_dump_sha256": "e20fcf314f201184fa522f87a4fe57b44e8daaac5ed359fbf25ca0730fb63d4b",
+        "obs_dump_sha256": "4f891cf4c7172ccc00d657e8a4b426b6c218d8997022d839109afb5726dccaa4",
+        "last_main_state": "$PPP_STATE,2026/09/22 06:20:45.00,Q=6,failure=0,x=-1332883.371554184938,y=5325278.632981899194,z=3237401.837651132140,clock_m=45452.177539586242,ZTD=2.223417338436",
+        "R_rows": 20682,
+        "all_R_rows_clean": true,
+        "wall_seconds": 2.8589999999967404,
+        "executable_sha256": "39239e7bf9be538c0fc0207274c9d1d1e2428b28303bbde6637979f5cc23181e",
+        "command": [
+          "E:\\GNSS\\PPP_only\\x64\\Release\\PPP_only.exe",
+          "--source",
+          "txt-fast",
+          "--no-gui",
+          "--max-epochs",
+          "180"
+        ]
+      },
+      {
+        "name": "A_repeat2",
+        "epochs": 180,
+        "valid": 180,
+        "Q": {
+          "5": 1,
+          "6": 179
+        },
+        "last": [
+          "2437",
+          "195645.001000064",
+          "6",
+          "17",
+          "27",
+          "-1332883.371554185",
+          "5325278.632981899",
+          "3237401.837651132",
+          "30.698161929889",
+          "104.052077024342",
+          "465.604859",
+          "0.557711",
+          "1.260992",
+          "0.559312"
+        ],
+        "nonfinite_numeric_fields": 0,
+        "failure_epochs": 0,
+        "failure_reasons": {},
+        "reject_events": 0,
+        "slip_checks": 7137,
+        "legacy_slip_reinitializations": 30,
+        "arc_reset": 33,
+        "arc_pending": 14,
+        "arc_reinitialized": 54,
+        "detector_slip_events": 25,
+        "state_dump_sha256": "e20fcf314f201184fa522f87a4fe57b44e8daaac5ed359fbf25ca0730fb63d4b",
+        "obs_dump_sha256": "4f891cf4c7172ccc00d657e8a4b426b6c218d8997022d839109afb5726dccaa4",
+        "last_main_state": "$PPP_STATE,2026/09/22 06:20:45.00,Q=6,failure=0,x=-1332883.371554184938,y=5325278.632981899194,z=3237401.837651132140,clock_m=45452.177539586242,ZTD=2.223417338436",
+        "R_rows": 20682,
+        "all_R_rows_clean": true,
+        "wall_seconds": 2.936999999998079,
+        "executable_sha256": "39239e7bf9be538c0fc0207274c9d1d1e2428b28303bbde6637979f5cc23181e",
+        "command": [
+          "E:\\GNSS\\PPP_only\\x64\\Release\\PPP_only.exe",
+          "--source",
+          "txt-fast",
+          "--no-gui",
+          "--max-epochs",
+          "180"
+        ]
+      },
+      {
+        "name": "B_corrected",
+        "epochs": 180,
+        "valid": 180,
+        "Q": {
+          "5": 1,
+          "6": 179
+        },
+        "last": [
+          "2437",
+          "195645.001000064",
+          "6",
+          "17",
+          "27",
+          "-1332886.265602366",
+          "5325267.363387857",
+          "3237400.929707086",
+          "30.698201991216",
+          "104.052134885858",
+          "456.345171",
+          "0.212971",
+          "0.475175",
+          "0.258490"
+        ],
+        "nonfinite_numeric_fields": 0,
+        "failure_epochs": 0,
+        "failure_reasons": {},
+        "reject_events": 108,
+        "slip_checks": 7137,
+        "legacy_slip_reinitializations": 30,
+        "arc_reset": 33,
+        "arc_pending": 14,
+        "arc_reinitialized": 54,
+        "detector_slip_events": 25,
+        "state_dump_sha256": "c09e15166de193caeeb8deffd3763af8a4a28b422e69002bb89224e5114751fe",
+        "obs_dump_sha256": "4f891cf4c7172ccc00d657e8a4b426b6c218d8997022d839109afb5726dccaa4",
+        "last_main_state": "$PPP_STATE,2026/09/22 06:20:45.00,Q=6,failure=0,x=-1332886.265602366300,y=5325267.363387856632,z=3237400.929707086179,clock_m=45447.662871068474,ZTD=2.793375808580",
+        "R_rows": 33090,
+        "all_R_rows_clean": false,
+        "wall_seconds": 3.735000000000582,
+        "executable_sha256": "39239e7bf9be538c0fc0207274c9d1d1e2428b28303bbde6637979f5cc23181e",
+        "command": [
+          "E:\\GNSS\\PPP_only\\x64\\Release\\PPP_only.exe",
+          "--source",
+          "txt-fast",
+          "--no-gui",
+          "--max-epochs",
+          "180"
+        ]
+      }
+    ],
+    "B_vs_97a57a9": {
+      "common_epochs": 180,
+      "common_valid_epochs": 180,
+      "numeric_rows_equal_excluding_wall_time": true,
+      "Q_differences": 0,
+      "ns_differences": 0,
+      "max_coordinate_component_difference_m": 0.0,
+      "max_coordinate_3d_difference_m": 0.0
+    },
+    "A_repeat": {
+      "common_epochs": 180,
+      "common_valid_epochs": 180,
+      "numeric_rows_equal_excluding_wall_time": true,
+      "Q_differences": 0,
+      "ns_differences": 0,
+      "max_coordinate_component_difference_m": 0.0,
+      "max_coordinate_3d_difference_m": 0.0
+    },
+    "B_corrected_vs_97a57a9": {
+      "common_epochs": 180,
+      "common_valid_epochs": 180,
+      "numeric_rows_equal_excluding_wall_time": false,
+      "Q_differences": 0,
+      "ns_differences": 0,
+      "max_coordinate_component_difference_m": 0.04325565020553768,
+      "max_coordinate_3d_difference_m": 0.06015606994952386
+    },
+    "B_state_dump_equal": true,
+    "A_state_dump_equal": true,
+    "all_observation_dumps_equal": true
+  },
+  "rinex": {
+    "inputs": [
+      {
+        "path": "E:\\RTKLIB_Data\\OBS\\K80-GNSS00GEO_R_20260760533_20M_01S_MO.rnx",
+        "sha256": "c79a33fedfda7c77de63ef6de68c27f8685b38776ca8a3e4a3345be7c02f2b3d"
+      },
+      {
+        "path": "E:\\RTKLIB_Data\\NAV\\BRDC00IGS_R_20260760000_01D_MN.rnx",
+        "sha256": "3a67c0c5e5a48d961febd4650ddf3f60075945445c877e96e723fb6796977514"
+      },
+      {
+        "path": "E:\\RTKLIB_Data\\SP3\\WUM0MGXFIN_20260760000_01D_05M_ORB.SP3",
+        "sha256": "7174fb104e4c061a3fa823e82327923d47e72100b484f89fbfca4fb39bed8d9d"
+      },
+      {
+        "path": "E:\\RTKLIB_Data\\CLK\\WUM0MGXFIN_20260760000_01D_30S_CLK.CLK",
+        "sha256": "498a2f50969fbee832aa528cd5a252080f0a390d8cbbd8410766e120a9e57e30"
+      },
+      {
+        "path": "E:\\RTKLIB_Data\\BIA\\WUM0MGXFIN_20260760000_01D_01D_OSB.BIA",
+        "sha256": "246e1428dd2a6c8a1f54529f4abe76ff501c0778fab78160df8ebe85e7a2c5e9"
+      },
+      {
+        "path": "E:\\RTKLIB_Data\\IONEX\\COD0OPSFIN_20260760000_01D_01H_GIM.INX",
+        "sha256": "62b636dc04028ce7e9514bdfc4f5c468570cd1d9bf1f88182cbd558f863a5d49"
+      },
+      {
+        "path": "E:\\RTKLIB_Data\\tro\\VMF3_20260317.H00",
+        "sha256": "5b019594e800c3d2331b972c26ccece898d5a25e707d1df553566546b764e365"
+      },
+      {
+        "path": "E:\\RTKLIB_Data\\tro\\VMF3_20260317.H06",
+        "sha256": "6cd8892ddf545510f05490c67777159d16611dc8fe93726b921c9de08c2a66f7"
+      },
+      {
+        "path": "E:\\RTKLIB_Data\\tro\\orography_ell_5x5",
+        "sha256": "2da6f83db2f5ac382b6c20d6ce3fc824aa6a5b573c16ba5a7c5737ca54c271ed"
+      },
+      {
+        "path": "E:\\RTKLIB_Data\\Tables\\igs20.atx",
+        "sha256": "fd9955ae17d759291e62e144db8e47a3d4f38bb1d8aae7a8e093fbc6cad0b79f"
+      }
+    ],
+    "common_input_records_equal": true,
+    "common_input_epochs": 1200,
+    "numeric_rows_equal": true,
+    "state_dump_equal": true,
+    "runs": [
+      {
+        "name": "rinex_97a57a9",
+        "output_epochs": 1200,
+        "state_sha256": "ef90fa4922bd70672611e7c858150e4c4472d4fa0f4c68d67ca740fbf89a6c54",
+        "Q": {
+          "6": 1197,
+          "5": 3
+        },
+        "reject_events": 22,
+        "legacy_slip_reinitializations": 501,
+        "detector_slip_events": 502,
+        "failure_records": [],
+        "wall_seconds": 14.671999999998661
+      },
+      {
+        "name": "rinex_B",
+        "output_epochs": 1200,
+        "state_sha256": "ef90fa4922bd70672611e7c858150e4c4472d4fa0f4c68d67ca740fbf89a6c54",
+        "Q": {
+          "6": 1197,
+          "5": 3
+        },
+        "reject_events": 22,
+        "legacy_slip_reinitializations": 501,
+        "detector_slip_events": 502,
+        "failure_records": [],
+        "wall_seconds": 23.968000000000757
+      }
+    ]
+  },
+  "changed_file_hashes": [
+    {
+      "path": "PPP_only/ppp_position.c",
+      "sha256": "e428e0fe2f69ad2a76b00f4c67f578c4f067b4a8b508cfd148890727612ccdfb"
+    },
+    {
+      "path": "README.md",
+      "sha256": "0844dd33039963bd9f7029ca3b8ee33c084fd911532ee72f3d3b659bee9d0831"
+    },
+    {
+      "path": "src/ppp.c",
+      "sha256": "185002e358afe85144327b39b01d61a1a5a429ba8fb30e3e31af58a5b1999f2d"
+    },
+    {
+      "path": "src/rnx2rtkp.c",
+      "sha256": "88b8168f2d1b9225b5222e9859eecd750a92194af453f5bb0b372843d154c17c"
+    },
+    {
+      "path": "src/rtkcmn.c",
+      "sha256": "a3892174d59efec22f83e5be29efb236eea5efb19d54094cab55a23cd8bed6b8"
+    },
+    {
+      "path": "src/rtklib.h",
+      "sha256": "b810b880e15b99f8bff3d9906f2c441c67d76c21f0f75aacf5d0bb02d110eeae"
+    },
+    {
+      "path": "src/smartphone_ppp_config.c",
+      "sha256": "c0215cea69f224ca66ec390fe8b37df51dc13ef0a9b3455ad34f7289a909fa3e"
+    },
+    {
+      "path": "src/smartphone_ppp_config.h",
+      "sha256": "de3fc4526c5223922a6f2eb24c29d520f4d7f1884e308b34157a50f8b5288a5b"
+    },
+    {
+      "path": "tests/filter_reference_97a57a9.c",
+      "sha256": "82f7df1f0bbd320fda20ff747a2556a962f054ca3064b40b0463a9498a56f41d"
+    },
+    {
+      "path": "tests/phase1_regression.c",
+      "sha256": "6a5232fb63cc7ecc463124a39a7f32b4b0942bdf360e3f3d45a5e04c35a479a1"
+    },
+    {
+      "path": "tests/run_phase1_replay.py",
+      "sha256": "8db205f62570700553d8babf7898d1c95b2b4749e3140231bac366a79fd8e652"
+    },
+    {
+      "path": "tests/run_phase1_rinex.py",
+      "sha256": "7db80fde55dbe6861abf8f88741e84bef43ff347149b0f90ec662c9535f7e5c0"
+    },
+    {
+      "path": "tests/run_phase1_tests.ps1",
+      "sha256": "4a78bc9243bf2a6287c07ebf50f4606eb9ba59ac721935e452cb6755107d177a"
+    }
+  ],
+  "binaries": [
+    {
+      "path": "E:\\GNSS\\PPP_only\\validation\\phase1\\PPP_only_97a57a9.exe",
+      "sha256": "958fee6be1ebc21846beaaabb82a3d90f9c2a6cca4e6b2cbd96f40df196c079a"
+    },
+    {
+      "path": "E:\\GNSS\\PPP_only\\x64\\Release\\PPP_only.exe",
+      "sha256": "39239e7bf9be538c0fc0207274c9d1d1e2428b28303bbde6637979f5cc23181e"
+    },
+    {
+      "path": "E:\\GNSS\\PPP_only\\validation\\phase1\\phase1_tests.exe",
+      "sha256": "90dfc655da6a61989140d8b675e7c16252ae6fd632f43881d8b0fd7412ad2f41"
+    }
+  ]
+}
