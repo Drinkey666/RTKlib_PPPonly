@@ -50,3 +50,9 @@ python tests/run_phase1_rinex.py
 以已验收 `ac99aba` 为参照，A/B 算法保持不变。设置 `RTK_PPP_INNOVATION_DIAG` 为独立 CSV 文件路径可开启诊断；未设置时关闭。每条有效 pre-fit 行记录实际 signal/source 映射、pred_var、Rii、Sii 和 u=v/sqrt(Sii)，虚拟大气约束单独分类。日志区分首次 pre-fit 与编辑重试，不按 u 改权或拒绝。
 
 实施、同输入回归、统计解释限制及后续学习不适用样本见 [Phase 2 报告](docs/PHASE2_REPORT.md)。测试：`tests/run_phase2_tests.ps1`；回放与离线统计：`tests/run_phase2_replay.py`、`tests/run_phase2_rinex.py`、`tests/summarize_phase2.py`。诊断需要独立输出路径；原始数据/运行日志保存在本地 validation，不进入仓库。
+
+## Phase 2.5：学习资格与异常证据审计
+
+保持 `4715448` 的A/B结果，诊断日志增加当期SPP/模糊度初始化来源及P/L分别维护的连续弧段标签；离线分类不反馈滤波。当前600历元样本没有严格可学习伪距：当期SPP钟差重建或来源不确定违反独立预测要求。分析、五种lag相关、10/30/60窗口与ESS限制见 [Phase 2.5 报告](docs/PHASE2_5_REPORT.md)。
+
+测试/回放/离线分析：`tests/run_phase2_5_tests.ps1`、`tests/test_phase2_5_analysis.py`、`tests/run_phase2_5_replay.py`、`tests/run_phase2_5_rinex.py`、`tests/analyze_phase2_5.py`。R/Q、权重、reject、eta均未改变。

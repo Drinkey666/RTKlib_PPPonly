@@ -1934,9 +1934,15 @@ static void udpos_ppp(rtk_t* rtk)
     }
     /* initialize position for first epoch */
     if (norm(rtk->x, 3) <= 0.0) {
-        for (i = 0; i < 3; i++) initx(rtk, rtk->sol.rr[i], VAR_POS, i);
+        for (i = 0; i < 3; i++) {
+            initx(rtk, rtk->sol.rr[i], VAR_POS, i);
+            if(ppp_innovation_spp_current())ppp_innovation_note_current_init(i,0,0,0);
+        }
         if (rtk->opt.dynamics) {
-            for (i = 3; i < 6; i++) initx(rtk, rtk->sol.rr[i], VAR_VEL, i);
+            for (i = 3; i < 6; i++) {
+                initx(rtk, rtk->sol.rr[i], VAR_VEL, i);
+                if(ppp_innovation_spp_current())ppp_innovation_note_current_init(i,0,0,0);
+            }
             for (i = 6; i < 9; i++) initx(rtk, 1E-6, VAR_ACC, i);
         }
     }
@@ -1951,6 +1957,7 @@ static void udpos_ppp(rtk_t* rtk)
     if (!rtk->opt.dynamics) {
         for (i = 0; i < 3; i++) {
             initx(rtk, rtk->sol.rr[i], VAR_POS, i);
+            if(ppp_innovation_spp_current())ppp_innovation_note_current_init(i,0,0,0);
         }
         return;
     }
@@ -1960,8 +1967,14 @@ static void udpos_ppp(rtk_t* rtk)
 
     if (var > VAR_POS) {
         /* reset position with large variance */
-        for (i = 0; i < 3; i++) initx(rtk, rtk->sol.rr[i], VAR_POS, i);
-        for (i = 3; i < 6; i++) initx(rtk, rtk->sol.rr[i], VAR_VEL, i);
+        for (i = 0; i < 3; i++) {
+            initx(rtk, rtk->sol.rr[i], VAR_POS, i);
+            if(ppp_innovation_spp_current())ppp_innovation_note_current_init(i,0,0,0);
+        }
+        for (i = 3; i < 6; i++) {
+            initx(rtk, rtk->sol.rr[i], VAR_VEL, i);
+            if(ppp_innovation_spp_current())ppp_innovation_note_current_init(i,0,0,0);
+        }
         for (i = 6; i < 9; i++) initx(rtk, 1E-6, VAR_ACC, i);
         trace(2, "reset rtk position due to large variance: var=%.3f\n", var);
         return;
@@ -2026,6 +2039,7 @@ static void udclk_ppp(rtk_t* rtk)
 
     /* GPS/QZS receiver clock: white-noise state */
     initx(rtk, CLIGHT * rtk->sol.dtr[0], VAR_CLK, IC(0, &rtk->opt));
+    if(ppp_innovation_spp_current())ppp_innovation_note_current_init(IC(0,&rtk->opt),0,0,0);
 
     /* Inter-system biases: keep temporal continuity */
     for (i = 1; i < NCLK_PPP; i++) {
@@ -2453,7 +2467,10 @@ static void udbias_ppp(rtk_t* rtk, const obsd_t* obs, int n, const nav_t* nav)
             k >= 2 && fabs(offset / k) > 0.0005 * CLIGHT) {
             for (i = 0; i < MAXSAT; i++) {
                 j = IB(i + 1, f, &rtk->opt);
-                if (j >= 0 && j < rtk->nx && rtk->x[j] != 0.0) rtk->x[j] += offset / k;
+                if (j >= 0 && j < rtk->nx && rtk->x[j] != 0.0) {
+                    rtk->x[j] += offset / k;
+                    ppp_innovation_note_current_adjustment(j);
+                }
             }
             trace(2, "phase-code jump corrected: %s n=%2d dt=%12.9fs\n",
                 time2str(rtk->sol.time, tstr, 0), k, offset / k / CLIGHT);
@@ -2505,6 +2522,7 @@ static void udbias_ppp(rtk_t* rtk, const obsd_t* obs, int n, const nav_t* nav)
                 }
 
                 initx(rtk, bias[i], VAR_BIAS, j);
+                ppp_innovation_note_current_init(j,sat,f,1);
                 if(smartphone_ppp_policy(&rtk->opt).corrected_lifecycle) {
                     rtk->ssat[sat-1].ppp_arc_pending[f]=0;
                     trace(2,"$ARC_REINITIALIZED,%s,sat=%d,F%d,bias=%.9f\n",
@@ -3283,6 +3301,15 @@ static int ppp_res(int post, const obsd_t* obs, int n, const double* rs,
                 m->frequency_hz=sat2freq(sat,m->signal,nav);
                 m->elevation_deg=azel[1+i*2]*R2D;m->cn0_dbhz=snr_real;m->r0=R0;
                 m->measurement_class=code?INNOV_GNSS_CODE:INNOV_GNSS_PHASE;
+                {
+                    int ci=ppp_clk_index(sys),ii=opt->ionoopt==IONOOPT_EST?II(sat,opt):-1;
+                    m->clock_m=x[IC(0,opt)];m->clock_var=rtk->P[IC(0,opt)*(nx+1)];
+                    m->isb_m=ci>0?x[IC(ci,opt)]:0.0;
+                    m->isb_var=ci>0?rtk->P[IC(ci,opt)*(nx+1)]:0.0;
+                    m->iono_m=ii>=0?x[ii]:NAN;m->iono_var=ii>=0?rtk->P[ii*(nx+1)]:NAN;
+                    m->trop_m=NT(opt)?x[IT(opt)]:NAN;m->trop_var=NT(opt)?rtk->P[IT(opt)*(nx+1)]:NAN;
+                    m->ambiguity_m=x[IB(sat,frq,opt)];
+                }
                 m->slip_flag=(obs[i].LLI[frq]|ss->slip[frq])&LLI_SLIP;
                 m->arc_status=x[IB(sat,frq,opt)]==0.0?
                     (ss->ppp_arc_pending[frq]?INNOV_ARC_PENDING:INNOV_ARC_UNINITIALIZED):
@@ -3884,6 +3911,7 @@ extern void pppos(rtk_t* rtk, const obsd_t* obs, int n, const nav_t* nav)
     }
 
     time2str(obs[0].time, str, 2);
+    ppp_innovation_core_begin(rtk->nx,obs,n,opt->nf,rtk);
     if ((diag_opt = strstr(opt->pppopt, "-PPPDIAG="))) {
         sscanf(diag_opt, "-PPPDIAG=%d", &diag_enabled);
     }
@@ -3946,6 +3974,7 @@ extern void pppos(rtk_t* rtk, const obsd_t* obs, int n, const nav_t* nav)
         if(j<NF(opt))observed_uninitialized[i][j]=rtk->x[IB(obs[i].sat,j,opt)]==0.0;
     }
     udstate_ppp(rtk, obs, n, nav);
+    ppp_innovation_core_events(obs,n,rtk,&observed_slip[0][0]);
     info=!numeric_finite(rtk->x,rtk->nx)?FILTER_NAN_STATE:
         numeric_covariance(rtk->P,rtk->nx);
     if(info) {
@@ -4076,6 +4105,7 @@ extern void pppos(rtk_t* rtk, const obsd_t* obs, int n, const nav_t* nav)
                     if(row_meta[j].arc_status==INNOV_ARC_ACTIVE && observed_uninitialized[oi][f])
                         row_meta[j].arc_status=INNOV_ARC_REINITIALIZED;
                 }
+                for(j=0;j<nv;j++)ppp_innovation_meta_provenance(&row_meta[j],H,rtk->nx,i);
                 memcpy(trial_meta[i],row_meta,nv*sizeof(*row_meta));
                 if(!ppp_innovation_diag(xp,Pp,v,H,R,rtk->nx,nv,trial_value[i],NULL))trial_count[i]=nv;
             }

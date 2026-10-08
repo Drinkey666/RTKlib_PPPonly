@@ -299,6 +299,7 @@ extern int rtkpos(rtk_t* rtk, const obsd_t* obs, int n, const nav_t* nav)
             fabs(timediff(obs[0].time,rtk->ppp_start_time))<=30.0);
         int spp_ok=startup ? pntpos_startup(obs,nu,nav,opt,&rtk->sol,NULL,rtk->ssat,msg) :
             pntpos(obs,nu,nav,opt,&rtk->sol,NULL,rtk->ssat,msg);
+        ppp_innovation_note_spp(spp_ok);
         if(startup_qc&&spp_ok&&norm(rtk->x,3)<=0.0&&
             fabs(timediff(obs[0].time,rtk->ppp_start_time))>30.0) {
             /* Clock-only/sparse callbacks before the first usable SPP must

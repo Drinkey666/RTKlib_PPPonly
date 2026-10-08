@@ -1,0 +1,137 @@
+
+Phase1 C
+PASS NaN innovation atomic failure
+PASS Inf innovation atomic failure
+PASS -Inf innovation atomic failure
+PASS finite scalar unchanged
+PASS finite matrix bitwise 97a57a9 equality
+PASS singular inverse preserves x/P
+PASS NaN covariance reason
+PASS negative variance rejected
+PASS Inf R rejected
+PASS NaN H rejected
+PASS finite input overflow rejected
+PASS posterior state overflow atomic failure
+PASS no active state explicit failure
+PASS asymmetric covariance rejected
+PASS Inf prior state rejected
+PASS continuous phase retains ambiguity
+PASS slip full P/L new arc
+PASS slip missing P invalidates old arc
+PASS pending survives flag clearing
+PASS later P/L reinitializes pending arc
+PASS elapsed long gap restarts arc
+PASS outage counter leaves pending arc
+PASS B LEGACY old arc behavior explicitly recoverable
+PASS B LEGACY GF deferral recoverable
+PASS GF missing phase history does not falsely defer
+PASS GF yields only to executed Doppler pair
+PASS phase history retained after startup
+PASS confirmed LLI without phase still invalidates
+PASS PPP raw NaN rejects without zero masking
+PASS confirmed slip survives rejected NaN packet
+PASS invalid prediction restores prior but not old slip arc
+PASS no-measurement failure keeps finite prediction
+PASS synthetic finite PPP residual control
+PASS postfit NaN cannot pass reject gate
+PASS PPP R0 NaN gets NAN_COV failure
+PASS A disables experimental features and corrects lifecycle
+PASS B retains legacy features
+PASS C cannot be accidentally enabled
+PASS D validation rejects unimplemented mode
+PASS R0 NaN is not masked by variance floor
+PASS elapsed arc gap has seconds independent of maxout epochs
+PASS A actual R ignores sticky CMC/persistent/current penalties
+PASS B actual R preserves history and separates epoch weight
+PASS reject rule stays separate from robust weight
+RESULT passed=44 failed=0
+
+Phase2 C
+PASS full S matrix with cross covariance and off-diagonal R
+PASS S diagonal decomposition
+PASS standardization uses S not R
+PASS all inputs bitwise read-only
+PASS filter bitwise same with diagnostics
+PASS zero-state sentinel flagged but full P retained
+PASS NaN innovation diagnostic invalid
+PASS invalid diagnostic cannot bypass Phase 1 filter protection
+PASS Inf innovation diagnostic invalid
+PASS invalid diagnostic cannot bypass Phase 1 filter protection
+PASS NaN P invalidates diagnostics
+PASS Inf H invalid row isolated
+PASS NaN R invalid row
+PASS large raw startup innovation normal u
+PASS zero S explicit invalid
+PASS negative S explicit invalid
+PASS u overflow explicit invalid
+PASS invalid dimensions fail only diagnostic
+PASS phase/code exact source row mapping
+PASS editing row remaps without changing source identity
+PASS code row retains pending arc diagnostic
+PASS IFLC maps actual L1/L5 pair despite empty L2 code slot
+PASS diagnostic open failure stays disabled
+PASS diagnostic writer enable
+PASS PPP NaN still rejected with observer enabled
+PASS rtkpos Inf still rejected with observer enabled
+RESULT passed=26 failed=0
+
+Phase2.5 C
+PASS observer open
+PASS first observation ARC_INIT
+PASS current SPP initialization explicit
+PASS continuous observation independent of ambiguity sentinel
+PASS no invented observation initialization
+PASS editing retry flag without age increment
+PASS same GNSS epoch reentry retains arc/count
+PASS post-gap recovery starts fresh arc
+PASS confirmed slip breaks arc exactly once
+PASS same-time slip/init reentry does not reset arc again
+PASS actual signal switch breaks arc
+PASS missing input epoch breaks arc
+PASS ambiguity seed global provenance with P row unaffected
+PASS phase row sees initialized ambiguity state
+PASS failed SPP clock source unknown, not falsely clean
+PASS legacy current-observation adjustment separate from init
+PASS observer APIs preserve estimator and H bitwise
+PASS missing P splits P innovation while raw/L continue
+PASS P loss does not split valid L sequence
+PASS observer did not mutate original observation fields
+RESULT passed=20 failed=0
+
+Phase2.5 Python
+test_arc_change_slip_reset_reject_all_break (__main__.ContinuityTests.test_arc_change_slip_reset_reject_all_break) ... ok
+test_current_obs_init_observed_for_correlation_but_never_learned (__main__.ContinuityTests.test_current_obs_init_observed_for_correlation_but_never_learned) ... ok
+test_missing_innovation_breaks_even_raw_arc_same (__main__.ContinuityTests.test_missing_innovation_breaks_even_raw_arc_same) ... ok
+test_retries_never_duplicate_statistics_or_pairs (__main__.ContinuityTests.test_retries_never_duplicate_statistics_or_pairs) ... ok
+test_satellites_never_paired (__main__.ContinuityTests.test_satellites_never_paired) ... ok
+test_signal_return_does_not_rejoin_old_signal (__main__.ContinuityTests.test_signal_return_does_not_rejoin_old_signal) ... ok
+test_timestamp_gap_breaks_adjacent_epoch (__main__.ContinuityTests.test_timestamp_gap_breaks_adjacent_epoch) ... ok
+test_unknown_provenance_observed_for_source_audit_never_learned (__main__.ContinuityTests.test_unknown_provenance_observed_for_source_audit_never_learned) ... ok
+test_B_history_and_effective_R_never_enter_learning_pool (__main__.EligibilityTests.test_B_history_and_effective_R_never_enter_learning_pool) ... ok
+test_ambiguity_current_init_code_excluded (__main__.EligibilityTests.test_ambiguity_current_init_code_excluded) ... ok
+test_any_current_state_init_excluded_even_outside_H (__main__.EligibilityTests.test_any_current_state_init_excluded_even_outside_H) ... ok
+test_bias_is_candidate_label_not_numeric_threshold (__main__.EligibilityTests.test_bias_is_candidate_label_not_numeric_threshold) ... ok
+test_clean_code_eligible (__main__.EligibilityTests.test_clean_code_eligible) ... ok
+test_code_pending_ambiguity_is_not_repeated_init_event (__main__.EligibilityTests.test_code_pending_ambiguity_is_not_repeated_init_event) ... ok
+test_constraints_and_iflc_separate_exclusions (__main__.EligibilityTests.test_constraints_and_iflc_separate_exclusions) ... ok
+test_multiple_lifecycle_exclusions_not_single_precedence (__main__.EligibilityTests.test_multiple_lifecycle_exclusions_not_single_precedence) ... ok
+test_phase_retained_for_statistics_not_phase_D_pool (__main__.EligibilityTests.test_phase_retained_for_statistics_not_phase_D_pool) ... ok
+test_unknown_provenance_failed_or_invalid_excluded (__main__.EligibilityTests.test_unknown_provenance_failed_or_invalid_excluded) ... ok
+test_inputs_not_written_outputs_reproducible_and_JSON_finite (__main__.FileTests.test_inputs_not_written_outputs_reproducible_and_JSON_finite) ... ok
+test_missing_lifecycle_provenance_contract_is_rejected (__main__.FileTests.test_missing_lifecycle_provenance_contract_is_rejected) ... ok
+test_hand_moments_and_centered_variance (__main__.MomentTests.test_hand_moments_and_centered_variance) ... ok
+test_positive_negative_zero_ratios (__main__.MomentTests.test_positive_negative_zero_ratios) ... ok
+test_stage_never_pooled (__main__.MomentTests.test_stage_never_pooled) ... ok
+test_between_arc_mean_difference_cannot_manufacture_correlation (__main__.TemporalTests.test_between_arc_mean_difference_cannot_manufacture_correlation) ... ok
+test_compact_bias_summary_preserves_all_window_counts (__main__.TemporalTests.test_compact_bias_summary_preserves_all_window_counts) ... ok
+test_full_sign_windows_10_30_60_and_zero_resets_streak (__main__.TemporalTests.test_full_sign_windows_10_30_60_and_zero_resets_streak) ... ok
+test_lag30_pairs_require31_continuous_samples (__main__.TemporalTests.test_lag30_pairs_require31_continuous_samples) ... ok
+test_long_linear_drift_high_rho_small_effective_count (__main__.TemporalTests.test_long_linear_drift_high_rho_small_effective_count) ... ok
+test_old_pair_mean_pooling_can_inflate_rho_without_cross_gap_pairs (__main__.TemporalTests.test_old_pair_mean_pooling_can_inflate_rho_without_cross_gap_pairs) ... ok
+test_per_segment_centered_manual_correlation (__main__.TemporalTests.test_per_segment_centered_manual_correlation) ... ok
+test_sign_alternation_not_persistent_bias_candidate (__main__.TemporalTests.test_sign_alternation_not_persistent_bias_candidate) ... ok
+
+----------------------------------------------------------------------
+Ran 31 tests in 0.244s
+
+OK

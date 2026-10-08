@@ -16,7 +16,20 @@ typedef struct {
     double frequency_hz,frequency2_hz,elevation_deg,cn0_dbhz,r0;
     ppp_measurement_class_t measurement_class;
     int slip_flag,arc_status,combined;
+    /* Phase 2.5 provenance: observer-owned, never estimator state. */
+    int state_init_from_current_obs,state_init_affects_row;
+    int ambiguity_init_from_current_obs,same_epoch_reentry;
+    unsigned long arc_id,continuous_epochs;
+    double arc_age;
+    unsigned long raw_arc_id,raw_continuous_epochs;
+    double raw_arc_age;
+    int raw_lifecycle_bits;
+    int lifecycle_bits,gap_flag,signal_switch_flag,spp_from_current_obs;
+    int legacy_current_obs_adjustment,provenance_valid,spp_attempted;
+    double clock_m,clock_var,isb_m,isb_var,iono_m,iono_var,trop_m,trop_var,ambiguity_m;
 } ppp_innovation_meta_t;
+enum { INNOV_LIFE_INIT=1,INNOV_LIFE_RESTART=2,INNOV_LIFE_RECOVERY=4,
+    INNOV_LIFE_POST_GAP=8,INNOV_LIFE_CONTINUOUS=16 };
 enum { INNOV_ARC_NA=0,INNOV_ARC_ACTIVE,INNOV_ARC_PENDING,
     INNOV_ARC_REINITIALIZED,INNOV_ARC_UNINITIALIZED,INNOV_ARC_LEGACY_ACTIVE };
 enum { INNOV_BAD_V=1,INNOV_BAD_P=2,INNOV_BAD_H=4,INNOV_BAD_R=8,
@@ -40,6 +53,15 @@ int ppp_innovation_log_open(const char *path);
 int ppp_innovation_log_close(void);
 int ppp_innovation_log_enabled(void);
 void ppp_innovation_log_epoch(gtime_t time);
+void ppp_innovation_note_spp(int success);
+int ppp_innovation_spp_current(void);
+void ppp_innovation_core_begin(int nx,const obsd_t *obs,int n,int nf,const rtk_t *rtk);
+void ppp_innovation_note_current_init(int state,int sat,int slot,int ambiguity);
+void ppp_innovation_note_current_adjustment(int state);
+void ppp_innovation_core_events(const obsd_t *obs,int n,const rtk_t *rtk,
+    const unsigned char *observed_slip);
+void ppp_innovation_meta_provenance(ppp_innovation_meta_t *meta,
+    const double *H,int nx,int trial);
 void ppp_innovation_log_trial(int trial,int baseline,int corrected,
     const ppp_innovation_meta_t *meta,const ppp_innovation_value_t *value,
     int count,const unsigned char *final_mexc,int mexc_count,
