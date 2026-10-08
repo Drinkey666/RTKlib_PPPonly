@@ -158,13 +158,13 @@ static void residual_tests(rtk_t *rtk,nav_t *nav)
     fixture(rtk,&obs,1,1);rtk->opt.posopt[0]=rtk->opt.posopt[2]=0;
     initx(rtk,6378137,1,0);initx(rtk,1,1,1);initx(rtk,1,1,2);initx(rtk,2,1,IT(&rtk->opt));
     H=mat(rtk->nx,2);
-    nv=ppp_res(0,&obs,1,rs,dts,satvar,svh,dr,exc,mexc,nav,rtk->x,rtk,v,H,R,azel,NULL,NULL,NULL);
+    nv=ppp_res(0,&obs,1,rs,dts,satvar,svh,dr,exc,mexc,nav,rtk->x,rtk,v,H,R,azel,NULL,NULL,NULL,NULL);
     CHECK("synthetic finite PPP residual control",nv==2 && numeric_finite(v,2) && !numeric_covariance(R,2));
     dts[0]=NAN;
-    nv=ppp_res(1,&obs,1,rs,dts,satvar,svh,dr,exc,mexc,nav,rtk->x,rtk,NULL,NULL,NULL,azel,NULL,NULL,NULL);
+    nv=ppp_res(1,&obs,1,rs,dts,satvar,svh,dr,exc,mexc,nav,rtk->x,rtk,NULL,NULL,NULL,azel,NULL,NULL,NULL,NULL);
     CHECK("postfit NaN cannot pass reject gate",nv==FILTER_NAN_INPUT && rtk->ppp_failure==FILTER_NAN_INPUT);
     dts[0]=0;rtk->opt.err[1]=NAN;
-    nv=ppp_res(0,&obs,1,rs,dts,satvar,svh,dr,exc,mexc,nav,rtk->x,rtk,v,H,R,azel,NULL,NULL,NULL);
+    nv=ppp_res(0,&obs,1,rs,dts,satvar,svh,dr,exc,mexc,nav,rtk->x,rtk,v,H,R,azel,NULL,NULL,NULL,NULL);
     CHECK("PPP R0 NaN gets NAN_COV failure",nv==FILTER_NAN_COV && rtk->ppp_failure==FILTER_NAN_COV);
     free(H);rtkfree(rtk);
 }
@@ -178,7 +178,10 @@ int main(void)
     smartphone_ppp_select(&opt,"A",NULL,error,sizeof(error));a=smartphone_ppp_policy(&opt);
     CHECK("A disables experimental features and corrects lifecycle",a.corrected_lifecycle && !a.legacy_weighting && !a.quality_learning && !a.smoothing && !a.atmosphere_constraints && !a.empirical_guards && !a.startup_qc);
     CHECK("B retains legacy features",b.legacy_weighting && b.quality_learning && b.smoothing && b.atmosphere_constraints && b.empirical_guards && !b.corrected_lifecycle);
-    CHECK("C cannot be accidentally enabled",!smartphone_ppp_select(&opt,"C",NULL,error,sizeof(error)));
+    CHECK("C explicitly selects clean corrected policy",smartphone_ppp_select(&opt,"C",NULL,error,sizeof(error)) &&
+        smartphone_ppp_validate(&opt,error,sizeof(error)) && opt.ppp_baseline==MODE_C_NEW_ROBUST &&
+        smartphone_ppp_policy(&opt).corrected_lifecycle &&
+        !smartphone_ppp_policy(&opt).legacy_weighting);
     opt.ppp_baseline=MODE_D_ADAPTIVE_R;CHECK("D validation rejects unimplemented mode",!smartphone_ppp_validate(&opt,error,sizeof(error)));
     smartphone_ppp_configure(&opt,NULL);opt.err[1]=NAN;
     CHECK("R0 NaN is not masked by variance floor",isnan(varerr(1,SYS_GPS,PI/2,35,0,1,&opt)) &&

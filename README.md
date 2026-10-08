@@ -56,3 +56,9 @@ python tests/run_phase1_rinex.py
 保持 `4715448` 的A/B结果，诊断日志增加当期SPP/模糊度初始化来源及P/L分别维护的连续弧段标签；离线分类不反馈滤波。当前600历元样本没有严格可学习伪距：当期SPP钟差重建或来源不确定违反独立预测要求。分析、五种lag相关、10/30/60窗口与ESS限制见 [Phase 2.5 报告](docs/PHASE2_5_REPORT.md)。
 
 测试/回放/离线分析：`tests/run_phase2_5_tests.ps1`、`tests/test_phase2_5_analysis.py`、`tests/run_phase2_5_replay.py`、`tests/run_phase2_5_rinex.py`、`tests/analyze_phase2_5.py`。R/Q、权重、reject、eta均未改变。
+
+## 普通抗差卡尔曼滤波 C
+
+先按 [PPP运行准入](docs/PPP_OPERATIONAL_GATE.md) 核对当前PC非组合PPP，再用 `RTK_PPP_BASELINE=C` 显式启用一次验前Huber权重EKF。C沿用A的函数模型、固定Q/R0和正确弧段处理；每条真实GNSS码/相位行使用 `u=v/sqrt(hP^-h^T+R)`，当前历元按固定截止值1.5计算权重。默认仍为B，A/B结果不变；D和信号级eta未启用。实施及TXT/RINEX对照见 [普通抗差报告](docs/PPP_ROBUST_KALMAN_REPORT.md)。
+
+测试命令：`tests/run_robust_tests.ps1`；同输入回放：`tests/run_robust_replay.py`；诊断核对：`tests/run_robust_diag.py`。

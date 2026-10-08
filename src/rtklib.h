@@ -1513,6 +1513,7 @@ EXPORT int  lsq   (const double *A, const double *y, int n, int m, double *x,
 #define FILTER_BAD_COV   (-13)
 #define FILTER_BAD_DIM   (-14)
 #define FILTER_NO_ACTIVE (-15)
+#define FILTER_NO_MEMORY (-16)
 #define PPP_FAILURE_NO_OBS (-20)
 #define PPP_FAILURE_EDIT_LIMIT (-21)
 #define PPP_EVIDENCE_LLI 1

@@ -44,15 +44,17 @@ int smartphone_ppp_select(prcopt_t *opt, const char *baseline,
             opt->ppp_baseline = PPP_BASELINE_A_CLEAN;
         else if (!strcmp(baseline,"B") || !strcmp(baseline,"LEGACY_BASELINE"))
             opt->ppp_baseline = PPP_BASELINE_B_LEGACY;
-        else problem = "baseline must be A or B; C/D are reserved and unavailable";
+        else if (!strcmp(baseline,"C") || !strcmp(baseline,"HUBER_ROBUST"))
+            opt->ppp_baseline = MODE_C_NEW_ROBUST;
+        else problem = "baseline must be A, B or C; D is reserved and unavailable";
     }
     if (!problem && lifecycle && *lifecycle) {
         if (!strcmp(lifecycle,"LEGACY")) opt->ppp_lifecycle=PPP_LIFECYCLE_LEGACY;
         else if (!strcmp(lifecycle,"CORRECTED")) opt->ppp_lifecycle=PPP_LIFECYCLE_CORRECTED;
         else problem = "lifecycle must be LEGACY or CORRECTED";
-        if (!problem && opt->ppp_baseline==PPP_BASELINE_A_CLEAN &&
+        if (!problem && opt->ppp_baseline!=PPP_BASELINE_B_LEGACY &&
             opt->ppp_lifecycle==PPP_LIFECYCLE_LEGACY)
-            problem = "A requires CORRECTED lifecycle";
+            problem = "A/C require CORRECTED lifecycle";
     }
     if (error && capacity) snprintf(error,capacity,"%s",problem?problem:"");
     return !problem;
@@ -97,8 +99,8 @@ int smartphone_ppp_validate(const prcopt_t *opt, char *error, size_t capacity)
     if (NSATCMP) supported |= SYS_CMP;
     if (NSATQZS) supported |= SYS_QZS;
     if (!opt) problem = "null processing options";
-    else if (opt->ppp_baseline < 0 || opt->ppp_baseline > PPP_BASELINE_A_CLEAN)
-        problem = "C/D algorithms are not implemented in Phase 1";
+    else if (opt->ppp_baseline < 0 || opt->ppp_baseline > MODE_C_NEW_ROBUST)
+        problem = "D algorithm is not implemented";
     else if (opt->ppp_lifecycle < 0 || opt->ppp_lifecycle > PPP_LIFECYCLE_CORRECTED)
         problem = "invalid PPP lifecycle";
     else if (opt->nf < 1 || opt->nf > NFREQ)
@@ -135,7 +137,8 @@ unsigned int smartphone_ppp_describe(const prcopt_t *opt, char *out, size_t capa
         "std=%.9g,%.9g,%.9g slip=%.9g dop=%.9g "
         "maxinno=%.9g,%.9g niter=%d codesmooth=%d "
         "posopt=%d,%d,%d,%d,%d,%d snrmask=%d,%d pppopt=%s",
-        opt->ppp_baseline==PPP_BASELINE_A_CLEAN?"A_CLEAN":"B_LEGACY",
+        opt->ppp_baseline==PPP_BASELINE_A_CLEAN?"A_CLEAN":
+        opt->ppp_baseline==MODE_C_NEW_ROBUST?"C_HUBER":"B_LEGACY",
         smartphone_ppp_policy(opt).corrected_lifecycle?"CORRECTED":"LEGACY",
         smartphone_ppp_policy(opt).arc_gap_seconds,
         SMARTPHONE_PPP_PROFILE, NFREQ, MAXSAT, NSATGLO, NSATQZS,
@@ -153,6 +156,10 @@ unsigned int smartphone_ppp_describe(const prcopt_t *opt, char *out, size_t capa
         opt->posopt[0], opt->posopt[1], opt->posopt[2],
         opt->posopt[3], opt->posopt[4], opt->posopt[5],
         opt->snrmask.ena[0], opt->snrmask.ena[1], opt->pppopt);
+    if(opt->ppp_baseline==MODE_C_NEW_ROBUST) {
+        size_t len=strlen(text);
+        snprintf(text+len,sizeof(text)-len," huber_k=%.9g",PPP_HUBER_K_DEFAULT);
+    }
     for (p = (const unsigned char *)text; *p; ++p) hash = (hash ^ *p) * 16777619u;
     if (out && capacity) snprintf(out, capacity, "PPP_CONFIG,signature=%08x,%s", hash, text);
     return hash;

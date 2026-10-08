@@ -15,7 +15,9 @@ typedef struct {
     double arc_gap_seconds; /* elapsed-time continuity bound, not maxout epochs */
 } ppp_policy_t;
 #define PPP_ARC_GAP_SECONDS_DEFAULT 30.0
-/* Sole mode policy. Reserved C/D modes are rejected, never silently run A/B. */
+#define PPP_HUBER_K_DEFAULT 1.5 /* dimensionless pre-fit u cutoff; no tuning */
+/* Sole mode policy. C uses the clean model plus current-epoch Huber weights;
+ * D remains reserved and is rejected. */
 ppp_policy_t smartphone_ppp_policy(const prcopt_t *opt);
 int smartphone_ppp_select(prcopt_t *opt, const char *baseline,
     const char *lifecycle, char *error, size_t capacity);

@@ -1489,6 +1489,7 @@ extern const char *filter_reason(int info)
         case FILTER_BAD_COV:return "BAD_COV";
         case FILTER_BAD_DIM:return "BAD_DIM";
         case FILTER_NO_ACTIVE:return "NO_ACTIVE_STATE";
+        case FILTER_NO_MEMORY:return "NO_MEMORY";
         case PPP_FAILURE_NO_OBS:return "NO_VALID_OBS";
         case PPP_FAILURE_EDIT_LIMIT:return "EDIT_LIMIT";
         default:return "SINGULAR_INNOVATION_COV";

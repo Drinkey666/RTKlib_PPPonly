@@ -1,0 +1,318 @@
+{
+  "reference_commit": "93de551",
+  "date": "2026-10-08",
+  "reference_executable_sha256": "e4e9df1a842a1bf5c4312bd5937e50138cf486b22660ca357149d1749a8863e3",
+  "new_executable_sha256": "1211a4f33e50a2554d46dbf0c8cf7446b26d22bc11a91a04c96553d5290651b3",
+  "tests": {
+    "phase1_C": "RESULT passed=44 failed=0",
+    "phase2_C": "RESULT passed=26 failed=0",
+    "phase2_5_C": "RESULT passed=20 failed=0",
+    "robust_C": "RESULT passed=11 failed=0"
+  },
+  "A_B_regression": {
+    "A": {
+      "common_epochs": 600,
+      "common_valid_epochs": 600,
+      "numeric_rows_equal_excluding_wall_time": true,
+      "Q_differences": 0,
+      "ns_differences": 0,
+      "max_coordinate_component_difference_m": 0.0,
+      "max_coordinate_3d_difference_m": 0.0,
+      "state_equal": true,
+      "stat_equal": true,
+      "obs_equal": true,
+      "reject_equal": true,
+      "slip_equal": true,
+      "failure_equal": true
+    },
+    "B": {
+      "common_epochs": 600,
+      "common_valid_epochs": 600,
+      "numeric_rows_equal_excluding_wall_time": true,
+      "Q_differences": 0,
+      "ns_differences": 0,
+      "max_coordinate_component_difference_m": 0.0,
+      "max_coordinate_3d_difference_m": 0.0,
+      "state_equal": true,
+      "stat_equal": true,
+      "obs_equal": true,
+      "reject_equal": true,
+      "slip_equal": true,
+      "failure_equal": true
+    },
+    "rinex_A": {
+      "numeric_rows": true,
+      "state_sha256": true,
+      "input_epoch_records": true,
+      "Q": true,
+      "reject_events": true,
+      "detector_slip_events": true,
+      "legacy_slip_reinitializations": true,
+      "failure_records": true
+    },
+    "rinex_B": {
+      "numeric_rows": true,
+      "state_sha256": true,
+      "input_epoch_records": true,
+      "Q": true,
+      "reject_events": true,
+      "detector_slip_events": true,
+      "legacy_slip_reinitializations": true,
+      "failure_records": true
+    }
+  },
+  "C": {
+    "txt": {
+      "summary": {
+        "name": "TXT_C_repeat1",
+        "epochs": 600,
+        "valid": 600,
+        "Q": {
+          "5": 2,
+          "6": 598
+        },
+        "last": [
+          "2437",
+          "196064.999000064",
+          "6",
+          "19",
+          "30",
+          "-1332883.425373613",
+          "5325281.177534878",
+          "3237404.137612285",
+          "30.698168341156",
+          "104.052071120852",
+          "468.912768",
+          "0.290083",
+          "0.575599",
+          "0.266665"
+        ],
+        "nonfinite_numeric_fields": 0,
+        "failure_epochs": 0,
+        "failure_reasons": {},
+        "reject_events": 102,
+        "slip_checks": 24833,
+        "legacy_slip_reinitializations": 161,
+        "arc_reset": 489,
+        "arc_pending": 1696,
+        "arc_reinitialized": 497,
+        "detector_slip_events": 127,
+        "state_dump_sha256": "6619ba7dc8859e15b502b15cdb264a35e27f16f6490b80d54c48c9ce426d3c84",
+        "obs_dump_sha256": "a84468870b69507013282344892c102c13d3526bd306c5c62017323faecf160f",
+        "last_main_state": "$PPP_STATE,2026/09/22 06:27:45.00,Q=6,failure=0,x=-1332883.425373613369,y=5325281.177534878254,z=3237404.137612285092,clock_m=-304376.234669176454,ZTD=1.658220412252",
+        "wall_seconds": 8.468999999997322,
+        "executable_sha256": "1211a4f33e50a2554d46dbf0c8cf7446b26d22bc11a91a04c96553d5290651b3",
+        "command": [
+          "E:\\GNSS\\PPP_only\\x64\\Release\\PPP_only.exe",
+          "--source",
+          "txt-fast",
+          "--no-gui",
+          "--max-epochs",
+          "600"
+        ]
+      },
+      "huber": {
+        "rows": 42043,
+        "downweighted": 562,
+        "minimum_weight": 0.279889386466407,
+        "maximum_abs_u": 5.359260023888164
+      }
+    },
+    "txt_repeat": {
+      "summary": {
+        "name": "TXT_C_repeat2",
+        "epochs": 600,
+        "valid": 600,
+        "Q": {
+          "5": 2,
+          "6": 598
+        },
+        "last": [
+          "2437",
+          "196064.999000064",
+          "6",
+          "19",
+          "30",
+          "-1332883.425373613",
+          "5325281.177534878",
+          "3237404.137612285",
+          "30.698168341156",
+          "104.052071120852",
+          "468.912768",
+          "0.290083",
+          "0.575599",
+          "0.266665"
+        ],
+        "nonfinite_numeric_fields": 0,
+        "failure_epochs": 0,
+        "failure_reasons": {},
+        "reject_events": 102,
+        "slip_checks": 24833,
+        "legacy_slip_reinitializations": 161,
+        "arc_reset": 489,
+        "arc_pending": 1696,
+        "arc_reinitialized": 497,
+        "detector_slip_events": 127,
+        "state_dump_sha256": "6619ba7dc8859e15b502b15cdb264a35e27f16f6490b80d54c48c9ce426d3c84",
+        "obs_dump_sha256": "a84468870b69507013282344892c102c13d3526bd306c5c62017323faecf160f",
+        "last_main_state": "$PPP_STATE,2026/09/22 06:27:45.00,Q=6,failure=0,x=-1332883.425373613369,y=5325281.177534878254,z=3237404.137612285092,clock_m=-304376.234669176454,ZTD=1.658220412252",
+        "wall_seconds": 8.5,
+        "executable_sha256": "1211a4f33e50a2554d46dbf0c8cf7446b26d22bc11a91a04c96553d5290651b3",
+        "command": [
+          "E:\\GNSS\\PPP_only\\x64\\Release\\PPP_only.exe",
+          "--source",
+          "txt-fast",
+          "--no-gui",
+          "--max-epochs",
+          "600"
+        ]
+      },
+      "huber": {
+        "rows": 42043,
+        "downweighted": 562,
+        "minimum_weight": 0.279889386466407,
+        "maximum_abs_u": 5.359260023888164
+      }
+    },
+    "rinex": {
+      "summary": {
+        "name": "RINEX_C_repeat1",
+        "output_epochs": 1200,
+        "state_sha256": "46873b77625517a71011eb97368b62ecf4b5068521ad216a80289be2ea58ab0d",
+        "Q": {
+          "6": 1197,
+          "5": 3
+        },
+        "reject_events": 5,
+        "legacy_slip_reinitializations": 717,
+        "detector_slip_events": 637,
+        "failure_records": [],
+        "wall_seconds": 19.797000000005937
+      },
+      "huber": {
+        "rows": 110978,
+        "downweighted": 0,
+        "minimum_weight": 1.0,
+        "maximum_abs_u": 1.0537076840537174
+      }
+    },
+    "rinex_repeat": {
+      "summary": {
+        "name": "RINEX_C_repeat2",
+        "output_epochs": 1200,
+        "state_sha256": "46873b77625517a71011eb97368b62ecf4b5068521ad216a80289be2ea58ab0d",
+        "Q": {
+          "6": 1197,
+          "5": 3
+        },
+        "reject_events": 5,
+        "legacy_slip_reinitializations": 717,
+        "detector_slip_events": 637,
+        "failure_records": [],
+        "wall_seconds": 19.5940000000046
+      },
+      "huber": {
+        "rows": 110978,
+        "downweighted": 0,
+        "minimum_weight": 1.0,
+        "maximum_abs_u": 1.0537076840537174
+      }
+    },
+    "txt_vs_A": {
+      "common_epochs": 600,
+      "common_valid_epochs": 600,
+      "numeric_rows_equal_excluding_wall_time": false,
+      "Q_differences": 0,
+      "ns_differences": 0,
+      "max_coordinate_component_difference_m": 7.092040803050622,
+      "max_coordinate_3d_difference_m": 7.367711421760529
+    },
+    "txt_diag_vs_off": {
+      "common_epochs": 600,
+      "common_valid_epochs": 600,
+      "numeric_rows_equal_excluding_wall_time": true,
+      "Q_differences": 0,
+      "ns_differences": 0,
+      "max_coordinate_component_difference_m": 0.0,
+      "max_coordinate_3d_difference_m": 0.0
+    },
+    "txt_diag_state_equal": true,
+    "rinex_C_equal_A": true,
+    "txt_weight_types": {
+      "rows": {
+        "CODE": 26730,
+        "PHASE": 15313
+      },
+      "downweighted": {
+        "CODE": 418,
+        "PHASE": 144
+      }
+    },
+    "rinex_weight_types": {
+      "rows": {
+        "CODE": 58893,
+        "PHASE": 52085
+      },
+      "downweighted": {
+        "CODE": 0,
+        "PHASE": 0
+      }
+    }
+  },
+  "inputs": {
+    "txt": {
+      "TXT": "4897740c30fa8385eaddc3b8f2f7205ee9d43ab0b0a9f6b2a418f50c0db04625",
+      "NAV": "7e9a8d95414098a0a4d37521f6852d7052449b0abcb3b1eae546ce0c9aa2645c",
+      "SP3": "802bfb0921ad93c9b6570bc30dc8817d4e019e0404fb7e889e274c817516259a",
+      "CLK": "716f3219ddbb90ee0a57ab7fe32c4cd900de0d9fcde1ebd360946aa29a24611e",
+      "BIA": "a44ae401ed51dac7b1893eed3c597b348428de6992a5359fff3349ad7d165652",
+      "IONEX": "8bb16f814f24367ca198db37fb1b9246314ae8823cd679e08ea1c37388e057aa",
+      "VMF_FIRST": "d63cf6e212c59d017a37f2dda5b7114612e6811435a29f9c7ffbc6352265f426",
+      "VMF_SECOND": "4cfa860730f20fc90a6bce19dad55bd1b6c6193fe88a5fc6639dd67c5b351810",
+      "OROGRAPHY": "2da6f83db2f5ac382b6c20d6ce3fc824aa6a5b573c16ba5a7c5737ca54c271ed",
+      "ATX": "fd9955ae17d759291e62e144db8e47a3d4f38bb1d8aae7a8e093fbc6cad0b79f"
+    },
+    "rinex": {
+      "OBS": "c79a33fedfda7c77de63ef6de68c27f8685b38776ca8a3e4a3345be7c02f2b3d",
+      "NAV": "3a67c0c5e5a48d961febd4650ddf3f60075945445c877e96e723fb6796977514",
+      "SP3": "7174fb104e4c061a3fa823e82327923d47e72100b484f89fbfca4fb39bed8d9d",
+      "CLK": "498a2f50969fbee832aa528cd5a252080f0a390d8cbbd8410766e120a9e57e30",
+      "BIA": "246e1428dd2a6c8a1f54529f4abe76ff501c0778fab78160df8ebe85e7a2c5e9",
+      "IONEX": "62b636dc04028ce7e9514bdfc4f5c468570cd1d9bf1f88182cbd558f863a5d49",
+      "VMF_FIRST": "5b019594e800c3d2331b972c26ccece898d5a25e707d1df553566546b764e365",
+      "VMF_SECOND": "6cd8892ddf545510f05490c67777159d16611dc8fe93726b921c9de08c2a66f7",
+      "OROGRAPHY": "2da6f83db2f5ac382b6c20d6ce3fc824aa6a5b573c16ba5a7c5737ca54c271ed",
+      "ATX": "fd9955ae17d759291e62e144db8e47a3d4f38bb1d8aae7a8e093fbc6cad0b79f"
+    }
+  },
+  "sources": {
+    "PPP_only/ppp_position.c": "29204c1fa4d236e2f9faba58c5a9fd1680cc2d43454d09a9640532877cba1596",
+    "src/ppp.c": "611d4531ac790937f737b4bf34f22c5757120550732600490abc3634e100ddc8",
+    "src/ppp_innovation_diag.c": "48b9ea539b554603d0f9b45d8f024f2b0f78a6f1c96ce4cb8833f1bc17f641d9",
+    "src/rnx2rtkp.c": "38d61cb1d2e65ab803ea4bc5d33794c1bde391ede7070e9aff9f8e889b3925fd",
+    "src/rtkcmn.c": "7996a9b0e137cfaf022a6850b060935f514d1f6a497aedd187942a7f7a2a2f3b",
+    "src/rtklib.h": "16259f36dcaba526888f543c99afee5ac08e25d6041bfef76c2b91dd3f6c87cd",
+    "src/smartphone_ppp_config.c": "ac7c6951844f690b63b2d9be438d389389a271015b633ff0d88e5a0ef5a2021e",
+    "src/smartphone_ppp_config.h": "1a01aa1979225e80a949d41b554db05c4aa28b0341b5713758b2f6c997a148fd",
+    "tests/robust_regression.c": "cff5abc3d78e2eacd84bb82cb611801eacdb25fdbee06003ede15243f357f1ea",
+    "tests/run_robust_tests.ps1": "118b5f9b86337586b0ae0949cce46ca252b5050df33a4b5a9adfea8f190131a3",
+    "tests/run_robust_replay.py": "d0a8bd60c73419838d62362c27e0f8f7bea17e3eb9099a0d3d47c090dee7f73b",
+    "tests/run_robust_diag.py": "2f9dc6a50a48a9b47115e6d5d86a0b1e7f13981df8fd4de9957a0290740b13fd",
+    "tests/prepare_robust_evidence.py": "87b6b8ae6586645a91af267a5ce30b287457fb956f22c7c8b885b5d81c692ea0"
+  },
+  "outputs": {
+    "TXT_A_new.csv": "b6b80681ece227b2758fef62aa52af53c692b6e7f59f3430dd2925bea2cfb8c9",
+    "TXT_B_new.csv": "9c5d0b7e831bd59f2c9739720450ef56c996eb2dd676cc0f0bb9389c4d37414b",
+    "TXT_C_repeat1.csv": "3e4c8edea13b8a4edf3a9e5fd28f9e73cadbb0f6de8010ab8623f0c99ff982f9",
+    "TXT_C_repeat1.csv.stat": "6619ba7dc8859e15b502b15cdb264a35e27f16f6490b80d54c48c9ce426d3c84",
+    "TXT_C_repeat1.trace": "dacd2221b1cbcfe5d5c6ad9ca03b7d01452992a6d102bb9175839d3ccc6419bf",
+    "TXT_C_diag.csv": "47fb3e52bf843f3b3b14410000f601612434323d7f317611905a5738ea40b84d",
+    "TXT_C_diag.csv.stat": "6619ba7dc8859e15b502b15cdb264a35e27f16f6490b80d54c48c9ce426d3c84",
+    "TXT_C_diag.innovation.csv": "ff26abcae17d68099a56a424b8168212f6bc08fdb1b2be1b781aeb66e6b25d16",
+    "RINEX_A_new.pos": "a0942d3f31cfa0e8fae11f774bdb808e5e736ad28064069102d5eecca98b03aa",
+    "RINEX_B_new.pos": "73d2f8cf97102d7a1290d67aa8a53c5a8b9d48c040518a7b8a7dc2cd09abe675",
+    "RINEX_C_repeat1.pos": "a0942d3f31cfa0e8fae11f774bdb808e5e736ad28064069102d5eecca98b03aa",
+    "RINEX_C_repeat1.pos.stat": "46873b77625517a71011eb97368b62ecf4b5068521ad216a80289be2ea58ab0d",
+    "RINEX_C_repeat1.trace": "4e40f6b5b217e64d421039dc53593bcba71636a536253d06611b05b450ed81b2"
+  }
+}

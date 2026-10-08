@@ -103,7 +103,7 @@ static const char* help[] = {
 "RTK_PPP_NAV, RTK_PPP_SP3, RTK_PPP_CLK, RTK_PPP_BIA, RTK_PPP_IONEX,",
 "RTK_PPP_VMF_FIRST, RTK_PPP_VMF_SECOND, RTK_PPP_OROGRAPHY, RTK_PPP_ATX.",
 "RTK_PPP_OUTPUT and RTK_PPP_TRACE select diagnostic output files.",
-"RTK_PPP_BASELINE=A|B selects CLEAN|LEGACY (default B). C/D are unavailable.",
+"RTK_PPP_BASELINE=A|B|C selects CLEAN|LEGACY|HUBER (default B). D is unavailable.",
 "RTK_PPP_LIFECYCLE=CORRECTED enables fixed arcs/history in B; default LEGACY.",
 "Existing RTK_PPP_NF/SYSTEMS/GLO/EXSATS/OPTS options are unchanged.",
 "An explicit RTK_PPP_OBS retains legacy unattended behavior.",

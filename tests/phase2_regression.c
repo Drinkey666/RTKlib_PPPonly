@@ -54,15 +54,15 @@ int main(void)
         int health[1]={0},exc[1]={0},nv;unsigned char mexc[MAXOBS*2*NFREQ]={0};ppp_innovation_meta_t m[2];
         fixture(rtk,&obs,1,1);rtk->opt.posopt[0]=rtk->opt.posopt[2]=0;
         initx(rtk,6378137,1,0);initx(rtk,1,1,1);initx(rtk,1,1,2);initx(rtk,2,1,IT(&rtk->opt));hh=mat(rtk->nx,2);
-        nv=ppp_res(0,&obs,1,rs,dts,sv,health,dr,exc,mexc,nav,rtk->x,rtk,vv,hh,rr,az,NULL,NULL,m);
+        nv=ppp_res(0,&obs,1,rs,dts,sv,health,dr,exc,mexc,nav,rtk->x,rtk,vv,hh,rr,az,NULL,NULL,m,NULL);
         CHECK("phase/code exact source row mapping",nv==2&&m[0].row_index==0&&m[1].row_index==1&&
             m[0].measurement_class==INNOV_GNSS_PHASE&&m[1].measurement_class==INNOV_GNSS_CODE&&
             m[0].source_obs_index==0&&m[0].sat==obs.sat&&m[0].signal==CODE_L1C&&m[0].frequency_hz==FREQL1&&m[0].cn0_dbhz==35);
         mexc[0]=1;
-        nv=ppp_res(0,&obs,1,rs,dts,sv,health,dr,exc,mexc,nav,rtk->x,rtk,vv,hh,rr,az,NULL,NULL,m);
+        nv=ppp_res(0,&obs,1,rs,dts,sv,health,dr,exc,mexc,nav,rtk->x,rtk,vv,hh,rr,az,NULL,NULL,m,NULL);
         CHECK("editing row remaps without changing source identity",nv==1&&m[0].row_index==0&&m[0].mexc_index==1&&m[0].measurement_class==INNOV_GNSS_CODE);
         obs.L[0]=0;rtk->ssat[0].ppp_arc_pending[0]=1;initx(rtk,0,0,IB(1,0,&rtk->opt));
-        nv=ppp_res(0,&obs,1,rs,dts,sv,health,dr,exc,mexc,nav,rtk->x,rtk,vv,hh,rr,az,NULL,NULL,m);
+        nv=ppp_res(0,&obs,1,rs,dts,sv,health,dr,exc,mexc,nav,rtk->x,rtk,vv,hh,rr,az,NULL,NULL,m,NULL);
         CHECK("code row retains pending arc diagnostic",nv==1&&m[0].arc_status==INNOV_ARC_PENDING);
         {
             prcopt_t opt=rtk->opt;opt.nf=3;opt.ionoopt=IONOOPT_IFLC;
@@ -72,7 +72,7 @@ int main(void)
             initx(rtk,6378137,1,0);initx(rtk,1,1,1);initx(rtk,1,1,2);
             initx(rtk,2,1,IT(&rtk->opt));initx(rtk,100,1,IB(1,0,&rtk->opt));
             free(hh);hh=mat(rtk->nx,2);mexc[0]=0;
-            nv=ppp_res(0,&obs,1,rs,dts,sv,health,dr,exc,mexc,nav,rtk->x,rtk,vv,hh,rr,az,NULL,NULL,m);
+            nv=ppp_res(0,&obs,1,rs,dts,sv,health,dr,exc,mexc,nav,rtk->x,rtk,vv,hh,rr,az,NULL,NULL,m,NULL);
             CHECK("IFLC maps actual L1/L5 pair despite empty L2 code slot",nv==2&&m[0].combined&&m[0].signal2==CODE_L5Q&&m[0].frequency2_hz==FREQL5);
         }
         CHECK("diagnostic open failure stays disabled",!ppp_innovation_log_open("validation/phase2/nonexistent_dir/diag.csv")&&!ppp_innovation_log_enabled());

@@ -2923,7 +2923,8 @@ static void update_cmc_quality_ppp(rtk_t *rtk, const obsd_t *obs, int n,
  * return value is the current-epoch robust weight only. Historical CMC and
  * quality factors are a separate B-only layer; smoothing is a random-model
  * adjustment, never presented as current-epoch robust evidence.
- * No C/D algorithm or learned noise scale is implemented here. */
+ * C's Huber update is applied separately after the complete pre-fit equation
+ * is formed. D and any learned noise scale remain unimplemented. */
 static double apply_legacy_robust_ppp(const prcopt_t *opt, const ssat_t *ss,
     int frq, int code, double z0, double *R_eff)
 {
@@ -2944,12 +2945,70 @@ static int reject_postfit_ppp(int post, double z0)
 {
     return post && z0>THRES_REJECT;
 }
+/* C is a current-epoch, observation-level robust EKF. The covariance used
+ * for u is the pre-fit Sii=h_i P^- h_i' + Rii, before any C inflation.
+ * RTKLIB stores each measurement's H column contiguously (nx x nv).
+ * Existing A/B paths never call this function. Pseudo observations stay at
+ * their original variance; no weights persist to the next epoch. */
+static int apply_huber_robust_ppp(const double *x,const double *P,
+    const double *v,const double *H,double *R,int nx,int nv,
+    const unsigned char *gnss,const ppp_innovation_meta_t *meta,
+    gtime_t time,int trial)
+{
+    ppp_innovation_value_t *value;
+    double *candidate;
+    int i,info=0;
+    if(nx<=0 || nv<=0 || !x || !P || !v || !H || !R || !gnss)
+        return FILTER_BAD_DIM;
+    value=(ppp_innovation_value_t *)malloc((size_t)nv*sizeof(*value));
+    candidate=(double *)malloc((size_t)nv*sizeof(*candidate));
+    if(!value || !candidate) {
+        free(value);free(candidate);
+        return FILTER_NO_MEMORY;
+    }
+    if(ppp_innovation_diag(x,P,v,H,R,nx,nv,value,NULL)<0) {
+        free(value);free(candidate);return FILTER_BAD_DIM;
+    }
+    for(i=0;i<nv;i++)if(gnss[i]) {
+        double magnitude,w,oldR,newR;
+        if(value[i].invalid_reason&INNOV_NO_MEMORY) {info=FILTER_NO_MEMORY;break;}
+        if(value[i].invalid_reason&(INNOV_BAD_V|INNOV_BAD_H|INNOV_BAD_U))
+            {info=FILTER_NAN_INPUT;break;}
+        if(value[i].invalid_reason&(INNOV_BAD_P|INNOV_BAD_R|INNOV_BAD_S))
+            {info=FILTER_NAN_COV;break;}
+        if(!value[i].u_valid || value[i].inactive_state_support)
+            {info=FILTER_BAD_COV;break;}
+        magnitude=fabs(value[i].u);
+        w=magnitude<=PPP_HUBER_K_DEFAULT?1.0:PPP_HUBER_K_DEFAULT/magnitude;
+        oldR=R[i+i*nv];newR=oldR/w;
+        if(!isfinite(w) || w<=0.0 || !isfinite(newR) || newR<0.0)
+            {info=FILTER_NAN_COV;break;}
+        candidate[i]=newR;
+    }
+    /* All candidate variances are validated before R is modified. If a
+     * later row is invalid, the caller's pre-fit covariance stays intact. */
+    if(!info)for(i=0;i<nv;i++)if(gnss[i]) {
+        double oldR=R[i+i*nv],newR=candidate[i];
+        double magnitude=fabs(value[i].u);
+        double w=magnitude<=PPP_HUBER_K_DEFAULT?1.0:PPP_HUBER_K_DEFAULT/magnitude;
+        int week;double tow=time2gpst(time,&week);
+        R[i+i*nv]=newR;
+        if(meta && meta[i].source_obs_index>=0) {
+            trace(2,"$PPP_HUBER,week=%d,tow=%.3f,trial=%d,row=%d,sat=%d,signal=%s,type=%s,u0=%.17g,w=%.17g,R_before=%.17g,R_eff=%.17g\n",
+                week,tow,trial,i,meta[i].sat,code2obs(meta[i].signal),
+                gnss[i]==1?"CODE":"PHASE",value[i].u,w,oldR,newR);
+        }
+        else trace(2,"$PPP_HUBER,week=%d,tow=%.3f,trial=%d,row=%d,type=%s,u0=%.17g,w=%.17g,R_before=%.17g,R_eff=%.17g\n",
+            week,tow,trial,i,gnss[i]==1?"CODE":"PHASE",value[i].u,w,oldR,newR);
+    }
+    free(value);free(candidate);return info;
+}
 static int ppp_res(int post, const obsd_t* obs, int n, const double* rs,
     const double* dts, const double* var_rs, const int* svh,
     const double* dr, int* exc, unsigned char* mexc, const nav_t* nav,
     const double* x, rtk_t* rtk, double* v, double* H, double* R,
     double* azel, ppp_diag_epoch_t* diag, int *product_use,
-    ppp_innovation_meta_t *row_meta)
+    ppp_innovation_meta_t *row_meta,unsigned char *robust_gnss)
 {
     prcopt_t* opt = &rtk->opt;
     double y, r, cdtr, bias, rr[3], pos[3], e[3], dtdx[3], L[NFREQ], P[NFREQ], Lc, Pc;
@@ -3261,8 +3320,12 @@ static int ppp_res(int post, const obsd_t* obs, int n, const double* rs,
                 persistent_variance_factor_ppp(opt,&rtk->ssat[sat-1].ppp_res_quality[frq][code],code):1.0;
             robust_weight=apply_legacy_robust_ppp(opt,&rtk->ssat[sat-1],
                 frq,code,z0,&var[nv]);
-            trace(3,"$PPP_R,%s,sat=%d,F%d,type=%s,R0=%.17g,legacy_random=%.17g,legacy_time_add=%.17g,w_history=%.17g,w=%.17g,eta=1,R_eff=%.17g\n",
-                str,sat,frq+1,code?"CODE":"PHASE",R0,legacy_random,legacy_time_add,history_weight,robust_weight,var[nv]);
+            if(opt->ppp_baseline==MODE_C_NEW_ROBUST)
+                trace(3,"$PPP_R_PRE_HUBER,%s,sat=%d,F%d,type=%s,R0=%.17g,R_pre_huber=%.17g\n",
+                    str,sat,frq+1,code?"CODE":"PHASE",R0,var[nv]);
+            else
+                trace(3,"$PPP_R,%s,sat=%d,F%d,type=%s,R0=%.17g,legacy_random=%.17g,legacy_time_add=%.17g,w_history=%.17g,w=%.17g,eta=1,R_eff=%.17g\n",
+                    str,sat,frq+1,code?"CODE":"PHASE",R0,legacy_random,legacy_time_add,history_weight,robust_weight,var[nv]);
             if(!isfinite(var[nv]) || var[nv]<0.0) {
                 rtk->ppp_failure=isfinite(var[nv])?FILTER_BAD_COV:FILTER_NAN_COV;
                 return rtk->ppp_failure;
@@ -3321,6 +3384,7 @@ static int ppp_res(int post, const obsd_t* obs, int n, const double* rs,
                     m->frequency2_hz=sat2freq(sat,m->signal2,nav);
                 }
             }
+            if(!post && robust_gnss)robust_gnss[nv]=code?1:2;
             nv++;
         }
     }
@@ -3879,6 +3943,7 @@ extern void pppos(rtk_t* rtk, const obsd_t* obs, int n, const nav_t* nav)
     ppp_innovation_meta_t *row_meta=NULL,*trial_meta[MAX_ITER]={0};
     ppp_innovation_value_t *trial_value[MAX_ITER]={0};
     int trial_count[MAX_ITER]={0},capacity;
+    unsigned char *robust_gnss=NULL;
     unsigned char observed_slip[MAXOBS][NFREQ]={{0}},observed_uninitialized[MAXOBS][NFREQ]={{0}};
     unsigned int observed_slipc[MAXOBS][NFREQ]={{0}};
     int i, j, nv, info, nsmooth, warmup, diag_enabled = 0,
@@ -3888,7 +3953,7 @@ extern void pppos(rtk_t* rtk, const obsd_t* obs, int n, const nav_t* nav)
     memset(&evidence,0,sizeof(evidence));
     rtk->ppp_failure=0;
     if(!obs || !nav || n<=0 || n>MAXOBS || opt->nf<1 || opt->nf>NFREQ ||
-        rtk->nx!=pppnx(opt) || opt->ppp_baseline<0 || opt->ppp_baseline>PPP_BASELINE_A_CLEAN) {
+        rtk->nx!=pppnx(opt) || opt->ppp_baseline<0 || opt->ppp_baseline>MODE_C_NEW_ROBUST) {
         rtk->ppp_failure=FILTER_BAD_DIM;rtk->sol.stat=SOLQ_NONE;
         trace(2,"$PPP_FAILURE,reason=BAD_DIM,stage=PPP_ENTRY\n");return;
     }
@@ -4073,7 +4138,11 @@ extern void pppos(rtk_t* rtk, const obsd_t* obs, int n, const nav_t* nav)
     xp = mat(rtk->nx, 1); Pp = zeros(rtk->nx, rtk->nx);
     v = mat(nv, 1); H = mat(rtk->nx, nv); R = mat(nv, nv);
     capacity=nv;
-    if(ppp_innovation_log_enabled()) {
+    if(opt->ppp_baseline==MODE_C_NEW_ROBUST) {
+        robust_gnss=(unsigned char *)calloc(capacity,sizeof(*robust_gnss));
+        if(!robust_gnss){rtk->ppp_failure=FILTER_NO_MEMORY;goto cleanup;}
+    }
+    if(ppp_innovation_log_enabled() || opt->ppp_baseline==MODE_C_NEW_ROBUST) {
         row_meta=(ppp_innovation_meta_t *)calloc(capacity,sizeof(*row_meta));
         if(!row_meta)trace(2,"$INNOV_DIAG_FAILURE,reason=NO_MEMORY,estimator_unchanged=1\n");
     }
@@ -4087,14 +4156,21 @@ extern void pppos(rtk_t* rtk, const obsd_t* obs, int n, const nav_t* nav)
         matcpy(Pp, rtk->P, rtk->nx, rtk->nx);
 
         /* prefit residuals */
-        if ((nv = ppp_res(0, obs, n, rs, dts, var, svh, dr, exc, mexc, nav, xp, rtk, v, H, R, azel, NULL, product_use, row_meta))<=0) {
+        if(robust_gnss)memset(robust_gnss,0,capacity*sizeof(*robust_gnss));
+        if ((nv = ppp_res(0, obs, n, rs, dts, var, svh, dr, exc, mexc, nav, xp, rtk, v, H, R, azel, NULL, product_use, row_meta,robust_gnss))<=0) {
             if(!rtk->ppp_failure)rtk->ppp_failure=PPP_FAILURE_NO_OBS;
             trace(2, "%s ppp (%d) no valid obs data\n", str, i + 1);
             break;
         }
         /* Snapshot pre-fit diagnostics before filter mutates xp/Pp. Outputs
          * have independent ownership; allocation failure affects logs only. */
-        if(row_meta) {
+        if(robust_gnss && (info=apply_huber_robust_ppp(xp,Pp,v,H,R,
+            rtk->nx,nv,robust_gnss,row_meta,obs[0].time,i))) {
+            rtk->ppp_failure=info;
+            trace(2,"$PPP_HUBER_FAILURE,%s,reason=%s\n",str,filter_reason(info));
+            break;
+        }
+        if(row_meta && ppp_innovation_log_enabled()) {
             trial_meta[i]=(ppp_innovation_meta_t *)malloc(nv*sizeof(*row_meta));
             trial_value[i]=(ppp_innovation_value_t *)malloc(nv*sizeof(*trial_value[i]));
             if(trial_meta[i] && trial_value[i]) {
@@ -4122,7 +4198,7 @@ extern void pppos(rtk_t* rtk, const obsd_t* obs, int n, const nav_t* nav)
          * post_ok=0 时仅保留新增 mexc 屏蔽，然后下一轮从原预测状态重算。 */
         {
         int post_ok=ppp_res(i + 1, obs, n, rs, dts, var, svh, dr, exc, mexc, nav, xp, rtk, NULL, NULL, NULL, azel,
-            &diag, NULL, NULL);
+            &diag, NULL, NULL,NULL);
         /* First post-fit residuals include measurements later edited out.
          * Count their evidence once, never once per editing iteration. */
         /* 第一份验后证据只用于持续质量检测，包含后续可能被剔除的观测。
@@ -4182,7 +4258,7 @@ extern void pppos(rtk_t* rtk, const obsd_t* obs, int n, const nav_t* nav)
 
         if (opt->modear != ARMODE_OFF &&
             ppp_ar(rtk, obs, n, exc, nav, azel, xp, Pp) &&
-            ppp_res(9, obs, n, rs, dts, var, svh, dr, exc, mexc, nav, xp, rtk, NULL, NULL, NULL, azel, NULL, NULL, NULL)>0 &&
+            ppp_res(9, obs, n, rs, dts, var, svh, dr, exc, mexc, nav, xp, rtk, NULL, NULL, NULL, azel, NULL, NULL, NULL,NULL)>0 &&
             numeric_finite(xp,rtk->nx) && !numeric_covariance(Pp,rtk->nx)) {
 
             matcpy(rtk->xa, xp, rtk->nx, 1);
@@ -4260,6 +4336,7 @@ cleanup:
         free(trial_meta[j]);free(trial_value[j]);
     }
     free(row_meta);
+    free(robust_gnss);
     free(xprior);free(Pprior);
     free(rs); free(dts); free(var); free(azel);
     free(xp); free(Pp); free(v); free(H); free(R);

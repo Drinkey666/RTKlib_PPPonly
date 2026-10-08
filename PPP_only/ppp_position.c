@@ -251,7 +251,7 @@ extern int rtkpos(rtk_t* rtk, const obsd_t* obs, int n, const nav_t* nav)
     rtk->ppp_failure=0;
     if(!obs||!nav||n<=0||opt->mode<PMODE_PPP_KINEMA||opt->mode>PMODE_PPP_FIXED){rtk->sol.stat=SOLQ_NONE;return 0;}
     if(n>MAXOBS || opt->nf<1 || opt->nf>NFREQ || rtk->nx!=pppnx(opt) ||
-        opt->ppp_baseline<0 || opt->ppp_baseline>PPP_BASELINE_A_CLEAN) {
+        opt->ppp_baseline<0 || opt->ppp_baseline>MODE_C_NEW_ROBUST) {
         rtk->ppp_failure=FILTER_BAD_DIM;rtk->sol.stat=SOLQ_NONE;
         trace(2,"$PPP_FAILURE,reason=BAD_DIM,stage=ENTRY\n");return 0;
     }

@@ -1,4 +1,5 @@
 #include "ppp_innovation_diag.h"
+#include "smartphone_ppp_config.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -299,7 +300,9 @@ void ppp_innovation_log_trial(int trial,int baseline,int corrected,
         if(m->same_epoch_reentry)strcat(life,"|EDIT_RETRY");
         fprintf(innovation_csv,"%s,%d,%.9f,%lu,%.9f,%s,%d,%s,%s,%s,%d,%s,%s,%s,%s,%d,%.17g,%.17g,%d,%s,%.9f,%.9f,%d,%.17g,%.17g,%.17g,%.17g,%.17g,%.17g,%.17g,%.17g,%d,%s,%s,%d,%s,%d,%d,%d,%d,%d,%.17g,%.17g,%.17g,%.17g,%s,%d,%d,%d,%d,%lu,%.17g,%lu,%d,%d,%d,%d,%d,%d,%.17g,%.17g,%.17g,%.17g,%.17g,%.17g,%.17g,%.17g,%.17g,%s,%lu,%.17g,%lu,%d\n",
             time,week,tow,epoch_index,elapsed,elapsed>=0 && elapsed<30.0?"STARTUP":"STEADY",trial,
-            trial==0?"FIRST_PREFIT":"EDIT_RETRY",baseline==1?"A":"B",corrected?"CORRECTED":"LEGACY",
+            trial==0?"FIRST_PREFIT":"EDIT_RETRY",
+            baseline==PPP_BASELINE_A_CLEAN?"A":baseline==MODE_C_NEW_ROBUST?"C":"B",
+            corrected?"CORRECTED":"LEGACY",
             m->row_index,sid,sys,m->signal?code2obs(m->signal):"",m->signal2?code2obs(m->signal2):"",
             m->frequency_slot,m->frequency_hz,m->frequency2_hz,m->combined,type,m->elevation_deg,m->cn0_dbhz,
             m->source_obs_index,d->v,d->obs_var,m->r0,d->pred_var,d->obs_var,d->Sii,d->sqrt_Sii,d->u,
