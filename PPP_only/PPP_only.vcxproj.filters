@@ -22,6 +22,7 @@
     <ClInclude Include="..\src\gnss_adapter.h"><Filter>头文件</Filter></ClInclude>
     <ClInclude Include="..\src\gnss_signal_policy.h"><Filter>头文件</Filter></ClInclude>
     <ClInclude Include="..\src\gnss_raw.h"><Filter>头文件</Filter></ClInclude>
+    <ClInclude Include="..\src\ppp_innovation_diag.h" />
     <ClInclude Include="..\src\smartphone_ppp_config.h"><Filter>头文件</Filter></ClInclude>
     <ClInclude Include="..\src\rtklib.h">
       <Filter>头文件</Filter>
@@ -39,6 +40,7 @@
     
     
     
+    <ClCompile Include="..\src\ppp_innovation_diag.c" />
     <ClCompile Include="..\src\smartphone_ppp_config.c"><Filter>源文件</Filter></ClCompile>
     <ClCompile Include="..\src\ephemeris.c">
       <Filter>源文件</Filter>

@@ -158,13 +158,13 @@ static void residual_tests(rtk_t *rtk,nav_t *nav)
     fixture(rtk,&obs,1,1);rtk->opt.posopt[0]=rtk->opt.posopt[2]=0;
     initx(rtk,6378137,1,0);initx(rtk,1,1,1);initx(rtk,1,1,2);initx(rtk,2,1,IT(&rtk->opt));
     H=mat(rtk->nx,2);
-    nv=ppp_res(0,&obs,1,rs,dts,satvar,svh,dr,exc,mexc,nav,rtk->x,rtk,v,H,R,azel,NULL,NULL);
+    nv=ppp_res(0,&obs,1,rs,dts,satvar,svh,dr,exc,mexc,nav,rtk->x,rtk,v,H,R,azel,NULL,NULL,NULL);
     CHECK("synthetic finite PPP residual control",nv==2 && numeric_finite(v,2) && !numeric_covariance(R,2));
     dts[0]=NAN;
-    nv=ppp_res(1,&obs,1,rs,dts,satvar,svh,dr,exc,mexc,nav,rtk->x,rtk,NULL,NULL,NULL,azel,NULL,NULL);
+    nv=ppp_res(1,&obs,1,rs,dts,satvar,svh,dr,exc,mexc,nav,rtk->x,rtk,NULL,NULL,NULL,azel,NULL,NULL,NULL);
     CHECK("postfit NaN cannot pass reject gate",nv==FILTER_NAN_INPUT && rtk->ppp_failure==FILTER_NAN_INPUT);
     dts[0]=0;rtk->opt.err[1]=NAN;
-    nv=ppp_res(0,&obs,1,rs,dts,satvar,svh,dr,exc,mexc,nav,rtk->x,rtk,v,H,R,azel,NULL,NULL);
+    nv=ppp_res(0,&obs,1,rs,dts,satvar,svh,dr,exc,mexc,nav,rtk->x,rtk,v,H,R,azel,NULL,NULL,NULL);
     CHECK("PPP R0 NaN gets NAN_COV failure",nv==FILTER_NAN_COV && rtk->ppp_failure==FILTER_NAN_COV);
     free(H);rtkfree(rtk);
 }

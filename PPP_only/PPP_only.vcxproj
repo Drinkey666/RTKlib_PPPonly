@@ -141,6 +141,7 @@
     <ClInclude Include="..\src\gnss_adapter.h" />
     <ClInclude Include="..\src\gnss_signal_policy.h" />
     <ClInclude Include="..\src\gnss_raw.h" />
+    <ClInclude Include="..\src\ppp_innovation_diag.h" />
     <ClInclude Include="..\src\smartphone_ppp_config.h" />
     <ClInclude Include="..\src\rtklib.h" />
   </ItemGroup>
@@ -151,6 +152,7 @@
     <ClCompile Include="..\src\gnss_replay.c"><PreprocessorDefinitions>GNSS_REPLAY_EMBEDDED;%(PreprocessorDefinitions)</PreprocessorDefinitions></ClCompile>
     <ClCompile Include="..\src\gnss_adapter.c" />
     <ClCompile Include="..\src\gnss_signal_policy.c" />
+    <ClCompile Include="..\src\ppp_innovation_diag.c" />
     <ClCompile Include="..\src\smartphone_ppp_config.c" />
     
     

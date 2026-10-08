@@ -3,6 +3,7 @@
  */
 #include <stdarg.h>
 #include "rtklib.h"
+#include "ppp_innovation_diag.h"
 #include "smartphone_ppp_config.h"
 
 #define STD_PREC_VAR_THRESH 0
@@ -268,6 +269,7 @@ extern int rtkpos(rtk_t* rtk, const obsd_t* obs, int n, const nav_t* nav)
             return 0;
         }
     }
+    ppp_innovation_log_epoch(obs[0].time);
     startup_qc=startup_qc_enabled(opt);
     { /* Input bounds protection applies to every baseline. */
         n=sanitize_ppp_input(obs,n,clean_obs);obs=clean_obs;

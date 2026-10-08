@@ -3,7 +3,7 @@ $ErrorActionPreference = 'Stop'
 $taskRoot = Split-Path -Parent $PSScriptRoot
 Set-Location -LiteralPath $taskRoot
 New-Item -ItemType Directory -Force validation/phase1 | Out-Null
-$objects = 'rtkcmn','trace','preceph','ephemeris','ionex','sbas','sofa','tides','pntpos','ppp_ar','ppp_position','smartphone_ppp_config'
+$objects = 'rtkcmn','trace','preceph','ephemeris','ionex','sbas','sofa','tides','pntpos','ppp_ar','ppp_position','smartphone_ppp_config','ppp_innovation_diag'
 $taskArgs = '/nologo /utf-8 /O2 /Gy /MD /D_CRT_SECURE_NO_WARNINGS /DENAGLO /DWIN32 /DTRACE /Isrc /Fevalidation/phase1/phase1_tests.exe /Fovalidation/phase1/ tests/phase1_regression.c tests/filter_reference_97a57a9.c ' + (($objects | ForEach-Object { 'build/PPP_only/x64/Release/' + $_ + '.obj' }) -join ' ')
 Set-Content -LiteralPath validation/phase1/tests.rsp -Encoding ascii -Value $taskArgs
 $taskBuild = '@echo off' + "`r`n" + 'call "' + $DevCmd + '" -arch=x64 -host_arch=x64 >nul' + "`r`n" + 'cl @validation\phase1\tests.rsp /link /OPT:REF winmm.lib ws2_32.lib'

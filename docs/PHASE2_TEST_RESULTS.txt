@@ -1,0 +1,75 @@
+Phase 1 regressions on Phase 2 build
+PASS NaN innovation atomic failure
+PASS Inf innovation atomic failure
+PASS -Inf innovation atomic failure
+PASS finite scalar unchanged
+PASS finite matrix bitwise 97a57a9 equality
+PASS singular inverse preserves x/P
+PASS NaN covariance reason
+PASS negative variance rejected
+PASS Inf R rejected
+PASS NaN H rejected
+PASS finite input overflow rejected
+PASS posterior state overflow atomic failure
+PASS no active state explicit failure
+PASS asymmetric covariance rejected
+PASS Inf prior state rejected
+PASS continuous phase retains ambiguity
+PASS slip full P/L new arc
+PASS slip missing P invalidates old arc
+PASS pending survives flag clearing
+PASS later P/L reinitializes pending arc
+PASS elapsed long gap restarts arc
+PASS outage counter leaves pending arc
+PASS B LEGACY old arc behavior explicitly recoverable
+PASS B LEGACY GF deferral recoverable
+PASS GF missing phase history does not falsely defer
+PASS GF yields only to executed Doppler pair
+PASS phase history retained after startup
+PASS confirmed LLI without phase still invalidates
+PASS PPP raw NaN rejects without zero masking
+PASS confirmed slip survives rejected NaN packet
+PASS invalid prediction restores prior but not old slip arc
+PASS no-measurement failure keeps finite prediction
+PASS synthetic finite PPP residual control
+PASS postfit NaN cannot pass reject gate
+PASS PPP R0 NaN gets NAN_COV failure
+PASS A disables experimental features and corrects lifecycle
+PASS B retains legacy features
+PASS C cannot be accidentally enabled
+PASS D validation rejects unimplemented mode
+PASS R0 NaN is not masked by variance floor
+PASS elapsed arc gap has seconds independent of maxout epochs
+PASS A actual R ignores sticky CMC/persistent/current penalties
+PASS B actual R preserves history and separates epoch weight
+PASS reject rule stays separate from robust weight
+RESULT passed=44 failed=0
+
+Phase 2 regressions
+PASS full S matrix with cross covariance and off-diagonal R
+PASS S diagonal decomposition
+PASS standardization uses S not R
+PASS all inputs bitwise read-only
+PASS filter bitwise same with diagnostics
+PASS zero-state sentinel flagged but full P retained
+PASS NaN innovation diagnostic invalid
+PASS invalid diagnostic cannot bypass Phase 1 filter protection
+PASS Inf innovation diagnostic invalid
+PASS invalid diagnostic cannot bypass Phase 1 filter protection
+PASS NaN P invalidates diagnostics
+PASS Inf H invalid row isolated
+PASS NaN R invalid row
+PASS large raw startup innovation normal u
+PASS zero S explicit invalid
+PASS negative S explicit invalid
+PASS u overflow explicit invalid
+PASS invalid dimensions fail only diagnostic
+PASS phase/code exact source row mapping
+PASS editing row remaps without changing source identity
+PASS code row retains pending arc diagnostic
+PASS IFLC maps actual L1/L5 pair despite empty L2 code slot
+PASS diagnostic open failure stays disabled
+PASS diagnostic writer enable
+PASS PPP NaN still rejected with observer enabled
+PASS rtkpos Inf still rejected with observer enabled
+RESULT passed=26 failed=0

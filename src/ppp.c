@@ -61,6 +61,7 @@
 *                           use E1-E5b for Galileo iono-free LC
 *-----------------------------------------------------------------------------*/
 #include "rtklib.h"
+#include "ppp_innovation_diag.h"
 #include "smartphone_ppp_config.h"
 
 /* =============================================================================
@@ -2929,7 +2930,8 @@ static int ppp_res(int post, const obsd_t* obs, int n, const double* rs,
     const double* dts, const double* var_rs, const int* svh,
     const double* dr, int* exc, unsigned char* mexc, const nav_t* nav,
     const double* x, rtk_t* rtk, double* v, double* H, double* R,
-    double* azel, ppp_diag_epoch_t* diag, int *product_use)
+    double* azel, ppp_diag_epoch_t* diag, int *product_use,
+    ppp_innovation_meta_t *row_meta)
 {
     prcopt_t* opt = &rtk->opt;
     double y, r, cdtr, bias, rr[3], pos[3], e[3], dtdx[3], L[NFREQ], P[NFREQ], Lc, Pc;
@@ -3272,6 +3274,26 @@ static int ppp_res(int post, const obsd_t* obs, int n, const double* rs,
             /* vsat/lock/outc describe accepted carrier tracking only. A
              * code-only filter update is labelled separately below. */
             if (code == 0) rtk->ssat[sat - 1].vsat[frq] = 1;
+            if (!post && row_meta) {
+                ppp_innovation_meta_t *m=&row_meta[nv];
+                const ssat_t *ss=&rtk->ssat[sat-1];
+                memset(m,0,sizeof(*m));m->time=obs[i].time;
+                m->row_index=nv;m->source_obs_index=i;m->sat=sat;m->sys=sys;
+                m->frequency_slot=frq;m->mexc_index=midx;m->signal=obs[i].code[frq];
+                m->frequency_hz=sat2freq(sat,m->signal,nav);
+                m->elevation_deg=azel[1+i*2]*R2D;m->cn0_dbhz=snr_real;m->r0=R0;
+                m->measurement_class=code?INNOV_GNSS_CODE:INNOV_GNSS_PHASE;
+                m->slip_flag=(obs[i].LLI[frq]|ss->slip[frq])&LLI_SLIP;
+                m->arc_status=x[IB(sat,frq,opt)]==0.0?
+                    (ss->ppp_arc_pending[frq]?INNOV_ARC_PENDING:INNOV_ARC_UNINITIALIZED):
+                    ss->ppp_arc_reset[frq]?INNOV_ARC_REINITIALIZED:
+                    smartphone_ppp_policy(opt).corrected_lifecycle?INNOV_ARC_ACTIVE:INNOV_ARC_LEGACY_ACTIVE;
+                if(opt->ionoopt==IONOOPT_IFLC) {
+                    int f2=obs[i].code[1] && sat2freq(sat,obs[i].code[1],nav)>0 && (L[1]!=0.0 || P[1]!=0.0)?1:2;
+                    m->combined=1;m->signal2=obs[i].code[f2];
+                    m->frequency2_hz=sat2freq(sat,m->signal2,nav);
+                }
+            }
             nv++;
         }
     }
@@ -3358,6 +3380,13 @@ static int ppp_res(int post, const obsd_t* obs, int n, const double* rs,
             trace(4, "$IONCON,%s,sat=%d,Iest=%.4f,Iionex=%.4f,res=%.4f,sig=%.3f,effsig=%.3f,interval=%.0f\n",
                 str, sat, x[ii], ion_prior, v[nv], sigma_prior,
                 sqrt(var[nv]), interval);
+            if(row_meta) {
+                ppp_innovation_meta_t *m=&row_meta[nv];memset(m,0,sizeof(*m));
+                m->time=obs[i].time;m->row_index=nv;m->source_obs_index=-1;
+                m->sat=sat;m->sys=m->sat?satsys(m->sat,NULL):0;
+                m->frequency_slot=m->mexc_index=-1;m->r0=NAN;
+                m->measurement_class=INNOV_IONO_PRIOR;
+            }
             nv++;
             ionex_constraints++;
         }
@@ -3411,6 +3440,13 @@ static int ppp_res(int post, const obsd_t* obs, int n, const double* rs,
                 "sig=%.3f,interval=%.0f,effsig=%.3f,z=%.2f,pen=%.2f\n",
                 str, x[it] - zhd_vmf, zwd_vmf, v[nv], sig_zwd,
                 interval, sqrt(var[nv]), zc, penalty);
+            if(row_meta) {
+                ppp_innovation_meta_t *m=&row_meta[nv];memset(m,0,sizeof(*m));
+                m->time=obs[0].time;m->row_index=nv;m->source_obs_index=-1;
+                m->sat=0;m->sys=m->sat?satsys(m->sat,NULL):0;
+                m->frequency_slot=m->mexc_index=-1;m->r0=NAN;
+                m->measurement_class=INNOV_TROP_PRIOR;
+            }
             nv++;
             vmf3_zwd_constraints++;
         }
@@ -3813,6 +3849,11 @@ extern void pppos(rtk_t* rtk, const obsd_t* obs, int n, const nav_t* nav)
     char str[40];
     const char* diag_opt;
     ppp_diag_epoch_t diag, evidence;
+    ppp_innovation_meta_t *row_meta=NULL,*trial_meta[MAX_ITER]={0};
+    ppp_innovation_value_t *trial_value[MAX_ITER]={0};
+    int trial_count[MAX_ITER]={0},capacity;
+    unsigned char observed_slip[MAXOBS][NFREQ]={{0}},observed_uninitialized[MAXOBS][NFREQ]={{0}};
+    unsigned int observed_slipc[MAXOBS][NFREQ]={{0}};
     int i, j, nv, info, nsmooth, warmup, diag_enabled = 0,
         product_use[MAXSAT+3] = {0},
         svh[MAXOBS], exc[MAXOBS] = { 0 }, stat = SOLQ_SINGLE;
@@ -3897,6 +3938,13 @@ extern void pppos(rtk_t* rtk, const obsd_t* obs, int n, const nav_t* nav)
     matcpy(xprior,rtk->x,rtk->nx,1);matcpy(Pprior,rtk->P,rtk->nx,rtk->nx);
     zwd_prior=rtk->ppp_zwd_prior_time;
     for(j=0;j<MAXSAT;j++)ion_prior[j]=rtk->ssat[j].ppp_ion_prior_time;
+    if(ppp_innovation_log_enabled())for(i=0;i<n;i++)for(j=0;j<NFREQ;j++)
+        {
+        const ssat_t *ss=&rtk->ssat[obs[i].sat-1];
+        observed_slip[i][j]=(obs[i].LLI[j]|ss->slip[j])&LLI_SLIP;
+        observed_slipc[i][j]=ss->slipc[j];
+        if(j<NF(opt))observed_uninitialized[i][j]=rtk->x[IB(obs[i].sat,j,opt)]==0.0;
+    }
     udstate_ppp(rtk, obs, n, nav);
     info=!numeric_finite(rtk->x,rtk->nx)?FILTER_NAN_STATE:
         numeric_covariance(rtk->P,rtk->nx);
@@ -3995,6 +4043,11 @@ extern void pppos(rtk_t* rtk, const obsd_t* obs, int n, const nav_t* nav)
     nv = n * rtk->opt.nf * 2 + MAXSAT + 3;
     xp = mat(rtk->nx, 1); Pp = zeros(rtk->nx, rtk->nx);
     v = mat(nv, 1); H = mat(rtk->nx, nv); R = mat(nv, nv);
+    capacity=nv;
+    if(ppp_innovation_log_enabled()) {
+        row_meta=(ppp_innovation_meta_t *)calloc(capacity,sizeof(*row_meta));
+        if(!row_meta)trace(2,"$INNOV_DIAG_FAILURE,reason=NO_MEMORY,estimator_unchanged=1\n");
+    }
 
     /* 第 7 步：测量更新 + 单观测粗差编辑，最多 MAX_ITER 次。
      * mexc 保留本历元累计屏蔽项；x/P 每次却回到同一预测状态重新求解。
@@ -4005,10 +4058,28 @@ extern void pppos(rtk_t* rtk, const obsd_t* obs, int n, const nav_t* nav)
         matcpy(Pp, rtk->P, rtk->nx, rtk->nx);
 
         /* prefit residuals */
-        if ((nv = ppp_res(0, obs, n, rs, dts, var, svh, dr, exc, mexc, nav, xp, rtk, v, H, R, azel, NULL, product_use))<=0) {
+        if ((nv = ppp_res(0, obs, n, rs, dts, var, svh, dr, exc, mexc, nav, xp, rtk, v, H, R, azel, NULL, product_use, row_meta))<=0) {
             if(!rtk->ppp_failure)rtk->ppp_failure=PPP_FAILURE_NO_OBS;
             trace(2, "%s ppp (%d) no valid obs data\n", str, i + 1);
             break;
+        }
+        /* Snapshot pre-fit diagnostics before filter mutates xp/Pp. Outputs
+         * have independent ownership; allocation failure affects logs only. */
+        if(row_meta) {
+            trial_meta[i]=(ppp_innovation_meta_t *)malloc(nv*sizeof(*row_meta));
+            trial_value[i]=(ppp_innovation_value_t *)malloc(nv*sizeof(*trial_value[i]));
+            if(trial_meta[i] && trial_value[i]) {
+                for(j=0;j<nv;j++)if(row_meta[j].source_obs_index>=0) {
+                    int oi=row_meta[j].source_obs_index,f=row_meta[j].frequency_slot;
+                    const ssat_t *ss=&rtk->ssat[row_meta[j].sat-1];
+                    row_meta[j].slip_flag|=observed_slip[oi][f] || ss->slipc[f]>observed_slipc[oi][f];
+                    if(row_meta[j].arc_status==INNOV_ARC_ACTIVE && observed_uninitialized[oi][f])
+                        row_meta[j].arc_status=INNOV_ARC_REINITIALIZED;
+                }
+                memcpy(trial_meta[i],row_meta,nv*sizeof(*row_meta));
+                if(!ppp_innovation_diag(xp,Pp,v,H,R,rtk->nx,nv,trial_value[i],NULL))trial_count[i]=nv;
+            }
+            else trace(2,"$INNOV_DIAG_FAILURE,reason=NO_MEMORY,estimator_unchanged=1\n");
         }
         /* filter 在 rtkcmn 中完成 EKF 测量更新：根据 v/H/R 算增益，更新
          * xp/Pp。info!=0 为数值更新失败，不能把该试算状态提交成有效 PPP。 */
@@ -4021,7 +4092,7 @@ extern void pppos(rtk_t* rtk, const obsd_t* obs, int n, const nav_t* nav)
          * post_ok=0 时仅保留新增 mexc 屏蔽，然后下一轮从原预测状态重算。 */
         {
         int post_ok=ppp_res(i + 1, obs, n, rs, dts, var, svh, dr, exc, mexc, nav, xp, rtk, NULL, NULL, NULL, azel,
-            &diag, NULL);
+            &diag, NULL, NULL);
         /* First post-fit residuals include measurements later edited out.
          * Count their evidence once, never once per editing iteration. */
         /* 第一份验后证据只用于持续质量检测，包含后续可能被剔除的观测。
@@ -4081,7 +4152,7 @@ extern void pppos(rtk_t* rtk, const obsd_t* obs, int n, const nav_t* nav)
 
         if (opt->modear != ARMODE_OFF &&
             ppp_ar(rtk, obs, n, exc, nav, azel, xp, Pp) &&
-            ppp_res(9, obs, n, rs, dts, var, svh, dr, exc, mexc, nav, xp, rtk, NULL, NULL, NULL, azel, NULL, NULL)>0 &&
+            ppp_res(9, obs, n, rs, dts, var, svh, dr, exc, mexc, nav, xp, rtk, NULL, NULL, NULL, azel, NULL, NULL, NULL)>0 &&
             numeric_finite(xp,rtk->nx) && !numeric_covariance(Pp,rtk->nx)) {
 
             matcpy(rtk->xa, xp, rtk->nx, 1);
@@ -4151,6 +4222,14 @@ cleanup:
     trace(2,"$PPP_STATE,%s,Q=%d,failure=%d,x=%.12f,y=%.12f,z=%.12f,clock_m=%.12f,ZTD=%.12f\n",
         str,rtk->sol.stat,rtk->ppp_failure,rtk->x[0],rtk->x[1],rtk->x[2],
         rtk->x[IC(0,opt)],NT(opt)?rtk->x[IT(opt)]:0.0);
+    for(j=0;j<MAX_ITER;j++) {
+        if(trial_count[j])ppp_innovation_log_trial(j,opt->ppp_baseline,
+            smartphone_ppp_policy(opt).corrected_lifecycle,trial_meta[j],trial_value[j],
+            trial_count[j],mexc,MAXOBS*2*NFREQ,rtk->ppp_failure,rtk->sol.stat,
+            stat==SOLQ_PPP || stat==SOLQ_FIX);
+        free(trial_meta[j]);free(trial_value[j]);
+    }
+    free(row_meta);
     free(xprior);free(Pprior);
     free(rs); free(dts); free(var); free(azel);
     free(xp); free(Pp); free(v); free(H); free(R);

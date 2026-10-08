@@ -44,3 +44,9 @@ python tests/run_phase1_rinex.py
 ```
 
 实施、验证结果和未处理问题见 [Phase 1 报告](docs/PHASE1_REPORT.md)。
+
+## Phase 2：只读新息诊断
+
+以已验收 `ac99aba` 为参照，A/B 算法保持不变。设置 `RTK_PPP_INNOVATION_DIAG` 为独立 CSV 文件路径可开启诊断；未设置时关闭。每条有效 pre-fit 行记录实际 signal/source 映射、pred_var、Rii、Sii 和 u=v/sqrt(Sii)，虚拟大气约束单独分类。日志区分首次 pre-fit 与编辑重试，不按 u 改权或拒绝。
+
+实施、同输入回归、统计解释限制及后续学习不适用样本见 [Phase 2 报告](docs/PHASE2_REPORT.md)。测试：`tests/run_phase2_tests.ps1`；回放与离线统计：`tests/run_phase2_replay.py`、`tests/run_phase2_rinex.py`、`tests/summarize_phase2.py`。诊断需要独立输出路径；原始数据/运行日志保存在本地 validation，不进入仓库。

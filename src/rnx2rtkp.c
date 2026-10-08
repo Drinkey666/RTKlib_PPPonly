@@ -51,6 +51,7 @@
  *   本次中文注释仅用于说明现有行为，不改默认参数、不改解算逻辑。
  *==============================================================================*/
 #include <stdarg.h>
+#include "ppp_innovation_diag.h"
 #include "./rtklib.h"                  /* RTKLIB 公共类型、常量和解算接口。 */
 #include "smartphone_ppp_config.h"      /* PC/replay/JNI 共享默认配置接口。 */
 #include "pc_file_picker.h"             /* 文件列表、输入类型和中文文件窗口。 */
@@ -443,6 +444,9 @@ int main(int argc, char **argv) {
         }
     }
 
+    if(!ppp_innovation_log_open(getenv("RTK_PPP_INNOVATION_DIAG")))
+        fprintf(stderr,"INNOV_DIAG_OPEN_ERROR,estimator_unchanged=1\n");
+
     /* 第6部分：TXT分流，执行后return，不继续运行RINEX后处理。
      * 同一份prcopt直接传入回放器，不另设一套“结果更好看”的参数。
      * gui/live_view任一为真：坐标窗口的后台线程启动同一回放器，
@@ -462,6 +466,7 @@ int main(int argc, char **argv) {
             outfile,outfile,outfile,trace_file);
         else if(ret==3) printf("TXT replay stopped by user. Completed epochs saved to: %s\n",outfile);
         else fprintf(stderr,"TXT replay failed (status=%d).\n",ret);
+        ppp_innovation_log_close();
         return ret;
     }
     /* 第7部分：只有RINEX输入走到这里。trace是诊断日志，不是POS/stat。
@@ -482,7 +487,7 @@ int main(int argc, char **argv) {
     if(!pppvmf3load(files.path[PC_VMF_FIRST],files.path[PC_VMF_SECOND],
                     files.path[PC_OROGRAPHY])) {
         fprintf(stderr,"ERROR: selected VMF3 files could not be loaded; no PPP run started.\n");
-        traceclose();return 2;
+        traceclose();ppp_innovation_log_close();return 2;
     }
     /* 第8部分：记录原输出文件状态，再执行RINEX后处理。
      * 同名文件已有时，记录其修改时间以供后面检查结果新鲜度。
@@ -519,6 +524,7 @@ int main(int argc, char **argv) {
      * 常见返回值：0正常完成/取消文件选择，2输入或结果检查错误，
      * -1本入口部分配置错误，3仅表示TXT用户安全停止。 */
     traceclose();
+    ppp_innovation_log_close();
     if(gui) {printf("Press 'Enter' key to exit...\n");getchar();}
     return ret;
 }
