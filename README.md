@@ -62,3 +62,7 @@ python tests/run_phase1_rinex.py
 先按 [PPP运行准入](docs/PPP_OPERATIONAL_GATE.md) 核对当前PC非组合PPP，再用 `RTK_PPP_BASELINE=C` 显式启用一次验前Huber权重EKF。C沿用A的函数模型、固定Q/R0和正确弧段处理；每条真实GNSS码/相位行使用 `u=v/sqrt(hP^-h^T+R)`，当前历元按固定截止值1.5计算权重。默认仍为B，A/B结果不变；D和信号级eta未启用。实施及TXT/RINEX对照见 [普通抗差报告](docs/PPP_ROBUST_KALMAN_REPORT.md)。
 
 测试命令：`tests/run_robust_tests.ps1`；同输入回放：`tests/run_robust_replay.py`；诊断核对：`tests/run_robust_diag.py`。
+
+## 3/17 与 3/21 精度差异诊断
+
+同输入隔离回放定位到北斗 ANTEX 槽映射对历史精度回归的主要影响，并确认重复 IONEX 先验与位置/ZTD/码偏差耦合；尚未完成卫星天线与产品参考定义的通用模型修复。本轮仅修复 `satposs()` 缺精密钟差时的方差数组索引，两天坐标/状态不变。原因、实验边界、收敛曲线与验证见 [精度诊断报告](docs/PPP_ACCURACY_DIAGNOSIS.md)。

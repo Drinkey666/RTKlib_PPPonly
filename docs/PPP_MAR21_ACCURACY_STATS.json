@@ -1,0 +1,225 @@
+{
+  "dataset": null,
+  "reference_usage": "OFFLINE_ONLY_NOT_SOLVER_INPUT",
+  "truth_WGS84_lat_lon_ellipsoid_h": [
+    30.759991,
+    103.984034,
+    482.202
+  ],
+  "cases": {
+    "Current": {
+      "label": "Current",
+      "pos": "E:\\GNSS\\PPP_only\\validation\\user_error_diagnosis\\mar21_B_clockfix.pos",
+      "epochs": 600,
+      "valid_epochs": 600,
+      "excluded_Q0_epochs": 0,
+      "ppp_epochs": 599,
+      "Q_counts": {
+        "5": 1,
+        "6": 599
+      },
+      "first_time": "2026/03/21 02:11:12.001",
+      "last_time": "2026/03/21 02:21:11.000",
+      "final_valid_time": "2026/03/21 02:21:11.000",
+      "tail_valid_samples": 60,
+      "final_ENU_m": [
+        1.767445,
+        0.193696,
+        -6.0908
+      ],
+      "final_horizontal_m": 1.778027,
+      "final_3d_m": 6.345016,
+      "tail60_mean_ENU_m": [
+        1.762421,
+        0.185573,
+        -6.133759
+      ],
+      "tail60_rms_horizontal_m": 1.772169,
+      "tail60_rms_3d_m": 6.384667,
+      "final_formal_sigma_ENU_m": [
+        0.0608,
+        0.0606,
+        0.246
+      ],
+      "trace": "E:\\GNSS\\PPP_only\\validation\\user_error_diagnosis\\mar21_B_clockfix.trace",
+      "reject_events": 2,
+      "slip_checks": 45383,
+      "detected_slips": 121,
+      "arc_resets": 0,
+      "failure_events": 0,
+      "ztd": {
+        "epochs": 600,
+        "first_m": 2.317,
+        "final_m": 2.7664,
+        "final_sigma_m": 0.0825,
+        "tail60_mean_m": 2.764028
+      }
+    },
+    "Clean_PPP": {
+      "label": "Clean_PPP",
+      "pos": "E:\\GNSS\\PPP_only\\validation\\user_error_diagnosis\\mar21_A_clockfix.pos",
+      "epochs": 600,
+      "valid_epochs": 600,
+      "excluded_Q0_epochs": 0,
+      "ppp_epochs": 599,
+      "Q_counts": {
+        "5": 1,
+        "6": 599
+      },
+      "first_time": "2026/03/21 02:11:12.001",
+      "last_time": "2026/03/21 02:21:11.000",
+      "final_valid_time": "2026/03/21 02:21:11.000",
+      "tail_valid_samples": 60,
+      "final_ENU_m": [
+        2.079016,
+        0.049006,
+        -1.6492
+      ],
+      "final_horizontal_m": 2.079594,
+      "final_3d_m": 2.654161,
+      "tail60_mean_ENU_m": [
+        2.063996,
+        0.035748,
+        -1.625417
+      ],
+      "tail60_rms_horizontal_m": 2.064345,
+      "tail60_rms_3d_m": 2.627517,
+      "final_formal_sigma_ENU_m": [
+        0.1105,
+        0.0749,
+        0.2444
+      ],
+      "trace": "E:\\GNSS\\PPP_only\\validation\\user_error_diagnosis\\mar21_A_clockfix.trace",
+      "reject_events": 2,
+      "slip_checks": 45383,
+      "detected_slips": 261,
+      "arc_resets": 2963,
+      "failure_events": 0,
+      "ztd": {
+        "epochs": 600,
+        "first_m": 2.3262,
+        "final_m": 2.5622,
+        "final_sigma_m": 0.0685,
+        "tail60_mean_m": 2.54825
+      }
+    },
+    "Historical": {
+      "label": "Historical",
+      "pos": "E:\\RTKLIB_Data\\PPP_Result\\GNSS00GEO_R_20260800210_10M_01S_MO.pos",
+      "epochs": 600,
+      "valid_epochs": 600,
+      "excluded_Q0_epochs": 0,
+      "ppp_epochs": 589,
+      "Q_counts": {
+        "5": 11,
+        "6": 589
+      },
+      "first_time": "2026/03/21 02:11:12.001",
+      "last_time": "2026/03/21 02:21:11.000",
+      "final_valid_time": "2026/03/21 02:21:11.000",
+      "tail_valid_samples": 60,
+      "final_ENU_m": [
+        0.548168,
+        -0.392604,
+        -0.4263
+      ],
+      "final_horizontal_m": 0.67426,
+      "final_3d_m": 0.79772,
+      "tail60_mean_ENU_m": [
+        0.533635,
+        -0.402522,
+        -0.45344
+      ],
+      "tail60_rms_horizontal_m": 0.668498,
+      "tail60_rms_3d_m": 0.807967,
+      "final_formal_sigma_ENU_m": [
+        0.0629,
+        0.0639,
+        0.259
+      ],
+      "trace": null,
+      "reject_events": null,
+      "slip_checks": null,
+      "detected_slips": null,
+      "arc_resets": null,
+      "failure_events": null,
+      "ztd": {
+        "epochs": 600,
+        "first_m": 2.3118,
+        "final_m": 2.1157,
+        "final_sigma_m": 0.0866,
+        "tail60_mean_m": 2.113427
+      }
+    },
+    "Wrong_ANTEX_Trial": {
+      "label": "Wrong_ANTEX_Trial",
+      "pos": "E:\\GNSS\\PPP_only\\validation\\user_error_diagnosis\\mar21_B_old_antex.pos",
+      "epochs": 600,
+      "valid_epochs": 600,
+      "excluded_Q0_epochs": 0,
+      "ppp_epochs": 599,
+      "Q_counts": {
+        "5": 1,
+        "6": 599
+      },
+      "first_time": "2026/03/21 02:11:12.001",
+      "last_time": "2026/03/21 02:21:11.000",
+      "final_valid_time": "2026/03/21 02:21:11.000",
+      "tail_valid_samples": 60,
+      "final_ENU_m": [
+        0.57785,
+        -0.349363,
+        -0.6024
+      ],
+      "final_horizontal_m": 0.675252,
+      "final_3d_m": 0.904904,
+      "tail60_mean_ENU_m": [
+        0.565373,
+        -0.361862,
+        -0.621218
+      ],
+      "tail60_rms_horizontal_m": 0.67131,
+      "tail60_rms_3d_m": 0.91469,
+      "final_formal_sigma_ENU_m": [
+        0.0607,
+        0.0605,
+        0.2458
+      ],
+      "trace": "E:\\GNSS\\PPP_only\\validation\\user_error_diagnosis\\mar21_B_old_antex.trace",
+      "reject_events": 2,
+      "slip_checks": 45383,
+      "detected_slips": 121,
+      "arc_resets": 0,
+      "failure_events": 0,
+      "ztd": {
+        "epochs": 600,
+        "first_m": 2.312,
+        "final_m": 2.0766,
+        "final_sigma_m": 0.0824,
+        "tail60_mean_m": 2.077867
+      }
+    }
+  },
+  "paired": [
+    {
+      "left": "Historical",
+      "right": "Current",
+      "common_epochs": 600,
+      "common_valid_epochs": 600,
+      "Q_differences": 10,
+      "first_difference_time": "2026/03/21 02:11:12.001",
+      "max_3d_difference_m": 5.848011,
+      "final_3d_difference_m": 5.823826
+    },
+    {
+      "left": "Current",
+      "right": "Wrong_ANTEX_Trial",
+      "common_epochs": 600,
+      "common_valid_epochs": 600,
+      "Q_differences": 0,
+      "first_difference_time": "2026/03/21 02:11:12.001",
+      "max_3d_difference_m": 5.688376,
+      "final_3d_difference_m": 5.642037
+    }
+  ]
+}

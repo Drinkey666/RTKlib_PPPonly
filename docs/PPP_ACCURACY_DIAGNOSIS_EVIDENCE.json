@@ -1,0 +1,1046 @@
+{
+  "replays": [
+    {
+      "date": "mar21",
+      "mode": "A",
+      "before": "E:\\GNSS\\PPP_only\\validation\\user_error_diagnosis\\mar21_A.pos",
+      "after": "E:\\GNSS\\PPP_only\\validation\\user_error_diagnosis\\mar21_A_clockfix.pos",
+      "epoch_count": 600,
+      "numeric_rows_identical": true,
+      "state_bytes_identical": true,
+      "Q": {
+        "6": 599,
+        "5": 1
+      },
+      "before_events": {
+        "counts": {
+          "$SAT_CLOCK_FALLBACK,": 0,
+          "$PPP_FAILURE,": 0,
+          "$PPP_REJECT,": 2,
+          "$ARC_RESET,": 2963,
+          "detslp_gf: slip ": 47,
+          "$PRE_MW_SLIP,": 0,
+          "$PRE_DOP_SLIP,": 53,
+          "slip_checks": 45383,
+          "detected_slip_checks": 261
+        },
+        "configuration": "2 PPP_CONFIG,signature=89992829,baseline=A_CLEAN lifecycle=CORRECTED arc_gap_sec=30 eta=1 profile=pc-baseline-20260930-v1 NFREQ=4 MAXSAT=197 NSATGLO=27 NSATQZS=0 mode=8 soltype=0 nf=4 navsys=41 dynamics=0 sateph=1 iono=4 trop=3 ar=0 elmin=0.261799388 maxout=30 tide=1 err=100,0.008,0.012,0,1,52,0,0 eratio=100,70,60,100,0,0 prn=0.0001,0.001,0.0001,0.1,0.01,0 std=30,0.03,0.3 slip=0.2 dop=0 maxinno=5,30 niter=1 codesmooth=0 posopt=1,0,1,1,0,0 snrmask=0,0 pppopt=-GAP_RESION=120 -IONCONS=1.5 -IONCONSINT=1 -VMF3SIG=0.15 -VMF3ZWDSIG=0.30 -VMF3ZWDINT=300 -DOPPSM=0.90 -DOPPWARM=0 -PREPROC=1 -DOPPSLIP=0.50 -CODEJUMP=30 -MWTHRES=5 -BDSCODEVAR=1 -BDSCODEWARM=120 -WGTELCN=0 -PPPDIAG=1 -PPPQUAR=3,120 -GALE5BPHASE=0,entry=pc-postprocess"
+      },
+      "after_events": {
+        "counts": {
+          "$SAT_CLOCK_FALLBACK,": 0,
+          "$PPP_FAILURE,": 0,
+          "$PPP_REJECT,": 2,
+          "$ARC_RESET,": 2963,
+          "detslp_gf: slip ": 47,
+          "$PRE_MW_SLIP,": 0,
+          "$PRE_DOP_SLIP,": 53,
+          "slip_checks": 45383,
+          "detected_slip_checks": 261
+        },
+        "configuration": "2 PPP_CONFIG,signature=89992829,baseline=A_CLEAN lifecycle=CORRECTED arc_gap_sec=30 eta=1 profile=pc-baseline-20260930-v1 NFREQ=4 MAXSAT=197 NSATGLO=27 NSATQZS=0 mode=8 soltype=0 nf=4 navsys=41 dynamics=0 sateph=1 iono=4 trop=3 ar=0 elmin=0.261799388 maxout=30 tide=1 err=100,0.008,0.012,0,1,52,0,0 eratio=100,70,60,100,0,0 prn=0.0001,0.001,0.0001,0.1,0.01,0 std=30,0.03,0.3 slip=0.2 dop=0 maxinno=5,30 niter=1 codesmooth=0 posopt=1,0,1,1,0,0 snrmask=0,0 pppopt=-GAP_RESION=120 -IONCONS=1.5 -IONCONSINT=1 -VMF3SIG=0.15 -VMF3ZWDSIG=0.30 -VMF3ZWDINT=300 -DOPPSM=0.90 -DOPPWARM=0 -PREPROC=1 -DOPPSLIP=0.50 -CODEJUMP=30 -MWTHRES=5 -BDSCODEVAR=1 -BDSCODEWARM=120 -WGTELCN=0 -PPPDIAG=1 -PPPQUAR=3,120 -GALE5BPHASE=0,entry=pc-postprocess"
+      },
+      "events_identical": true,
+      "state_sha256": "db73f3dec19ca68783b7d958771f2031a837e013897cd19c49680a2b20ec4c34",
+      "metrics": {
+        "label": "A",
+        "pos": "E:\\GNSS\\PPP_only\\validation\\user_error_diagnosis\\mar21_A_clockfix.pos",
+        "epochs": 600,
+        "valid_epochs": 600,
+        "ppp_epochs": 599,
+        "Q_counts": {
+          "5": 1,
+          "6": 599
+        },
+        "first_time": "2026/03/21 02:11:12.001",
+        "last_time": "2026/03/21 02:21:11.000",
+        "final_ENU_m": [
+          2.079016,
+          0.049006,
+          -1.6492
+        ],
+        "final_horizontal_m": 2.079594,
+        "final_3d_m": 2.654161,
+        "tail60_mean_ENU_m": [
+          2.063996,
+          0.035748,
+          -1.625417
+        ],
+        "tail60_rms_horizontal_m": 2.064345,
+        "tail60_rms_3d_m": 2.627517,
+        "final_formal_sigma_ENU_m": [
+          0.1105,
+          0.0749,
+          0.2444
+        ],
+        "trace": "E:\\GNSS\\PPP_only\\validation\\user_error_diagnosis\\mar21_A_clockfix.trace",
+        "reject_events": 2,
+        "slip_checks": 45383,
+        "detected_slips": 261,
+        "arc_resets": 2963,
+        "failure_events": 0,
+        "ztd": {
+          "epochs": 600,
+          "first_m": 2.3262,
+          "final_m": 2.5622,
+          "final_sigma_m": 0.0685,
+          "tail60_mean_m": 2.54825
+        }
+      }
+    },
+    {
+      "date": "mar21",
+      "mode": "B",
+      "before": "E:\\GNSS\\PPP_only\\validation\\user_error_diagnosis\\mar21_B.pos",
+      "after": "E:\\GNSS\\PPP_only\\validation\\user_error_diagnosis\\mar21_B_clockfix.pos",
+      "epoch_count": 600,
+      "numeric_rows_identical": true,
+      "state_bytes_identical": true,
+      "Q": {
+        "6": 599,
+        "5": 1
+      },
+      "before_events": {
+        "counts": {
+          "$SAT_CLOCK_FALLBACK,": 0,
+          "$PPP_FAILURE,": 0,
+          "$PPP_REJECT,": 2,
+          "$ARC_RESET,": 0,
+          "detslp_gf: slip ": 0,
+          "$PRE_MW_SLIP,": 0,
+          "$PRE_DOP_SLIP,": 0,
+          "slip_checks": 45383,
+          "detected_slip_checks": 121
+        },
+        "configuration": "2 PPP_CONFIG,signature=4f10f148,baseline=B_LEGACY lifecycle=LEGACY arc_gap_sec=30 eta=1 profile=pc-baseline-20260930-v1 NFREQ=4 MAXSAT=197 NSATGLO=27 NSATQZS=0 mode=8 soltype=0 nf=4 navsys=41 dynamics=0 sateph=1 iono=4 trop=3 ar=0 elmin=0.261799388 maxout=30 tide=1 err=100,0.008,0.012,0,1,52,0,0 eratio=100,70,60,100,0,0 prn=0.0001,0.001,0.0001,0.1,0.01,0 std=30,0.03,0.3 slip=0.2 dop=0 maxinno=5,30 niter=1 codesmooth=0 posopt=1,0,1,1,0,0 snrmask=0,0 pppopt=-GAP_RESION=120 -IONCONS=1.5 -IONCONSINT=1 -VMF3SIG=0.15 -VMF3ZWDSIG=0.30 -VMF3ZWDINT=300 -DOPPSM=0.90 -DOPPWARM=0 -PREPROC=1 -DOPPSLIP=0.50 -CODEJUMP=30 -MWTHRES=5 -BDSCODEVAR=1 -BDSCODEWARM=120 -WGTELCN=0 -PPPDIAG=1 -PPPQUAR=3,120 -GALE5BPHASE=0,entry=pc-postprocess"
+      },
+      "after_events": {
+        "counts": {
+          "$SAT_CLOCK_FALLBACK,": 0,
+          "$PPP_FAILURE,": 0,
+          "$PPP_REJECT,": 2,
+          "$ARC_RESET,": 0,
+          "detslp_gf: slip ": 0,
+          "$PRE_MW_SLIP,": 0,
+          "$PRE_DOP_SLIP,": 0,
+          "slip_checks": 45383,
+          "detected_slip_checks": 121
+        },
+        "configuration": "2 PPP_CONFIG,signature=4f10f148,baseline=B_LEGACY lifecycle=LEGACY arc_gap_sec=30 eta=1 profile=pc-baseline-20260930-v1 NFREQ=4 MAXSAT=197 NSATGLO=27 NSATQZS=0 mode=8 soltype=0 nf=4 navsys=41 dynamics=0 sateph=1 iono=4 trop=3 ar=0 elmin=0.261799388 maxout=30 tide=1 err=100,0.008,0.012,0,1,52,0,0 eratio=100,70,60,100,0,0 prn=0.0001,0.001,0.0001,0.1,0.01,0 std=30,0.03,0.3 slip=0.2 dop=0 maxinno=5,30 niter=1 codesmooth=0 posopt=1,0,1,1,0,0 snrmask=0,0 pppopt=-GAP_RESION=120 -IONCONS=1.5 -IONCONSINT=1 -VMF3SIG=0.15 -VMF3ZWDSIG=0.30 -VMF3ZWDINT=300 -DOPPSM=0.90 -DOPPWARM=0 -PREPROC=1 -DOPPSLIP=0.50 -CODEJUMP=30 -MWTHRES=5 -BDSCODEVAR=1 -BDSCODEWARM=120 -WGTELCN=0 -PPPDIAG=1 -PPPQUAR=3,120 -GALE5BPHASE=0,entry=pc-postprocess"
+      },
+      "events_identical": true,
+      "state_sha256": "598f0645d54798720dd94362d20eb76847b4b3a3903fa80474aae68fe60a28f5",
+      "metrics": {
+        "label": "B",
+        "pos": "E:\\GNSS\\PPP_only\\validation\\user_error_diagnosis\\mar21_B_clockfix.pos",
+        "epochs": 600,
+        "valid_epochs": 600,
+        "ppp_epochs": 599,
+        "Q_counts": {
+          "5": 1,
+          "6": 599
+        },
+        "first_time": "2026/03/21 02:11:12.001",
+        "last_time": "2026/03/21 02:21:11.000",
+        "final_ENU_m": [
+          1.767445,
+          0.193696,
+          -6.0908
+        ],
+        "final_horizontal_m": 1.778027,
+        "final_3d_m": 6.345016,
+        "tail60_mean_ENU_m": [
+          1.762421,
+          0.185573,
+          -6.133759
+        ],
+        "tail60_rms_horizontal_m": 1.772169,
+        "tail60_rms_3d_m": 6.384667,
+        "final_formal_sigma_ENU_m": [
+          0.0608,
+          0.0606,
+          0.246
+        ],
+        "trace": "E:\\GNSS\\PPP_only\\validation\\user_error_diagnosis\\mar21_B_clockfix.trace",
+        "reject_events": 2,
+        "slip_checks": 45383,
+        "detected_slips": 121,
+        "arc_resets": 0,
+        "failure_events": 0,
+        "ztd": {
+          "epochs": 600,
+          "first_m": 2.317,
+          "final_m": 2.7664,
+          "final_sigma_m": 0.0825,
+          "tail60_mean_m": 2.764028
+        }
+      }
+    },
+    {
+      "date": "mar17",
+      "mode": "A",
+      "before": "E:\\GNSS\\PPP_only\\validation\\robust\\RINEX_A_new.pos",
+      "after": "E:\\GNSS\\PPP_only\\validation\\user_error_diagnosis\\mar17_A_clockfix.pos",
+      "epoch_count": 1200,
+      "numeric_rows_identical": true,
+      "state_bytes_identical": true,
+      "Q": {
+        "6": 1197,
+        "5": 3
+      },
+      "before_events": {
+        "counts": {
+          "$SAT_CLOCK_FALLBACK,": 0,
+          "$PPP_FAILURE,": 0,
+          "$PPP_REJECT,": 5,
+          "$ARC_RESET,": 9119,
+          "detslp_gf: slip ": 57,
+          "$PRE_MW_SLIP,": 26,
+          "$PRE_DOP_SLIP,": 53,
+          "slip_checks": 94397,
+          "detected_slip_checks": 717
+        },
+        "configuration": "2 PPP_CONFIG,signature=89992829,baseline=A_CLEAN lifecycle=CORRECTED arc_gap_sec=30 eta=1 profile=pc-baseline-20260930-v1 NFREQ=4 MAXSAT=197 NSATGLO=27 NSATQZS=0 mode=8 soltype=0 nf=4 navsys=41 dynamics=0 sateph=1 iono=4 trop=3 ar=0 elmin=0.261799388 maxout=30 tide=1 err=100,0.008,0.012,0,1,52,0,0 eratio=100,70,60,100,0,0 prn=0.0001,0.001,0.0001,0.1,0.01,0 std=30,0.03,0.3 slip=0.2 dop=0 maxinno=5,30 niter=1 codesmooth=0 posopt=1,0,1,1,0,0 snrmask=0,0 pppopt=-GAP_RESION=120 -IONCONS=1.5 -IONCONSINT=1 -VMF3SIG=0.15 -VMF3ZWDSIG=0.30 -VMF3ZWDINT=300 -DOPPSM=0.90 -DOPPWARM=0 -PREPROC=1 -DOPPSLIP=0.50 -CODEJUMP=30 -MWTHRES=5 -BDSCODEVAR=1 -BDSCODEWARM=120 -WGTELCN=0 -PPPDIAG=1 -PPPQUAR=3,120 -GALE5BPHASE=0,entry=pc-postprocess"
+      },
+      "after_events": {
+        "counts": {
+          "$SAT_CLOCK_FALLBACK,": 0,
+          "$PPP_FAILURE,": 0,
+          "$PPP_REJECT,": 5,
+          "$ARC_RESET,": 9119,
+          "detslp_gf: slip ": 57,
+          "$PRE_MW_SLIP,": 26,
+          "$PRE_DOP_SLIP,": 53,
+          "slip_checks": 94397,
+          "detected_slip_checks": 717
+        },
+        "configuration": "2 PPP_CONFIG,signature=89992829,baseline=A_CLEAN lifecycle=CORRECTED arc_gap_sec=30 eta=1 profile=pc-baseline-20260930-v1 NFREQ=4 MAXSAT=197 NSATGLO=27 NSATQZS=0 mode=8 soltype=0 nf=4 navsys=41 dynamics=0 sateph=1 iono=4 trop=3 ar=0 elmin=0.261799388 maxout=30 tide=1 err=100,0.008,0.012,0,1,52,0,0 eratio=100,70,60,100,0,0 prn=0.0001,0.001,0.0001,0.1,0.01,0 std=30,0.03,0.3 slip=0.2 dop=0 maxinno=5,30 niter=1 codesmooth=0 posopt=1,0,1,1,0,0 snrmask=0,0 pppopt=-GAP_RESION=120 -IONCONS=1.5 -IONCONSINT=1 -VMF3SIG=0.15 -VMF3ZWDSIG=0.30 -VMF3ZWDINT=300 -DOPPSM=0.90 -DOPPWARM=0 -PREPROC=1 -DOPPSLIP=0.50 -CODEJUMP=30 -MWTHRES=5 -BDSCODEVAR=1 -BDSCODEWARM=120 -WGTELCN=0 -PPPDIAG=1 -PPPQUAR=3,120 -GALE5BPHASE=0,entry=pc-postprocess"
+      },
+      "events_identical": true,
+      "state_sha256": "46873b77625517a71011eb97368b62ecf4b5068521ad216a80289be2ea58ab0d",
+      "metrics": {
+        "label": "A",
+        "pos": "E:\\GNSS\\PPP_only\\validation\\user_error_diagnosis\\mar17_A_clockfix.pos",
+        "epochs": 1200,
+        "valid_epochs": 1200,
+        "ppp_epochs": 1197,
+        "Q_counts": {
+          "5": 3,
+          "6": 1197
+        },
+        "first_time": "2026/03/17 05:33:34.001",
+        "last_time": "2026/03/17 05:53:33.001",
+        "final_ENU_m": [
+          1.571161,
+          -0.35912,
+          0.5221
+        ],
+        "final_horizontal_m": 1.61168,
+        "final_3d_m": 1.694137,
+        "tail60_mean_ENU_m": [
+          1.593962,
+          -0.355633,
+          0.510148
+        ],
+        "tail60_rms_horizontal_m": 1.633201,
+        "tail60_rms_3d_m": 1.711029,
+        "final_formal_sigma_ENU_m": [
+          0.0705,
+          0.0378,
+          0.1406
+        ],
+        "trace": "E:\\GNSS\\PPP_only\\validation\\user_error_diagnosis\\mar17_A_clockfix.trace",
+        "reject_events": 5,
+        "slip_checks": 94397,
+        "detected_slips": 717,
+        "arc_resets": 9119,
+        "failure_events": 0,
+        "ztd": {
+          "epochs": 1200,
+          "first_m": 2.3209,
+          "final_m": 2.2242,
+          "final_sigma_m": 0.0363,
+          "tail60_mean_m": 2.226962
+        }
+      }
+    },
+    {
+      "date": "mar17",
+      "mode": "B",
+      "before": "E:\\GNSS\\PPP_only\\validation\\robust\\RINEX_B_new.pos",
+      "after": "E:\\GNSS\\PPP_only\\validation\\user_error_diagnosis\\mar17_B_clockfix.pos",
+      "epoch_count": 1200,
+      "numeric_rows_identical": true,
+      "state_bytes_identical": true,
+      "Q": {
+        "6": 1197,
+        "5": 3
+      },
+      "before_events": {
+        "counts": {
+          "$SAT_CLOCK_FALLBACK,": 0,
+          "$PPP_FAILURE,": 0,
+          "$PPP_REJECT,": 22,
+          "$ARC_RESET,": 0,
+          "detslp_gf: slip ": 0,
+          "$PRE_MW_SLIP,": 0,
+          "$PRE_DOP_SLIP,": 1,
+          "slip_checks": 94397,
+          "detected_slip_checks": 502
+        },
+        "configuration": "2 PPP_CONFIG,signature=4f10f148,baseline=B_LEGACY lifecycle=LEGACY arc_gap_sec=30 eta=1 profile=pc-baseline-20260930-v1 NFREQ=4 MAXSAT=197 NSATGLO=27 NSATQZS=0 mode=8 soltype=0 nf=4 navsys=41 dynamics=0 sateph=1 iono=4 trop=3 ar=0 elmin=0.261799388 maxout=30 tide=1 err=100,0.008,0.012,0,1,52,0,0 eratio=100,70,60,100,0,0 prn=0.0001,0.001,0.0001,0.1,0.01,0 std=30,0.03,0.3 slip=0.2 dop=0 maxinno=5,30 niter=1 codesmooth=0 posopt=1,0,1,1,0,0 snrmask=0,0 pppopt=-GAP_RESION=120 -IONCONS=1.5 -IONCONSINT=1 -VMF3SIG=0.15 -VMF3ZWDSIG=0.30 -VMF3ZWDINT=300 -DOPPSM=0.90 -DOPPWARM=0 -PREPROC=1 -DOPPSLIP=0.50 -CODEJUMP=30 -MWTHRES=5 -BDSCODEVAR=1 -BDSCODEWARM=120 -WGTELCN=0 -PPPDIAG=1 -PPPQUAR=3,120 -GALE5BPHASE=0,entry=pc-postprocess"
+      },
+      "after_events": {
+        "counts": {
+          "$SAT_CLOCK_FALLBACK,": 0,
+          "$PPP_FAILURE,": 0,
+          "$PPP_REJECT,": 22,
+          "$ARC_RESET,": 0,
+          "detslp_gf: slip ": 0,
+          "$PRE_MW_SLIP,": 0,
+          "$PRE_DOP_SLIP,": 1,
+          "slip_checks": 94397,
+          "detected_slip_checks": 502
+        },
+        "configuration": "2 PPP_CONFIG,signature=4f10f148,baseline=B_LEGACY lifecycle=LEGACY arc_gap_sec=30 eta=1 profile=pc-baseline-20260930-v1 NFREQ=4 MAXSAT=197 NSATGLO=27 NSATQZS=0 mode=8 soltype=0 nf=4 navsys=41 dynamics=0 sateph=1 iono=4 trop=3 ar=0 elmin=0.261799388 maxout=30 tide=1 err=100,0.008,0.012,0,1,52,0,0 eratio=100,70,60,100,0,0 prn=0.0001,0.001,0.0001,0.1,0.01,0 std=30,0.03,0.3 slip=0.2 dop=0 maxinno=5,30 niter=1 codesmooth=0 posopt=1,0,1,1,0,0 snrmask=0,0 pppopt=-GAP_RESION=120 -IONCONS=1.5 -IONCONSINT=1 -VMF3SIG=0.15 -VMF3ZWDSIG=0.30 -VMF3ZWDINT=300 -DOPPSM=0.90 -DOPPWARM=0 -PREPROC=1 -DOPPSLIP=0.50 -CODEJUMP=30 -MWTHRES=5 -BDSCODEVAR=1 -BDSCODEWARM=120 -WGTELCN=0 -PPPDIAG=1 -PPPQUAR=3,120 -GALE5BPHASE=0,entry=pc-postprocess"
+      },
+      "events_identical": true,
+      "state_sha256": "ef90fa4922bd70672611e7c858150e4c4472d4fa0f4c68d67ca740fbf89a6c54",
+      "metrics": {
+        "label": "B",
+        "pos": "E:\\GNSS\\PPP_only\\validation\\user_error_diagnosis\\mar17_B_clockfix.pos",
+        "epochs": 1200,
+        "valid_epochs": 1200,
+        "ppp_epochs": 1197,
+        "Q_counts": {
+          "5": 3,
+          "6": 1197
+        },
+        "first_time": "2026/03/17 05:33:34.001",
+        "last_time": "2026/03/17 05:53:33.001",
+        "final_ENU_m": [
+          0.349583,
+          -0.626548,
+          0.0808
+        ],
+        "final_horizontal_m": 0.717475,
+        "final_3d_m": 0.72201,
+        "tail60_mean_ENU_m": [
+          0.348844,
+          -0.626439,
+          0.040848
+        ],
+        "tail60_rms_horizontal_m": 0.71703,
+        "tail60_rms_3d_m": 0.718628,
+        "final_formal_sigma_ENU_m": [
+          0.0497,
+          0.0385,
+          0.162
+        ],
+        "trace": "E:\\GNSS\\PPP_only\\validation\\user_error_diagnosis\\mar17_B_clockfix.trace",
+        "reject_events": 22,
+        "slip_checks": 94397,
+        "detected_slips": 502,
+        "arc_resets": 0,
+        "failure_events": 0,
+        "ztd": {
+          "epochs": 1200,
+          "first_m": 2.3084,
+          "final_m": 2.9539,
+          "final_sigma_m": 0.0508,
+          "tail60_mean_m": 2.968128
+        }
+      }
+    }
+  ],
+  "rinex_order_test": {
+    "observation_types_changed_only": true,
+    "numeric_rows_identical": true,
+    "state_bytes_identical": true
+  },
+  "inputs": {
+    "mar21": [
+      {
+        "kind": "OBS",
+        "path": "E:\\RTKLIB_Data\\OBS\\GNSS00GEO_R_20260800210_10M_01S_MO.rnx",
+        "sha256": "5a4d2c48a9d0a05348729ed40007d65a4a81cf77b915a5e73318b24b8feee91a"
+      },
+      {
+        "kind": "NAV",
+        "path": "E:\\RTKLIB_Data\\NAV\\BRDC00IGS_R_20260800000_01D_MN.rnx",
+        "sha256": "bc551fb45cd4ea9e0a8e7e471c494b386627a1a57693fea1c271246e63017ffd"
+      },
+      {
+        "kind": "SP3",
+        "path": "E:\\RTKLIB_Data\\SP3\\WUM0MGXRTS_20260800000_01D_05M_ORB.SP3",
+        "sha256": "5762add78efb7edd38bb55ab94c9ca42037365a967bac724a19bf5cfdceb2e94"
+      },
+      {
+        "kind": "CLK",
+        "path": "E:\\RTKLIB_Data\\CLK\\WUM0MGXRTS_20260800000_01D_05S_CLK.CLK",
+        "sha256": "a294a69823f752771eed9849ff28192050cfbb0f42974a520eca1cde33b58b8d"
+      },
+      {
+        "kind": "BIA",
+        "path": "E:\\RTKLIB_Data\\BIA\\WUM0MGXRTS_20260800000_01D_05M_OSB.BIA",
+        "sha256": "74bc88cdcc1c9b48aa8feb8886f4af3647c0244cc6928751bd6bb5bb76ea2a74"
+      },
+      {
+        "kind": "IONEX",
+        "path": "E:\\RTKLIB_Data\\IONEX\\COD0OPSPRD_20260800000_01D_01H_GIM.INX",
+        "sha256": "30b778d68ac9125ae6e1713a5d319785a06415b9818f955d6173a17beb73d4aa"
+      },
+      {
+        "kind": "VMF_FIRST",
+        "path": "E:\\RTKLIB_Data\\tro\\VMF3_20260321.H00",
+        "sha256": "4b4a42d607920d3dc8cdfcddbe9f880a799ea2aa652591cbded0a0693503c991"
+      },
+      {
+        "kind": "VMF_SECOND",
+        "path": "E:\\RTKLIB_Data\\tro\\VMF3_20260321.H06",
+        "sha256": "0dbcdeca32132d46205441e2c406b416a9b7e02a72f61509465c21715f598ff1"
+      },
+      {
+        "kind": "OROGRAPHY",
+        "path": "E:\\RTKLIB_Data\\tro\\orography_ell_5x5",
+        "sha256": "2da6f83db2f5ac382b6c20d6ce3fc824aa6a5b573c16ba5a7c5737ca54c271ed"
+      },
+      {
+        "kind": "ATX",
+        "path": "E:\\RTKLIB_Data\\Tables\\igs20.atx",
+        "sha256": "fd9955ae17d759291e62e144db8e47a3d4f38bb1d8aae7a8e093fbc6cad0b79f"
+      }
+    ],
+    "mar17": [
+      {
+        "kind": "OBS",
+        "path": "E:\\RTKLIB_Data\\OBS\\K80-GNSS00GEO_R_20260760533_20M_01S_MO.rnx",
+        "sha256": "c79a33fedfda7c77de63ef6de68c27f8685b38776ca8a3e4a3345be7c02f2b3d"
+      },
+      {
+        "kind": "NAV",
+        "path": "E:\\RTKLIB_Data\\NAV\\BRDC00IGS_R_20260760000_01D_MN.rnx",
+        "sha256": "3a67c0c5e5a48d961febd4650ddf3f60075945445c877e96e723fb6796977514"
+      },
+      {
+        "kind": "SP3",
+        "path": "E:\\RTKLIB_Data\\SP3\\WUM0MGXFIN_20260760000_01D_05M_ORB.SP3",
+        "sha256": "7174fb104e4c061a3fa823e82327923d47e72100b484f89fbfca4fb39bed8d9d"
+      },
+      {
+        "kind": "CLK",
+        "path": "E:\\RTKLIB_Data\\CLK\\WUM0MGXFIN_20260760000_01D_30S_CLK.CLK",
+        "sha256": "498a2f50969fbee832aa528cd5a252080f0a390d8cbbd8410766e120a9e57e30"
+      },
+      {
+        "kind": "BIA",
+        "path": "E:\\RTKLIB_Data\\BIA\\WUM0MGXFIN_20260760000_01D_01D_OSB.BIA",
+        "sha256": "246e1428dd2a6c8a1f54529f4abe76ff501c0778fab78160df8ebe85e7a2c5e9"
+      },
+      {
+        "kind": "IONEX",
+        "path": "E:\\RTKLIB_Data\\IONEX\\COD0OPSFIN_20260760000_01D_01H_GIM.INX",
+        "sha256": "62b636dc04028ce7e9514bdfc4f5c468570cd1d9bf1f88182cbd558f863a5d49"
+      },
+      {
+        "kind": "VMF_FIRST",
+        "path": "E:\\RTKLIB_Data\\tro\\VMF3_20260317.H00",
+        "sha256": "5b019594e800c3d2331b972c26ccece898d5a25e707d1df553566546b764e365"
+      },
+      {
+        "kind": "VMF_SECOND",
+        "path": "E:\\RTKLIB_Data\\tro\\VMF3_20260317.H06",
+        "sha256": "6cd8892ddf545510f05490c67777159d16611dc8fe93726b921c9de08c2a66f7"
+      },
+      {
+        "kind": "OROGRAPHY",
+        "path": "E:\\RTKLIB_Data\\tro\\orography_ell_5x5",
+        "sha256": "2da6f83db2f5ac382b6c20d6ce3fc824aa6a5b573c16ba5a7c5737ca54c271ed"
+      },
+      {
+        "kind": "ATX",
+        "path": "E:\\RTKLIB_Data\\Tables\\igs20.atx",
+        "sha256": "fd9955ae17d759291e62e144db8e47a3d4f38bb1d8aae7a8e093fbc6cad0b79f"
+      }
+    ]
+  },
+  "before_exe_sha256": "1211a4f33e50a2554d46dbf0c8cf7446b26d22bc11a91a04c96553d5290651b3",
+  "after_exe_sha256": "22c3827d10cd8c316b989a5015eb1dbd2ed0a25e7c694969d6301aa830f39889",
+  "user_result_matches_original_B": true,
+  "source_file_sha256": "8315cf1e38f943f68732db996d5dd08936855616cec247fca7a60f8e3384dd6b",
+  "tests": {
+    "clock_fallback_patched": "11/11",
+    "clock_fallback_legacy": "7/11; 4 failures detect bug",
+    "phase1": "44/44",
+    "offline_accuracy_audit": "3/3"
+  },
+  "antex_isolation": {
+    "mar21_current_final_height": 476.1112,
+    "mar21_old_mapping_trial_final_height": 481.5996,
+    "mar21_historical_final_height": 481.7757,
+    "mar21_up_shift_m": 5.4884,
+    "fraction_of_historical_up_difference": 0.968911642686914,
+    "mar17_height_shift_m": 0.17380000000002838,
+    "mar17_reference": "PROVISIONAL_FROM_PRIOR_REPORT_NOT_RECONFIRMED_BY_USER",
+    "mar17": {
+      "current": {
+        "label": "current",
+        "pos": "E:\\GNSS\\PPP_only\\validation\\user_error_diagnosis\\mar17_B_clockfix.pos",
+        "epochs": 1200,
+        "valid_epochs": 1200,
+        "ppp_epochs": 1197,
+        "Q_counts": {
+          "5": 3,
+          "6": 1197
+        },
+        "first_time": "2026/03/17 05:33:34.001",
+        "last_time": "2026/03/17 05:53:33.001",
+        "final_ENU_m": [
+          0.349583,
+          -0.626548,
+          0.0808
+        ],
+        "final_horizontal_m": 0.717475,
+        "final_3d_m": 0.72201,
+        "tail60_mean_ENU_m": [
+          0.348844,
+          -0.626439,
+          0.040848
+        ],
+        "tail60_rms_horizontal_m": 0.71703,
+        "tail60_rms_3d_m": 0.718628,
+        "final_formal_sigma_ENU_m": [
+          0.0497,
+          0.0385,
+          0.162
+        ],
+        "trace": "E:\\GNSS\\PPP_only\\validation\\user_error_diagnosis\\mar17_B_clockfix.trace",
+        "reject_events": 22,
+        "slip_checks": 94397,
+        "detected_slips": 502,
+        "arc_resets": 0,
+        "failure_events": 0,
+        "ztd": {
+          "epochs": 1200,
+          "first_m": 2.3084,
+          "final_m": 2.9539,
+          "final_sigma_m": 0.0508,
+          "tail60_mean_m": 2.968128
+        }
+      },
+      "wrong_ANTEX_trial": {
+        "label": "wrong_ANTEX_trial",
+        "pos": "E:\\GNSS\\PPP_only\\validation\\user_error_diagnosis\\mar17_B_old_antex.pos",
+        "epochs": 1200,
+        "valid_epochs": 1200,
+        "ppp_epochs": 1197,
+        "Q_counts": {
+          "5": 3,
+          "6": 1197
+        },
+        "first_time": "2026/03/17 05:33:34.001",
+        "last_time": "2026/03/17 05:53:33.001",
+        "final_ENU_m": [
+          0.456919,
+          -0.771349,
+          0.2546
+        ],
+        "final_horizontal_m": 0.896523,
+        "final_3d_m": 0.931974,
+        "tail60_mean_ENU_m": [
+          0.456311,
+          -0.772289,
+          0.213098
+        ],
+        "tail60_rms_horizontal_m": 0.897031,
+        "tail60_rms_3d_m": 0.922359,
+        "final_formal_sigma_ENU_m": [
+          0.0497,
+          0.0385,
+          0.162
+        ],
+        "trace": "E:\\GNSS\\PPP_only\\validation\\user_error_diagnosis\\mar17_B_old_antex.trace",
+        "reject_events": 22,
+        "slip_checks": 94397,
+        "detected_slips": 502,
+        "arc_resets": 0,
+        "failure_events": 0,
+        "ztd": {
+          "epochs": 1200,
+          "first_m": 2.3085,
+          "final_m": 2.9604,
+          "final_sigma_m": 0.0507,
+          "tail60_mean_m": 2.975708
+        }
+      }
+    },
+    "production_mapping_unchanged": true,
+    "diagnostic_scratch_source_sha256": "da339477bed55911e4dd79225bb81cc1f048510c1dc88791eb3e50712441b1da"
+  },
+  "atmospheric_prior_ablation": {
+    "mar21_B_baseline": {
+      "epochs": 600,
+      "Q": {
+        "6": 599,
+        "5": 1
+      },
+      "first": {
+        "time": "2026/03/21 02:11:12.001",
+        "lat": 30.759991309,
+        "lon": 103.98405038,
+        "h": 474.7787,
+        "q": 6,
+        "ns": 25
+      },
+      "last": {
+        "time": "2026/03/21 02:21:11.000",
+        "lat": 30.759992747,
+        "lon": 103.984052459,
+        "h": 476.1112,
+        "q": 6,
+        "ns": 27
+      },
+      "tail300": {
+        "mean_h": 476.14203733333335,
+        "mean_enu_vs_B": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "last_enu_vs_B": [
+        -0.0,
+        0.0,
+        0.0
+      ],
+      "state": {
+        "ztd": {
+          "first": 2.317,
+          "last": 2.7664,
+          "tail300": 2.7085593333333335
+        },
+        "rcb": {
+          "GPS_C5Q": {
+            "first": -5.6489,
+            "last": -5.4285,
+            "tail300": -5.448044
+          },
+          "GAL_C5Q": {
+            "first": -6.7725,
+            "last": -6.742,
+            "tail300": -6.765295666666667
+          },
+          "BDS_C7I": {
+            "first": 0.0,
+            "last": 0.0,
+            "tail300": 0.0
+          },
+          "BDS_C5P": {
+            "first": -5.303,
+            "last": -5.107,
+            "tail300": -5.239960333333333
+          },
+          "BDS_C1P": {
+            "first": -4.8302,
+            "last": -4.8231,
+            "tail300": -4.881519
+          }
+        },
+        "ion": {
+          "mean_all": 6.927518078134845,
+          "n": 15870
+        }
+      }
+    },
+    "mar21_B_no_ion": {
+      "epochs": 600,
+      "Q": {
+        "6": 599,
+        "5": 1
+      },
+      "first": {
+        "time": "2026/03/21 02:11:12.001",
+        "lat": 30.759991309,
+        "lon": 103.98405038,
+        "h": 474.7787,
+        "q": 6,
+        "ns": 25
+      },
+      "last": {
+        "time": "2026/03/21 02:21:11.000",
+        "lat": 30.759992094,
+        "lon": 103.984058323,
+        "h": 479.806,
+        "q": 6,
+        "ns": 27
+      },
+      "tail300": {
+        "mean_h": 480.3481606666667,
+        "mean_enu_vs_B": [
+          0.6165312015657829,
+          -0.06691856161665226,
+          4.206123303033452
+        ]
+      },
+      "last_enu_vs_B": [
+        0.5614769196433655,
+        -0.07240052539998865,
+        3.694799974318519
+      ],
+      "state": {
+        "ztd": {
+          "first": 2.317,
+          "last": 2.3618,
+          "tail300": 2.309802
+        },
+        "rcb": {
+          "GPS_C5Q": {
+            "first": -5.6489,
+            "last": -1.3097,
+            "tail300": -1.610134
+          },
+          "GAL_C5Q": {
+            "first": -6.7725,
+            "last": -4.2154,
+            "tail300": -4.858614333333334
+          },
+          "BDS_C7I": {
+            "first": 0.0,
+            "last": 0.0,
+            "tail300": 0.0
+          },
+          "BDS_C5P": {
+            "first": -5.303,
+            "last": -2.1225,
+            "tail300": -2.7145356666666665
+          },
+          "BDS_C1P": {
+            "first": -4.8302,
+            "last": -4.3663,
+            "tail300": -4.395871333333333
+          }
+        },
+        "ion": {
+          "mean_all": 5.497087996219282,
+          "n": 15870
+        }
+      }
+    },
+    "mar21_B_no_trop": {
+      "epochs": 600,
+      "Q": {
+        "6": 599,
+        "5": 1
+      },
+      "first": {
+        "time": "2026/03/21 02:11:12.001",
+        "lat": 30.759991309,
+        "lon": 103.98405038,
+        "h": 474.7787,
+        "q": 6,
+        "ns": 25
+      },
+      "last": {
+        "time": "2026/03/21 02:21:11.000",
+        "lat": 30.759992725,
+        "lon": 103.984052314,
+        "h": 475.9082,
+        "q": 6,
+        "ns": 27
+      },
+      "tail300": {
+        "mean_h": 475.97368466666666,
+        "mean_enu_vs_B": [
+          -0.011924674892498922,
+          -0.0027921682522864225,
+          -0.16835266660958476
+        ]
+      },
+      "last_enu_vs_B": [
+        -0.013883715811853312,
+        -0.0024392199217185134,
+        -0.20299999978969419
+      ],
+      "state": {
+        "ztd": {
+          "first": 2.317,
+          "last": 2.8457,
+          "tail300": 2.77537
+        },
+        "rcb": {
+          "GPS_C5Q": {
+            "first": -5.6489,
+            "last": -5.431,
+            "tail300": -5.448613
+          },
+          "GAL_C5Q": {
+            "first": -6.7725,
+            "last": -6.7409,
+            "tail300": -6.760971333333333
+          },
+          "BDS_C7I": {
+            "first": 0.0,
+            "last": 0.0,
+            "tail300": 0.0
+          },
+          "BDS_C5P": {
+            "first": -5.303,
+            "last": -5.1213,
+            "tail300": -5.251641
+          },
+          "BDS_C1P": {
+            "first": -4.8302,
+            "last": -4.832,
+            "tail300": -4.88748
+          }
+        },
+        "ion": {
+          "mean_all": 6.927328437303087,
+          "n": 15870
+        }
+      }
+    },
+    "mar21_B_no_both": {
+      "epochs": 600,
+      "Q": {
+        "6": 599,
+        "5": 1
+      },
+      "first": {
+        "time": "2026/03/21 02:11:12.001",
+        "lat": 30.759991309,
+        "lon": 103.98405038,
+        "h": 474.7787,
+        "q": 6,
+        "ns": 25
+      },
+      "last": {
+        "time": "2026/03/21 02:21:11.000",
+        "lat": 30.759992101,
+        "lon": 103.984058322,
+        "h": 479.7749,
+        "q": 6,
+        "ns": 27
+      },
+      "tail300": {
+        "mean_h": 480.3500246666667,
+        "mean_enu_vs_B": [
+          0.6163464047076843,
+          -0.06756939048038794,
+          4.2079873030749235
+        ]
+      },
+      "last_enu_vs_B": [
+        0.56138116636208,
+        -0.07162440903570122,
+        3.6636999746867662
+      ],
+      "state": {
+        "ztd": {
+          "first": 2.317,
+          "last": 2.3722,
+          "tail300": 2.3086076666666666
+        },
+        "rcb": {
+          "GPS_C5Q": {
+            "first": -5.6489,
+            "last": -1.3094,
+            "tail300": -1.6104713333333334
+          },
+          "GAL_C5Q": {
+            "first": -6.7725,
+            "last": -4.2213,
+            "tail300": -4.858256
+          },
+          "BDS_C7I": {
+            "first": 0.0,
+            "last": 0.0,
+            "tail300": 0.0
+          },
+          "BDS_C5P": {
+            "first": -5.303,
+            "last": -2.1218,
+            "tail300": -2.7144893333333333
+          },
+          "BDS_C1P": {
+            "first": -4.8302,
+            "last": -4.3659,
+            "tail300": -4.395824
+          }
+        },
+        "ion": {
+          "mean_all": 5.497341172022685,
+          "n": 15870
+        }
+      }
+    },
+    "mar17_B_baseline": {
+      "epochs": 1200,
+      "Q": {
+        "6": 1197,
+        "5": 3
+      },
+      "first": {
+        "time": "2026/03/17 05:33:34.001",
+        "lat": 30.759927589,
+        "lon": 103.984169084,
+        "h": 483.4919,
+        "q": 6,
+        "ns": 21
+      },
+      "last": {
+        "time": "2026/03/17 05:53:33.001",
+        "lat": 30.759922349,
+        "lon": 103.984165651,
+        "h": 482.3338,
+        "q": 6,
+        "ns": 20
+      },
+      "tail300": {
+        "mean_h": 482.1810233333333,
+        "mean_enu_vs_B": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "last_enu_vs_B": [
+        -0.0,
+        0.0,
+        0.0
+      ],
+      "state": {
+        "ztd": {
+          "first": 2.3084,
+          "last": 2.9539,
+          "tail300": 3.006922
+        },
+        "rcb": {
+          "GPS_C5Q": {
+            "first": -3.1284,
+            "last": -1.983,
+            "tail300": -2.1092743333333335
+          },
+          "GAL_C5Q": {
+            "first": -3.9699,
+            "last": -1.841,
+            "tail300": -1.8890306666666667
+          },
+          "BDS_C7I": {
+            "first": 0.0,
+            "last": 0.0,
+            "tail300": 0.0
+          },
+          "BDS_C5P": {
+            "first": -3.6532,
+            "last": -3.1355,
+            "tail300": -3.1518253333333335
+          },
+          "BDS_C1P": {
+            "first": -4.6746,
+            "last": -4.966,
+            "tail300": -4.994903
+          }
+        },
+        "ion": {
+          "mean_all": 8.756686366105377,
+          "n": 25774
+        }
+      }
+    },
+    "mar17_B_no_ion": {
+      "epochs": 1200,
+      "Q": {
+        "6": 1197,
+        "5": 3
+      },
+      "first": {
+        "time": "2026/03/17 05:33:34.001",
+        "lat": 30.759927589,
+        "lon": 103.984169084,
+        "h": 483.4919,
+        "q": 6,
+        "ns": 21
+      },
+      "last": {
+        "time": "2026/03/17 05:53:33.001",
+        "lat": 30.759921378,
+        "lon": 103.984177782,
+        "h": 483.277,
+        "q": 6,
+        "ns": 21
+      },
+      "tail300": {
+        "mean_h": 483.146327,
+        "mean_enu_vs_B": [
+          1.1873608038098031,
+          -0.1055728388264236,
+          0.9653035553065135
+        ]
+      },
+      "last_enu_vs_B": [
+        1.1615424943935717,
+        -0.10765837911363141,
+        0.9431998924927876
+      ],
+      "state": {
+        "ztd": {
+          "first": 2.3084,
+          "last": 1.9899,
+          "tail300": 1.9900556666666667
+        },
+        "rcb": {
+          "GPS_C5Q": {
+            "first": -3.1284,
+            "last": -6.8033,
+            "tail300": -6.613477
+          },
+          "GAL_C5Q": {
+            "first": -3.9699,
+            "last": -2.0913,
+            "tail300": -2.110733
+          },
+          "BDS_C7I": {
+            "first": 0.0,
+            "last": 0.0,
+            "tail300": 0.0
+          },
+          "BDS_C5P": {
+            "first": -3.6532,
+            "last": -7.5945,
+            "tail300": -7.384283333333333
+          },
+          "BDS_C1P": {
+            "first": -4.6746,
+            "last": -4.8786,
+            "tail300": -4.930791
+          }
+        },
+        "ion": {
+          "mean_all": 10.792106242725227,
+          "n": 25774
+        }
+      }
+    }
+  },
+  "historical_reproduction": {
+    "executable": "E:\\GNSS\\rtklib_only\\rtklib_only\\gnss_replay\\antex_fix_audit\\legacy\\gnss_replay_legacy.exe",
+    "replay": "E:\\GNSS\\PPP_only\\validation\\historical_replay\\legacy_exe_5baa7f21",
+    "solution_600_rows_equal_ignoring_processing_ms": true,
+    "state_trace_obs_guard_hashes_identical": true
+  },
+  "mar21_accepted_commits": {
+    "97a57a9": {
+      "numeric_rows_equal_current": true,
+      "state_bytes_equal_current": true,
+      "epochs": 600,
+      "final_row": "2026/03/21 02:21:11.000   30.759992747  103.984052459   476.1112   6  27   0.0606   0.0608   0.2460   0.0259   0.0463  -0.0223   0.00    0.0"
+    },
+    "4715448": {
+      "numeric_rows_equal_current": true,
+      "state_bytes_equal_current": true,
+      "epochs": 600,
+      "final_row": "2026/03/21 02:21:11.000   30.759992747  103.984052459   476.1112   6  27   0.0606   0.0608   0.2460   0.0259   0.0463  -0.0223   0.00    0.0"
+    }
+  }
+}
