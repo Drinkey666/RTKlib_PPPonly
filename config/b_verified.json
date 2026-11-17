@@ -1,0 +1,17 @@
+{
+  "name": "B_VERIFIED_v2_JOSEPH",
+  "version": 1,
+  "environment": {
+    "PROFILE": "B_VERIFIED",
+    "BASELINE": "B",
+    "LIFECYCLE": "CORRECTED",
+    "CLOCK": "PPP_COMMON",
+    "ESTIMATOR": "LEGACY",
+    "NF": "4",
+    "SYSTEMS": "GEC",
+    "GLO": "0",
+    "GAL_E5B": "0"
+  },
+  "recovery_qc_default": "OFF",
+  "note": "Existing verified numerical/model parameters are retained. BRIDGE3 remains an explicit independent experiment."
+}

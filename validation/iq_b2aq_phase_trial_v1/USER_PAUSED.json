@@ -1,0 +1,7 @@
+{
+  "status": "paused_by_user",
+  "date": "2026-11-10",
+  "instruction": "先不处理iq，先解决另外两个问题",
+  "production_deployed": false,
+  "note": "Completed artifacts retained without further evaluation or promotion; do not resume automatically."
+}

@@ -1,0 +1,60 @@
+{
+  "results": [
+    {
+      "kind": "RTS_CLOCK",
+      "matched_rows": 50206,
+      "unmatched_rows_by_sat": {
+        "C02": 49,
+        "C03": 887,
+        "C04": 8
+      },
+      "NRT_common_rows_ENU_m": [
+        1.9921648928507376,
+        0.5426209427836268,
+        4.116646607781256
+      ],
+      "RTS_common_rows_ENU_m": [
+        1.9319721587284064,
+        0.5250777140991245,
+        3.416842689276642
+      ],
+      "change_ENU_m": [
+        -0.060192734126627255,
+        -0.017543228699827683,
+        -0.6998039185036431
+      ],
+      "normal_relative_residual": 5.1834918566676723e-17,
+      "warning": "Not a complete PPP rerun or an independently truth-calibrated RTS reference. Orbit COM/APC/frame conventions are not fully certified; do not interpret raw common clock offset as position error."
+    },
+    {
+      "kind": "RTS_PAIR",
+      "matched_rows": 50206,
+      "unmatched_rows_by_sat": {
+        "C02": 49,
+        "C03": 887,
+        "C04": 8
+      },
+      "NRT_common_rows_ENU_m": [
+        1.9921648928507376,
+        0.5426209427836268,
+        4.116646607781256
+      ],
+      "RTS_common_rows_ENU_m": [
+        1.9354438006432273,
+        0.5277947264506591,
+        3.4269308920263946
+      ],
+      "change_ENU_m": [
+        -0.056721092203126426,
+        -0.014826216340505856,
+        -0.6897157157327608
+      ],
+      "normal_relative_residual": 3.340389078227549e-17,
+      "warning": "Not a complete PPP rerun or an independently truth-calibrated RTS reference. Orbit COM/APC/frame conventions are not fully certified; do not interpret raw common clock offset as position error."
+    }
+  ],
+  "filter_calls": 0,
+  "default_changes": false,
+  "downloaded_after_capture": true,
+  "formal_files_unchanged": 52
+}

@@ -1,0 +1,80 @@
+{
+  "case": "iq",
+  "mode": "off",
+  "command": [
+    "E:\\GNSS\\PPP_only\\validation\\phase_osb_trial_v1\\build\\trial.exe",
+    "--source",
+    "txt-fast",
+    "--no-gui"
+  ],
+  "exe_sha256": "47aa1e1ab132665b9f4bfca659f93f61e97bf02fdcb4ad3e5225d4525968ce65",
+  "inputs": {
+    "NAV": {
+      "path": "E:\\RTKLIB_Data\\10.31\\products\\BRDC00WRD_R_20263040000_01D_MN.rnx",
+      "sha256": "56c345de1fd74ed6b276cbf49a8662e00214622872d461b68966e66eb19f42f0"
+    },
+    "SP3": {
+      "path": "E:\\RTKLIB_Data\\10.31\\products\\WUM0MGXNRT_20263030000_02D_05M_ORB.SP3",
+      "sha256": "01db668875001f1c8b9b85147d83765e913d297323806026e16d67b604d6f32d"
+    },
+    "CLK": {
+      "path": "E:\\RTKLIB_Data\\10.31\\products\\WUM0MGXNRT_20263030000_02D_30S_CLK.CLK",
+      "sha256": "8857f210f3f9f8f8e04acd692ebb37f41f9b33418b25cc0616622324ca5091a1"
+    },
+    "BIA": {
+      "path": "E:\\RTKLIB_Data\\10.31\\products\\WUM0MGXRTS_20263040000_01D_05M_OSB.BIA",
+      "sha256": "0001a8398375722761a8b92de056534e815e5de5b469bad3fc8b31a8d7e96593"
+    },
+    "IONEX": {
+      "path": "E:\\RTKLIB_Data\\10.31\\products\\COD0OPSP1D_20263040000_01D_01H_GIM.INX",
+      "sha256": "c76b7e99fab621bac4816859be45d2faa450eccf49b594c423acb2034346c4b5"
+    },
+    "VMF_FIRST": {
+      "path": "E:\\RTKLIB_Data\\10.31\\products\\VMF3_20261031.H00",
+      "sha256": "04a168903acd9a0e7711b143467df5511e6a6b7d9cec1a73c0500f02214c38d1"
+    },
+    "VMF_SECOND": {
+      "path": "E:\\RTKLIB_Data\\10.31\\products\\VMF3_20261031.H06",
+      "sha256": "7109ddc6a9636b4a7e5fcd6180058610e5ef8397c14240b6ebabdb752b2fac04"
+    },
+    "ATX": {
+      "path": "E:\\RTKLIB_Data\\Tables\\igs20.atx",
+      "sha256": "fd9955ae17d759291e62e144db8e47a3d4f38bb1d8aae7a8e093fbc6cad0b79f"
+    },
+    "OROGRAPHY": {
+      "path": "E:\\GNSS\\PPP_only\\validation\\android_live_20261025_v1\\inputs\\orography_ell_5x5",
+      "sha256": "2da6f83db2f5ac382b6c20d6ce3fc824aa6a5b573c16ba5a7c5737ca54c271ed"
+    },
+    "TXT": {
+      "path": "E:\\RTKLIB_Data\\10.31\\vivo_V2507A_file_ppp\\RawData_20261031_101333.txt",
+      "sha256": "1316f10692c572ccac5444b207dcbc9e8bd662f6e25f5e395a76bec1a3909393"
+    }
+  },
+  "reference_used_in_filter": false,
+  "parameters": "same B_VERIFIED; R/Q/P0/GIM and legacy QC thresholds unchanged",
+  "preflight_returncode": 0,
+  "returncode": 0,
+  "wall_seconds": 104.49244200007524,
+  "baseline_fields_exact_except_processing_ms": true,
+  "completed": true,
+  "epochs": 3710,
+  "Q": {
+    "6": 3707,
+    "5": 3
+  },
+  "solution_sha256": "219c1dbd95b103980c19bae8ab5d9ea8d5f2e36ffc2326cbe6dfc04b8ea2dcf3",
+  "compressed_logs": {
+    "solution.trace": {
+      "path": "E:\\GNSS\\PPP_only\\validation\\phase_osb_trial_v1\\iq\\off\\solution.trace.gz",
+      "uncompressed_sha256": "d0b216a27b1b41c06861dbd413f9a24ed7995644ae5dde673a93c0da4a382ba8"
+    },
+    "solution.csv.stat": {
+      "path": "E:\\GNSS\\PPP_only\\validation\\phase_osb_trial_v1\\iq\\off\\solution.csv.stat.gz",
+      "uncompressed_sha256": "2715021e22d60cc7f60ce9e86217c1ab6e3a77487d8fcabf70ebcfd8402e482f"
+    },
+    "solution.csv.obs.csv": {
+      "path": "E:\\GNSS\\PPP_only\\validation\\phase_osb_trial_v1\\iq\\off\\solution.csv.obs.csv.gz",
+      "uncompressed_sha256": "88a9ba8fe1a13fdf6e3a706b30d6d15d2ae17771cd9cc73f2ecf23d0b9e6559a"
+    }
+  }
+}

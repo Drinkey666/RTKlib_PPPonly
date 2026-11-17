@@ -1,0 +1,19 @@
+{
+  "date": "2026-11-08",
+  "core_regressions_passed": 215,
+  "phase_OSB_regressions_passed": 32,
+  "full_replays": 4,
+  "full_replay_epochs": 14840,
+  "prefix_controls": 2,
+  "prefix_epochs_each": 120,
+  "off_matches_frozen_baselines": true,
+  "raw_adapter_observation_CSV_unchanged": true,
+  "native_product_events_independently_verified": 1165,
+  "production_sources_objects_and_executables_unchanged": true,
+  "original_inputs_verified": true,
+  "formal_default": "OFF",
+  "Android_ported": false,
+  "candidate_sha256": "47aa1e1ab132665b9f4bfca659f93f61e97bf02fdcb4ad3e5225d4525968ce65",
+  "product_reference_compatibility": "not certified",
+  "git_HEAD": "0fd98a9e21f7aa615194a02f6e143d64c2c00335"
+}

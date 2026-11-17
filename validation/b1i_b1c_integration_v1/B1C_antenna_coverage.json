@@ -1,0 +1,345 @@
+{
+  "devices": {
+    "k70": [
+      "C06",
+      "C07",
+      "C11",
+      "C12",
+      "C19",
+      "C20",
+      "C22",
+      "C23",
+      "C29",
+      "C32",
+      "C35",
+      "C36",
+      "C37"
+    ],
+    "iq": [
+      "C06",
+      "C07",
+      "C12",
+      "C19",
+      "C20",
+      "C23",
+      "C29",
+      "C32",
+      "C35",
+      "C36",
+      "C37"
+    ]
+  },
+  "antenna": {
+    "original": {
+      "path": "E:\\RTKLIB_Data\\Tables\\igs20.atx",
+      "by_satellite": {
+        "C06": {
+          "type_serial": "BEIDOU-2I           C06                 C005      2010-036A TYPE / SERIAL NO",
+          "physical_frequency_ids": [
+            "C02",
+            "C06",
+            "C07"
+          ],
+          "B1C_C01_present": false
+        },
+        "C07": {
+          "type_serial": "BEIDOU-2I           C07                 C007      2010-068A TYPE / SERIAL NO",
+          "physical_frequency_ids": [
+            "C02",
+            "C06",
+            "C07"
+          ],
+          "B1C_C01_present": false
+        },
+        "C11": {
+          "type_serial": "BEIDOU-2M           C11                 C012      2012-018A TYPE / SERIAL NO",
+          "physical_frequency_ids": [
+            "C02",
+            "C06",
+            "C07"
+          ],
+          "B1C_C01_present": false
+        },
+        "C12": {
+          "type_serial": "BEIDOU-2M           C12                 C013      2012-018B TYPE / SERIAL NO",
+          "physical_frequency_ids": [
+            "C02",
+            "C06",
+            "C07"
+          ],
+          "B1C_C01_present": false
+        },
+        "C19": {
+          "type_serial": "BEIDOU-3M-CAST      C19                 C201      2017-069A TYPE / SERIAL NO",
+          "physical_frequency_ids": [
+            "C01",
+            "C02",
+            "C05",
+            "C06",
+            "C07",
+            "C08"
+          ],
+          "B1C_C01_present": true
+        },
+        "C20": {
+          "type_serial": "BEIDOU-3M-CAST      C20                 C202      2017-069B TYPE / SERIAL NO",
+          "physical_frequency_ids": [
+            "C01",
+            "C02",
+            "C05",
+            "C06",
+            "C07",
+            "C08"
+          ],
+          "B1C_C01_present": true
+        },
+        "C22": {
+          "type_serial": "BEIDOU-3M-CAST      C22                 C205      2018-018A TYPE / SERIAL NO",
+          "physical_frequency_ids": [
+            "C01",
+            "C02",
+            "C05",
+            "C06",
+            "C07",
+            "C08"
+          ],
+          "B1C_C01_present": true
+        },
+        "C23": {
+          "type_serial": "BEIDOU-3M-CAST      C23                 C209      2018-062A TYPE / SERIAL NO",
+          "physical_frequency_ids": [
+            "C01",
+            "C02",
+            "C05",
+            "C06",
+            "C07",
+            "C08"
+          ],
+          "B1C_C01_present": true
+        },
+        "C29": {
+          "type_serial": "BEIDOU-3M-SECM      C29                 C207      2018-029A TYPE / SERIAL NO",
+          "physical_frequency_ids": [
+            "C01",
+            "C02",
+            "C05",
+            "C06",
+            "C07",
+            "C08"
+          ],
+          "B1C_C01_present": true
+        },
+        "C32": {
+          "type_serial": "BEIDOU-3M-CAST      C32                 C213      2018-072A TYPE / SERIAL NO",
+          "physical_frequency_ids": [
+            "C01",
+            "C02",
+            "C05",
+            "C06",
+            "C07",
+            "C08"
+          ],
+          "B1C_C01_present": true
+        },
+        "C35": {
+          "type_serial": "BEIDOU-3M-SECM      C35                 C215      2018-078A TYPE / SERIAL NO",
+          "physical_frequency_ids": [
+            "C01",
+            "C02",
+            "C05",
+            "C06",
+            "C07",
+            "C08"
+          ],
+          "B1C_C01_present": true
+        },
+        "C36": {
+          "type_serial": "BEIDOU-3M-CAST      C36                 C218      2018-093A TYPE / SERIAL NO",
+          "physical_frequency_ids": [
+            "C01",
+            "C02",
+            "C05",
+            "C06",
+            "C07",
+            "C08"
+          ],
+          "B1C_C01_present": true
+        },
+        "C37": {
+          "type_serial": "BEIDOU-3M-CAST      C37                 C219      2018-093B TYPE / SERIAL NO",
+          "physical_frequency_ids": [
+            "C01",
+            "C02",
+            "C05",
+            "C06",
+            "C07",
+            "C08"
+          ],
+          "B1C_C01_present": true
+        }
+      }
+    },
+    "official_download": {
+      "path": "E:\\GNSS\\PPP_only\\validation\\bds_signal_identity_fix_v1\\igs20.atx",
+      "by_satellite": {
+        "C06": {
+          "type_serial": "BEIDOU-3I           C06                 C220      2019-023A TYPE / SERIAL NO",
+          "physical_frequency_ids": [
+            "C01",
+            "C02",
+            "C05",
+            "C06",
+            "C07",
+            "C08"
+          ],
+          "B1C_C01_present": true
+        },
+        "C07": {
+          "type_serial": "BEIDOU-3I           C07                 C221      2019-035A TYPE / SERIAL NO",
+          "physical_frequency_ids": [
+            "C01",
+            "C02",
+            "C05",
+            "C06",
+            "C07",
+            "C08"
+          ],
+          "B1C_C01_present": true
+        },
+        "C11": {
+          "type_serial": "BEIDOU-3M-SECM      C11                 C234      2024-168B TYPE / SERIAL NO",
+          "physical_frequency_ids": [
+            "C01",
+            "C02",
+            "C05",
+            "C06",
+            "C07",
+            "C08"
+          ],
+          "B1C_C01_present": true
+        },
+        "C12": {
+          "type_serial": "BEIDOU-3M-CAST      C12                 C233      2023-207B TYPE / SERIAL NO",
+          "physical_frequency_ids": [
+            "C01",
+            "C02",
+            "C05",
+            "C06",
+            "C07",
+            "C08"
+          ],
+          "B1C_C01_present": true
+        },
+        "C19": {
+          "type_serial": "BEIDOU-3M-CAST      C19                 C201      2017-069A TYPE / SERIAL NO",
+          "physical_frequency_ids": [
+            "C01",
+            "C02",
+            "C05",
+            "C06",
+            "C07",
+            "C08"
+          ],
+          "B1C_C01_present": true
+        },
+        "C20": {
+          "type_serial": "BEIDOU-3M-CAST      C20                 C202      2017-069B TYPE / SERIAL NO",
+          "physical_frequency_ids": [
+            "C01",
+            "C02",
+            "C05",
+            "C06",
+            "C07",
+            "C08"
+          ],
+          "B1C_C01_present": true
+        },
+        "C22": {
+          "type_serial": "BEIDOU-3M-CAST      C22                 C205      2018-018A TYPE / SERIAL NO",
+          "physical_frequency_ids": [
+            "C01",
+            "C02",
+            "C05",
+            "C06",
+            "C07",
+            "C08"
+          ],
+          "B1C_C01_present": true
+        },
+        "C23": {
+          "type_serial": "BEIDOU-3M-CAST      C23                 C209      2018-062A TYPE / SERIAL NO",
+          "physical_frequency_ids": [
+            "C01",
+            "C02",
+            "C05",
+            "C06",
+            "C07",
+            "C08"
+          ],
+          "B1C_C01_present": true
+        },
+        "C29": {
+          "type_serial": "BEIDOU-3M-SECM      C29                 C207      2018-029A TYPE / SERIAL NO",
+          "physical_frequency_ids": [
+            "C01",
+            "C02",
+            "C05",
+            "C06",
+            "C07",
+            "C08"
+          ],
+          "B1C_C01_present": true
+        },
+        "C32": {
+          "type_serial": "BEIDOU-3M-CAST      C32                 C213      2018-072A TYPE / SERIAL NO",
+          "physical_frequency_ids": [
+            "C01",
+            "C02",
+            "C05",
+            "C06",
+            "C07",
+            "C08"
+          ],
+          "B1C_C01_present": true
+        },
+        "C35": {
+          "type_serial": "BEIDOU-3M-SECM      C35                 C215      2018-078A TYPE / SERIAL NO",
+          "physical_frequency_ids": [
+            "C01",
+            "C02",
+            "C05",
+            "C06",
+            "C07",
+            "C08"
+          ],
+          "B1C_C01_present": true
+        },
+        "C36": {
+          "type_serial": "BEIDOU-3M-CAST      C36                 C218      2018-093A TYPE / SERIAL NO",
+          "physical_frequency_ids": [
+            "C01",
+            "C02",
+            "C05",
+            "C06",
+            "C07",
+            "C08"
+          ],
+          "B1C_C01_present": true
+        },
+        "C37": {
+          "type_serial": "BEIDOU-3M-CAST      C37                 C219      2018-093B TYPE / SERIAL NO",
+          "physical_frequency_ids": [
+            "C01",
+            "C02",
+            "C05",
+            "C06",
+            "C07",
+            "C08"
+          ],
+          "B1C_C01_present": true
+        }
+      }
+    }
+  },
+  "scope": "Identity and C01 coverage only, not NRT clock-reference calibration certification"
+}

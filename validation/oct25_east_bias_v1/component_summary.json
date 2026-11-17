@@ -1,0 +1,555 @@
+{
+  "actual_rows_matched": 53383,
+  "missing_rows": [],
+  "OSB_status_counts": {
+    "1": 47740,
+    "0": 5643
+  },
+  "max_normal_equation_relative": 1.1902500946680467e-16,
+  "components": [
+    {
+      "start_s": 0,
+      "end_s": 60,
+      "component": "RAW_RANGE_CLOCK",
+      "E_m": 1.5288804648625522,
+      "N_m": 0.4778212385674659,
+      "U_m": -3.055944556126432,
+      "normal_relative_residual": 2.178649555682064e-17
+    },
+    {
+      "start_s": 0,
+      "end_s": 60,
+      "component": "NEGATIVE_ANTENNA",
+      "E_m": -0.0025864241952536873,
+      "N_m": -0.0010736982742533437,
+      "U_m": 0.039888775459922976,
+      "normal_relative_residual": 2.178649555682064e-17
+    },
+    {
+      "start_s": 0,
+      "end_s": 60,
+      "component": "NEGATIVE_OSB",
+      "E_m": 0.7242451233360084,
+      "N_m": -0.21086794120988023,
+      "U_m": 1.928759570397563,
+      "normal_relative_residual": 2.178649555682064e-17
+    },
+    {
+      "start_s": 0,
+      "end_s": 60,
+      "component": "CODE_FALLBACK_REMAINDER",
+      "E_m": -2.3034416077993096e-09,
+      "N_m": -2.4835741774892965e-10,
+      "U_m": 1.0007933631491919e-08,
+      "normal_relative_residual": 2.178649555682064e-17
+    },
+    {
+      "start_s": 0,
+      "end_s": 60,
+      "component": "NEGATIVE_MODEL_TROP",
+      "E_m": -0.0005813511511665682,
+      "N_m": -0.00033858220714035937,
+      "U_m": -0.04264862572605285,
+      "normal_relative_residual": 2.178649555682064e-17
+    },
+    {
+      "start_s": 0,
+      "end_s": 60,
+      "component": "NEGATIVE_GIM_IONO",
+      "E_m": 4.865901911579035e-16,
+      "N_m": -7.925993812533319e-16,
+      "U_m": 2.0171064652079545e-14,
+      "normal_relative_residual": 2.178649555682064e-17
+    },
+    {
+      "start_s": 0,
+      "end_s": 60,
+      "component": "RAW_MODEL_TARGET",
+      "E_m": 2.2499578105490827,
+      "N_m": 0.26554101662845364,
+      "U_m": -1.1299448259897147,
+      "normal_relative_residual": 2.178649555682064e-17
+    },
+    {
+      "start_s": 0,
+      "end_s": 60,
+      "component": "ACTUAL_USED_TARGET",
+      "E_m": 1.4892795973861963,
+      "N_m": 1.8967406927393888,
+      "U_m": 7.400056040809003,
+      "normal_relative_residual": 2.178649555682064e-17
+    },
+    {
+      "start_s": 0,
+      "end_s": 60,
+      "component": "USED_MINUS_RAW_MODEL",
+      "E_m": -0.7606782131637149,
+      "N_m": 1.6311996761109127,
+      "U_m": 8.530000866798593,
+      "normal_relative_residual": 2.178649555682064e-17
+    },
+    {
+      "start_s": 0,
+      "end_s": 60,
+      "component": "NRT_MINUS_RTS_OSB_ONLY",
+      "E_m": 0.02385202670264569,
+      "N_m": 0.0006990100087696823,
+      "U_m": -0.07014002423031618,
+      "normal_relative_residual": 2.178649555682064e-17
+    },
+    {
+      "start_s": 60,
+      "end_s": 300,
+      "component": "RAW_RANGE_CLOCK",
+      "E_m": -0.41733433089200905,
+      "N_m": 1.9092890387166497,
+      "U_m": -9.823208454818127,
+      "normal_relative_residual": 2.3768275154848954e-17
+    },
+    {
+      "start_s": 60,
+      "end_s": 300,
+      "component": "NEGATIVE_ANTENNA",
+      "E_m": -0.0024080427279390124,
+      "N_m": -0.000722293149655224,
+      "U_m": 0.04181329529308608,
+      "normal_relative_residual": 2.3768275154848954e-17
+    },
+    {
+      "start_s": 60,
+      "end_s": 300,
+      "component": "NEGATIVE_OSB",
+      "E_m": 0.760538889607165,
+      "N_m": -0.2951026694762166,
+      "U_m": 2.9743006274802184,
+      "normal_relative_residual": 2.3768275154848954e-17
+    },
+    {
+      "start_s": 60,
+      "end_s": 300,
+      "component": "CODE_FALLBACK_REMAINDER",
+      "E_m": -1.9010060772762677e-09,
+      "N_m": -3.9217595645320083e-10,
+      "U_m": 1.0908122692900594e-08,
+      "normal_relative_residual": 2.3768275154848954e-17
+    },
+    {
+      "start_s": 60,
+      "end_s": 300,
+      "component": "NEGATIVE_MODEL_TROP",
+      "E_m": -0.0004957802035489708,
+      "N_m": -0.0005073265797803318,
+      "U_m": -0.045466359783703815,
+      "normal_relative_residual": 2.3768275154848954e-17
+    },
+    {
+      "start_s": 60,
+      "end_s": 300,
+      "component": "NEGATIVE_GIM_IONO",
+      "E_m": 2.9921753458452835e-15,
+      "N_m": -1.2642017422951521e-15,
+      "U_m": -6.050214404054415e-15,
+      "normal_relative_residual": 2.3768275154848954e-17
+    },
+    {
+      "start_s": 60,
+      "end_s": 300,
+      "component": "RAW_MODEL_TARGET",
+      "E_m": 0.34030073388237325,
+      "N_m": 1.6129567491147108,
+      "U_m": -6.8525608809699925,
+      "normal_relative_residual": 2.3768275154848954e-17
+    },
+    {
+      "start_s": 60,
+      "end_s": 300,
+      "component": "ACTUAL_USED_TARGET",
+      "E_m": 0.6829643850540994,
+      "N_m": 2.6331076766601886,
+      "U_m": -6.797120752475239,
+      "normal_relative_residual": 2.3768275154848954e-17
+    },
+    {
+      "start_s": 60,
+      "end_s": 300,
+      "component": "USED_MINUS_RAW_MODEL",
+      "E_m": 0.3426636511721049,
+      "N_m": 1.0201509275424714,
+      "U_m": 0.05544012848606066,
+      "normal_relative_residual": 2.3768275154848954e-17
+    },
+    {
+      "start_s": 60,
+      "end_s": 300,
+      "component": "NRT_MINUS_RTS_OSB_ONLY",
+      "E_m": 0.024658206335085305,
+      "N_m": -0.00035532142334100447,
+      "U_m": -0.07075533359560972,
+      "normal_relative_residual": 2.3768275154848954e-17
+    },
+    {
+      "start_s": 300,
+      "end_s": 900,
+      "component": "RAW_RANGE_CLOCK",
+      "E_m": 0.785913720941377,
+      "N_m": -0.9959128674208192,
+      "U_m": -3.6316175901418717,
+      "normal_relative_residual": 6.36164135535192e-17
+    },
+    {
+      "start_s": 300,
+      "end_s": 900,
+      "component": "NEGATIVE_ANTENNA",
+      "E_m": -0.0005198341469505087,
+      "N_m": 0.0015022442965452873,
+      "U_m": 0.04437921337786129,
+      "normal_relative_residual": 6.36164135535192e-17
+    },
+    {
+      "start_s": 300,
+      "end_s": 900,
+      "component": "NEGATIVE_OSB",
+      "E_m": 1.63773311381071,
+      "N_m": 0.8280517341285178,
+      "U_m": 1.2190783895706745,
+      "normal_relative_residual": 6.36164135535192e-17
+    },
+    {
+      "start_s": 300,
+      "end_s": 900,
+      "component": "CODE_FALLBACK_REMAINDER",
+      "E_m": -1.1534681648622556e-09,
+      "N_m": -3.0261864414863495e-10,
+      "U_m": 1.1079838812476458e-08,
+      "normal_relative_residual": 6.36164135535192e-17
+    },
+    {
+      "start_s": 300,
+      "end_s": 900,
+      "component": "NEGATIVE_MODEL_TROP",
+      "E_m": 0.00011218782478948057,
+      "N_m": -0.0008610604254633529,
+      "U_m": -0.05625081323695211,
+      "normal_relative_residual": 6.36164135535192e-17
+    },
+    {
+      "start_s": 300,
+      "end_s": 900,
+      "component": "NEGATIVE_GIM_IONO",
+      "E_m": 2.5821996241797492e-15,
+      "N_m": 6.200211858990479e-16,
+      "U_m": 9.032958076083135e-15,
+      "normal_relative_residual": 6.36164135535192e-17
+    },
+    {
+      "start_s": 300,
+      "end_s": 900,
+      "component": "RAW_MODEL_TARGET",
+      "E_m": 2.423239187290097,
+      "N_m": -0.16721994970613904,
+      "U_m": -2.4244107893173377,
+      "normal_relative_residual": 6.36164135535192e-17
+    },
+    {
+      "start_s": 300,
+      "end_s": 900,
+      "component": "ACTUAL_USED_TARGET",
+      "E_m": 2.6375945383749326,
+      "N_m": -0.19284203967566865,
+      "U_m": 0.3120549186673719,
+      "normal_relative_residual": 6.36164135535192e-17
+    },
+    {
+      "start_s": 300,
+      "end_s": 900,
+      "component": "USED_MINUS_RAW_MODEL",
+      "E_m": 0.21435535109559367,
+      "N_m": -0.025622089964689763,
+      "U_m": 2.7364657079496535,
+      "normal_relative_residual": 6.36164135535192e-17
+    },
+    {
+      "start_s": 300,
+      "end_s": 900,
+      "component": "NRT_MINUS_RTS_OSB_ONLY",
+      "E_m": 0.021109070778506465,
+      "N_m": -0.0064414899210649,
+      "U_m": -0.055655347866764265,
+      "normal_relative_residual": 6.36164135535192e-17
+    },
+    {
+      "start_s": 900,
+      "end_s": 1550,
+      "component": "RAW_RANGE_CLOCK",
+      "E_m": 0.505859280179911,
+      "N_m": -0.47670701893511735,
+      "U_m": 13.374363080330369,
+      "normal_relative_residual": 1.1902500946680467e-16
+    },
+    {
+      "start_s": 900,
+      "end_s": 1550,
+      "component": "NEGATIVE_ANTENNA",
+      "E_m": 0.0015571415878393971,
+      "N_m": 0.003998027333409397,
+      "U_m": 0.05200960105989665,
+      "normal_relative_residual": 1.1902500946680467e-16
+    },
+    {
+      "start_s": 900,
+      "end_s": 1550,
+      "component": "NEGATIVE_OSB",
+      "E_m": 1.7600050197804464,
+      "N_m": 1.4328726389253705,
+      "U_m": -1.5361220413443661,
+      "normal_relative_residual": 1.1902500946680467e-16
+    },
+    {
+      "start_s": 900,
+      "end_s": 1550,
+      "component": "CODE_FALLBACK_REMAINDER",
+      "E_m": -6.319079644379167e-10,
+      "N_m": -4.642456289423873e-10,
+      "U_m": 1.4042184535428731e-08,
+      "normal_relative_residual": 1.1902500946680467e-16
+    },
+    {
+      "start_s": 900,
+      "end_s": 1550,
+      "component": "NEGATIVE_MODEL_TROP",
+      "E_m": 0.0009806475784909445,
+      "N_m": -0.0009274540023330554,
+      "U_m": -0.053252496369186345,
+      "normal_relative_residual": 1.1902500946680467e-16
+    },
+    {
+      "start_s": 900,
+      "end_s": 1550,
+      "component": "NEGATIVE_GIM_IONO",
+      "E_m": 2.926572069506411e-15,
+      "N_m": -2.1264737562595937e-16,
+      "U_m": 4.87524630631192e-15,
+      "normal_relative_residual": 1.1902500946680467e-16
+    },
+    {
+      "start_s": 900,
+      "end_s": 1550,
+      "component": "RAW_MODEL_TARGET",
+      "E_m": 2.268402088445721,
+      "N_m": 0.9592361928030926,
+      "U_m": 11.836998157299579,
+      "normal_relative_residual": 1.1902500946680467e-16
+    },
+    {
+      "start_s": 900,
+      "end_s": 1550,
+      "component": "ACTUAL_USED_TARGET",
+      "E_m": 2.9125269664308386,
+      "N_m": 0.5153519306053093,
+      "U_m": 10.349140939316145,
+      "normal_relative_residual": 1.1902500946680467e-16
+    },
+    {
+      "start_s": 900,
+      "end_s": 1550,
+      "component": "USED_MINUS_RAW_MODEL",
+      "E_m": 0.6441248779962553,
+      "N_m": -0.4438842621882518,
+      "U_m": -1.4878572178978822,
+      "normal_relative_residual": 1.1902500946680467e-16
+    },
+    {
+      "start_s": 900,
+      "end_s": 1550,
+      "component": "NRT_MINUS_RTS_OSB_ONLY",
+      "E_m": 0.01826694323032017,
+      "N_m": -0.011346678346579599,
+      "U_m": -0.049370043945244316,
+      "normal_relative_residual": 1.1902500946680467e-16
+    },
+    {
+      "start_s": 60,
+      "end_s": 1550,
+      "component": "RAW_RANGE_CLOCK",
+      "E_m": 0.41246352300394645,
+      "N_m": -0.38683033075808837,
+      "U_m": 4.293752857099781,
+      "normal_relative_residual": 4.270574264051808e-17
+    },
+    {
+      "start_s": 60,
+      "end_s": 1550,
+      "component": "NEGATIVE_ANTENNA",
+      "E_m": 0.00013122434328567852,
+      "N_m": 0.0022138467657596777,
+      "U_m": 0.046956784331916274,
+      "normal_relative_residual": 4.270574264051808e-17
+    },
+    {
+      "start_s": 60,
+      "end_s": 1550,
+      "component": "NEGATIVE_OSB",
+      "E_m": 1.5791758924024055,
+      "N_m": 0.9280434514442298,
+      "U_m": -0.1705886948759825,
+      "normal_relative_residual": 4.270574264051808e-17
+    },
+    {
+      "start_s": 60,
+      "end_s": 1550,
+      "component": "CODE_FALLBACK_REMAINDER",
+      "E_m": -1.0491228624978277e-09,
+      "N_m": -3.868591034772468e-10,
+      "U_m": 1.2530940598759468e-08,
+      "normal_relative_residual": 4.270574264051808e-17
+    },
+    {
+      "start_s": 60,
+      "end_s": 1550,
+      "component": "NEGATIVE_MODEL_TROP",
+      "E_m": 0.00039425418502662187,
+      "N_m": -0.0008060242841227327,
+      "U_m": -0.05347435136913182,
+      "normal_relative_residual": 4.270574264051808e-17
+    },
+    {
+      "start_s": 60,
+      "end_s": 1550,
+      "component": "NEGATIVE_GIM_IONO",
+      "E_m": 2.805339925468351e-15,
+      "N_m": -5.171639682367963e-17,
+      "U_m": 5.110841089657299e-15,
+      "normal_relative_residual": 4.270574264051808e-17
+    },
+    {
+      "start_s": 60,
+      "end_s": 1550,
+      "component": "RAW_MODEL_TARGET",
+      "E_m": 1.9921648928696674,
+      "N_m": 0.5426209427654042,
+      "U_m": 4.116646607535365,
+      "normal_relative_residual": 4.270574264051808e-17
+    },
+    {
+      "start_s": 60,
+      "end_s": 1550,
+      "component": "ACTUAL_USED_TARGET",
+      "E_m": 2.4184229555154904,
+      "N_m": 0.521758723829796,
+      "U_m": 4.659158880224172,
+      "normal_relative_residual": 4.270574264051808e-17
+    },
+    {
+      "start_s": 60,
+      "end_s": 1550,
+      "component": "USED_MINUS_RAW_MODEL",
+      "E_m": 0.42625806265487476,
+      "N_m": -0.020862218930378526,
+      "U_m": 0.5425122727143314,
+      "normal_relative_residual": 4.270574264051808e-17
+    },
+    {
+      "start_s": 60,
+      "end_s": 1550,
+      "component": "NRT_MINUS_RTS_OSB_ONLY",
+      "E_m": 0.02027406926562631,
+      "N_m": -0.0076774035799718095,
+      "U_m": -0.05251600304895271,
+      "normal_relative_residual": 4.270574264051808e-17
+    },
+    {
+      "start_s": 300,
+      "end_s": 1550,
+      "component": "RAW_RANGE_CLOCK",
+      "E_m": 0.5864766275918895,
+      "N_m": -0.7911514438256657,
+      "U_m": 5.752601801894724,
+      "normal_relative_residual": 6.426601687138194e-17
+    },
+    {
+      "start_s": 300,
+      "end_s": 1550,
+      "component": "NEGATIVE_ANTENNA",
+      "E_m": 0.0005790291793737961,
+      "N_m": 0.002768838693029569,
+      "U_m": 0.04803485850438806,
+      "normal_relative_residual": 6.426601687138194e-17
+    },
+    {
+      "start_s": 300,
+      "end_s": 1550,
+      "component": "NEGATIVE_OSB",
+      "E_m": 1.7198554252095957,
+      "N_m": 1.145619993939832,
+      "U_m": -0.4208847734651803,
+      "normal_relative_residual": 6.426601687138194e-17
+    },
+    {
+      "start_s": 300,
+      "end_s": 1550,
+      "component": "CODE_FALLBACK_REMAINDER",
+      "E_m": -8.919356369733174e-10,
+      "N_m": -3.8831148022300014e-10,
+      "U_m": 1.2708509740502625e-08,
+      "normal_relative_residual": 6.426601687138194e-17
+    },
+    {
+      "start_s": 300,
+      "end_s": 1550,
+      "component": "NEGATIVE_MODEL_TROP",
+      "E_m": 0.0005571881765680805,
+      "N_m": -0.0008944715558711272,
+      "U_m": -0.05464665368273975,
+      "normal_relative_residual": 6.426601687138194e-17
+    },
+    {
+      "start_s": 300,
+      "end_s": 1550,
+      "component": "NEGATIVE_GIM_IONO",
+      "E_m": 2.7663150443231393e-15,
+      "N_m": 2.1479914571214504e-16,
+      "U_m": 6.83166998649905e-15,
+      "normal_relative_residual": 6.426601687138194e-17
+    },
+    {
+      "start_s": 300,
+      "end_s": 1550,
+      "component": "RAW_MODEL_TARGET",
+      "E_m": 2.307468269246783,
+      "N_m": 0.35634291684505776,
+      "U_m": 5.325105245758498,
+      "normal_relative_residual": 6.426601687138194e-17
+    },
+    {
+      "start_s": 300,
+      "end_s": 1550,
+      "component": "ACTUAL_USED_TARGET",
+      "E_m": 2.756701849470777,
+      "N_m": 0.13714879505931354,
+      "U_m": 5.748091945709224,
+      "normal_relative_residual": 6.426601687138194e-17
+    },
+    {
+      "start_s": 300,
+      "end_s": 1550,
+      "component": "USED_MINUS_RAW_MODEL",
+      "E_m": 0.4492335802345922,
+      "N_m": -0.21919412177891254,
+      "U_m": 0.42298669998186295,
+      "normal_relative_residual": 6.426601687138194e-17
+    },
+    {
+      "start_s": 300,
+      "end_s": 1550,
+      "component": "NRT_MINUS_RTS_OSB_ONLY",
+      "E_m": 0.019526678914188817,
+      "N_m": -0.008986025962158991,
+      "U_m": -0.05112179617092729,
+      "normal_relative_residual": 6.426601687138194e-17
+    }
+  ],
+  "warning": "Projected physical components are neither correction errors nor PPP trajectory changes. USED_MINUS_RAW includes smoothing and state/position linearization differences, not a certified pure smoother ablation.",
+  "filter_calls": 0,
+  "default_changes": false,
+  "formal_files_unchanged": 52
+}

@@ -1,0 +1,84 @@
+{
+  "date": "2026-11-08",
+  "scope": "Oct31 B_VERIFIED fixed-clock TXT file-product path",
+  "original_BIA": "E:\\RTKLIB_Data\\10.31\\products\\WUM0MGXRTS_20263040000_01D_05M_OSB.BIA",
+  "original_BIA_sha256": "0001a8398375722761a8b92de056534e815e5de5b469bad3fc8b31a8d7e96593",
+  "original_record_types": {
+    "C": 867,
+    "L": 15007
+  },
+  "phase_records_by_system_signal": {
+    "G_L1C": 1290,
+    "G_L2W": 1290,
+    "G_L5Q": 817,
+    "E_L1C": 1075,
+    "E_L5Q": 1075,
+    "E_L6C": 1075,
+    "E_L7Q": 1075,
+    "E_L8Q": 1075,
+    "C_L2I": 1247,
+    "C_L6I": 1247,
+    "C_L7Z": 1247,
+    "C_L1P": 1247,
+    "C_L5P": 1247
+  },
+  "phase_rows_removed": 15007,
+  "code_rows_byte_identical": true,
+  "probes": {
+    "k70": {
+      "executable": "E:\\GNSS\\PPP_only\\validation\\observation_generation_2023_v1\\pc_build\\PPP_only.exe",
+      "executable_sha256": "b21c0420e7ebcf85251ede0dd4b06c20a05530cf4fe8560dd027f5d957826944",
+      "command": [
+        "E:\\GNSS\\PPP_only\\validation\\observation_generation_2023_v1\\pc_build\\PPP_only.exe",
+        "--source",
+        "txt-fast",
+        "--no-gui",
+        "--max-epochs",
+        "30"
+      ],
+      "preflight_returncode": 0,
+      "returncode": 0,
+      "epochs": 30,
+      "comparison": "Exact field equality to original-BIA baseline prefix, excluding processing_ms",
+      "changed_fields": 0,
+      "derived_BIA": "E:\\GNSS\\PPP_only\\validation\\oct31_phase_osb_audit_v1\\same_code_without_phase_osb.BIA",
+      "derived_BIA_sha256": "0e689802febe61498985c80935f341b4c149aa8a4d06149a8f3b6d0b2a4b81fb",
+      "original_BIA": "E:\\RTKLIB_Data\\10.31\\products\\WUM0MGXRTS_20263040000_01D_05M_OSB.BIA",
+      "original_BIA_sha256": "0001a8398375722761a8b92de056534e815e5de5b469bad3fc8b31a8d7e96593",
+      "baseline_run": "E:\\GNSS\\PPP_only\\validation\\oct31_reference_diagnosis_v1\\k70\\run.json",
+      "baseline_solution_sha256": "a116f258f2ee19c07c712bcdce3a43f54bd6f9077186978438fc5f80cd6b289d"
+    },
+    "iq": {
+      "executable": "E:\\GNSS\\PPP_only\\validation\\observation_generation_2023_v1\\pc_build\\PPP_only.exe",
+      "executable_sha256": "b21c0420e7ebcf85251ede0dd4b06c20a05530cf4fe8560dd027f5d957826944",
+      "command": [
+        "E:\\GNSS\\PPP_only\\validation\\observation_generation_2023_v1\\pc_build\\PPP_only.exe",
+        "--source",
+        "txt-fast",
+        "--no-gui",
+        "--max-epochs",
+        "30"
+      ],
+      "preflight_returncode": 0,
+      "returncode": 0,
+      "epochs": 30,
+      "comparison": "Exact field equality to original-BIA baseline prefix, excluding processing_ms",
+      "changed_fields": 0,
+      "derived_BIA": "E:\\GNSS\\PPP_only\\validation\\oct31_phase_osb_audit_v1\\same_code_without_phase_osb.BIA",
+      "derived_BIA_sha256": "0e689802febe61498985c80935f341b4c149aa8a4d06149a8f3b6d0b2a4b81fb",
+      "original_BIA": "E:\\RTKLIB_Data\\10.31\\products\\WUM0MGXRTS_20263040000_01D_05M_OSB.BIA",
+      "original_BIA_sha256": "0001a8398375722761a8b92de056534e815e5de5b469bad3fc8b31a8d7e96593",
+      "baseline_run": "E:\\GNSS\\PPP_only\\validation\\oct31_reference_diagnosis_v1\\iq\\run.json",
+      "baseline_solution_sha256": "ac05c4be25e519f4fb396dac5775a14c8f38790f169ce94c7432448e39aa2b50"
+    }
+  },
+  "sources_unchanged": {
+    "E:\\GNSS\\PPP_only\\src\\preceph.c": "bb00474d5c98fa18266a2fc53fa5c118ff0c82fbd3a4e6c38961f843ff9beb85",
+    "E:\\GNSS\\PPP_only\\src\\ppp.c": "9764a2ec4285d147404fab0a0a6a60ef98766e31a23ae644cb780c132012fdca",
+    "E:\\GNSS\\PPP_only\\src\\gnss_replay.c": "53232a7a828bc5d4650e045178778b913c4648d82f398f888348cdf6323a7d81",
+    "E:\\GNSS\\PPP_only\\src\\postpos.c": "99b61e34854e59bbdde8825916c49a4b2cbebef6794f4b26486a28c21071e5c3",
+    "E:\\GNSS\\PPP_only\\src\\rtklib.h": "9a3bb7c873a0bbff389153ba80b71c1c6a91b9001fcff353c1c2cc0358b2ac53"
+  },
+  "conclusion": "BIA phase OSBs are present in the input file but not read or applied by this TXT file-product path. Code OSBs are used. SSR phase-bias path is separate and inactive.",
+  "limit": "30-epoch runtime probes plus source inspection; not a test enabling phase OSB and not a diagnosis of the metre-level error cause."
+}

@@ -1,0 +1,10 @@
+PPP_CONFIG,signature=f498c398,baseline=B_LEGACY lifecycle=CORRECTED arc_gap_sec=30 eta=1 profile=pc-baseline-20260930-v1 NFREQ=4 MAXSAT=197 NSATGLO=27 NSATQZS=0 mode=8 soltype=0 nf=4 navsys=41 dynamics=0 sateph=1 iono=4 trop=3 ar=0 elmin=0.261799388 maxout=30 tide=1 err=100,0.008,0.012,0,1,52,0,0 eratio=100,70,60,100,0,0 prn=0.0001,0.001,0.0001,0.1,0.01,0 std=30,0.03,0.3 slip=0.2 dop=0 maxinno=5,30 niter=1 codesmooth=0 posopt=1,0,1,1,0,0 snrmask=0,0 pppopt=-GAP_RESION=120 -IONCONS=1.5 -IONCONSINT=1 -VMF3SIG=0.15 -VMF3ZWDSIG=0.30 -VMF3ZWDINT=300 -DOPPSM=0.90 -DOPPWARM=0 -PREPROC=1 -DOPPSLIP=0.50 -CODEJUMP=30 -MWTHRES=5 -BDSCODEVAR=1 -BDSCODEWARM=120 -WGTELCN=0 -PPPDIAG=1 -PPPQUAR=3,120 -GALE5BPHASE=0 clock_seed=PPP_COMMON clock_mode=2 repairs=B_VERIFIED_v2 phase_identity=1 reference_seed=1 ion_continuity=1 reference_event=1 covariance=JOSEPH_B_MASK
+/storage/emulated/0/Android/data/com.example.ftpget/files/GNSS_Products/BRDC00WRD_R_20262980000_01D_MN.rnx
+/storage/emulated/0/Android/data/com.example.ftpget/files/GNSS_Products/WUM0MGXNRT_20262970300_02D_05M_ORB.SP3
+/storage/emulated/0/Android/data/com.example.ftpget/files/GNSS_Products/WUM0MGXNRT_20262970300_02D_30S_CLK.CLK
+/storage/emulated/0/Android/data/com.example.ftpget/files/GNSS_Products/WUM0MGXRTS_20262980000_01D_05M_OSB.BIA
+/storage/emulated/0/Android/data/com.example.ftpget/files/GNSS_Products/COD0OPSP1D_20262980000_01D_01H_GIM.INX
+/storage/emulated/0/Android/data/com.example.ftpget/files/GNSS_Products/VMF3_20261025.H00
+/storage/emulated/0/Android/data/com.example.ftpget/files/GNSS_Products/VMF3_20261025.H06
+/storage/emulated/0/Android/data/com.example.ftpget/files/GNSS_Products/orography_ell_5x5
+/storage/emulated/0/Android/data/com.example.ftpget/files/GNSS_Products/igs20.atx

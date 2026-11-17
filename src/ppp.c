@@ -1,4 +1,4 @@
-﻿/*------------------------------------------------------------------------------
+/*------------------------------------------------------------------------------
 * ppp.c : precise point positioning
 *
 *          Copyright (C) 2010-2020 by T.TAKASU, All rights reserved.
@@ -62,6 +62,9 @@
 *-----------------------------------------------------------------------------*/
 #include "rtklib.h"
 #include "ppp_innovation_diag.h"
+#ifdef ENABLE_FILTER_DIAGNOSTIC
+#include "ppp_filter_diagnostic.h"
+#endif
 #include "smartphone_ppp_config.h"
 
 /* =============================================================================
@@ -198,6 +201,11 @@
 #define NI(opt)     ((opt)->ionoopt==IONOOPT_EST?MAXSAT:0)
 
 /*
+ * PAIR_DATUM removes the receiver clock/ionosphere/code-bias gauge by fixing
+ * GPS/GAL 1C/5Q and BDS 2I/7I receiver biases. Ionosphere becomes effective,
+ * including receiver pair DCB; remaining BDS 5P/1P biases are estimable.
+ * This does not combine observations and cannot use physical GIM constraints.
+ * The following single-reference convention describes LEGACY only.
  * Receiver code biases are estimated only relative to each constellation's
  * reference code (GPS/GAL C1C, BDS C2I). Estimating a state for a reference
  * code would be indistinguishable from its receiver-clock state. The original
@@ -213,8 +221,10 @@ enum {
     RCB_BDS_C1P,
     NIFB_PPP
 };
-#define ND(opt)     ((opt)->nf>=4?NIFB_PPP:((opt)->nf>=3?RCB_BDS_C1P:0))
+#define ND_BASE(opt) ((opt)->ppp_rcb_datum ? (((opt)->navsys&SYS_CMP)?((opt)->nf>=4?2:((opt)->nf>=3?1:0)):0) : ((opt)->nf>=4?NIFB_PPP:((opt)->nf>=3?RCB_BDS_C1P:0)))
 
+/* The opt-in state is appended, preserving every legacy RCB index. */
+#define ND(opt)     (ND_BASE(opt)+((opt)->ppp_gal_e5b?1:0))
 #define NR(opt)     (NP(opt)+NC(opt)+NT(opt)+NI(opt)+ND(opt))
 #define NB(opt)     (NF(opt)*MAXSAT)
 #define NX(opt)     (NR(opt)+NB(opt))
@@ -223,6 +233,9 @@ enum {
 #define II(s,opt)   (NP(opt)+NC(opt)+NT(opt)+(s)-1)
 #define ID(i,opt)   (NP(opt)+NC(opt)+NT(opt)+NI(opt)+(i))
 #define IB(s,f,opt) (NR(opt)+MAXSAT*(f)+(s)-1)
+
+/* Model wet delay is a frozen epoch offset, not a pseudo-observation. */
+static double ppp_total_trop(const rtk_t *rtk,const double *x);
 
   /* PPP receiver-clock slot ----------------------------------------------------*/
 static int ppp_clk_index(int sys)
@@ -242,13 +255,21 @@ static int ppp_clk_index(int sys)
 /* 按系统+实际信号+存储槽寻找接收机码偏差状态。
  * 当前参考码：GPS/GAL 1C、BDS 2I；参考码偏差与接收机钟差不可分离，
  * 不再单独估计。GPS/GAL 5Q、BDS 7I/5P/1P 分别使用自己的 RCB 状态。
- * 返回 -1 不一定是不支持：也可能是参考码；调用方还需判断 frq==0。
+ * PAIR_DATUM uses two explicit actual-code references; -1 can be a fixed datum code.
+ * 返回 -1 不一定是不支持：也可能是参考码；调用方须用 ppp_code_modelled 判断。
  * BDS B1I 与 B1C 是不同真实频率；本 PPP 的 B1C 放在第 4 存储槽。 */
 static int ppp_ifb_index(int sys, int frq, uint8_t code, const prcopt_t* opt)
 {
     const char *obs = code2obs(code);
 
     if (!opt || opt->nf < 3 || !obs || !*obs) return -1;
+    if(opt->ppp_gal_e5b && sys==SYS_GAL && frq==1 && code==CODE_L7Q)
+        return ND_BASE(opt); /* E5b offset relative to the selected GAL datum */
+    if(opt->ppp_rcb_datum) {
+        if(sys==SYS_CMP && frq==2 && code==CODE_L5P)return 0;
+        if(sys==SYS_CMP && opt->nf>=4 && frq==3 && code==CODE_L1P)return 1;
+        return -1; /* both datum codes are fixed, not unknown RCBs */
+    }
 
     if ((sys == SYS_GPS || sys == SYS_QZS) &&
         frq == 2 && !strcmp(obs, "5Q")) return RCB_GPS_C5Q;
@@ -270,6 +291,16 @@ static int ppp_ifb_index(int sys, int frq, uint8_t code, const prcopt_t* opt)
 static int ppp_code_modelled(int sys, int frq, uint8_t code,
                              const prcopt_t *opt)
 {
+    if(opt->ppp_rcb_datum || opt->ppp_physical_atmosphere) {
+        /* Single-G1 extension: no fictitious G1/G2 receiver datum or DCB.
+         * Common C1 receiver offset is represented by the existing GLO clock. */
+        if(sys==SYS_GLO)return frq==0 && code==CODE_L1C;
+        if((sys==SYS_GPS || sys==SYS_GAL) &&
+            ((frq==0 && code==CODE_L1C) || (frq==2 && code==CODE_L5Q)))return 1;
+        if(sys==SYS_CMP && ((frq==0 && code==CODE_L2I) ||
+            (frq==1 && code==CODE_L7I)))return 1;
+        return ppp_ifb_index(sys,frq,code,opt)>=0;
+    }
     return frq == 0 || ppp_ifb_index(sys, frq, code, opt) >= 0;
 }
 
@@ -284,6 +315,16 @@ static int ppp_signal_supported(int sys, int frq, uint8_t code,
     const char *p;
     int gal_e5b_phase = 0;
 
+    /* B2b is excluded from PPP for every input path, including RINEX.
+     * B2I shares 1207.14 MHz but has different actual codes and stays separate. */
+    if (sys == SYS_CMP &&
+        (code == CODE_L7D || code == CODE_L7P || code == CODE_L7Z)) return 0;
+
+    /* The integrated GLO path is validated for raw C1C/L1C only.
+     * G2/G3/CDMA need a separate receiver bias model and input regression. */
+    if(opt && (opt->ppp_rcb_datum || opt->ppp_physical_atmosphere) && sys==SYS_GLO)
+        return frq==0 && code==CODE_L1C;
+
     /* E5b/7Q currently has no receiver-code-bias state, so only its carrier
      * enters PPP. Three independent phone data sets repeatedly reject that
      * phase, while excluding it preserves Galileo E1/E5a and Q6 continuity.
@@ -292,8 +333,11 @@ static int ppp_signal_supported(int sys, int frq, uint8_t code,
         if (sscanf(p, "-GALE5BPHASE=%d", &gal_e5b_phase) != 1)
             gal_e5b_phase = 0;
     }
+    if (opt && opt->ppp_gal_e5b && sys==SYS_GAL && frq==1 && code==CODE_L7Q) return 1;
     if (!gal_e5b_phase && sys == SYS_GAL && frq == 1 && obs &&
         !strcmp(obs, "7Q")) return 0;
+    if(opt && opt->ppp_physical_atmosphere)
+        return ppp_code_modelled(sys,frq,code,opt);
     if (frq < 3) return 1;
     return frq == 3 && sys == SYS_CMP && obs && !strcmp(obs, "1P");
 }
@@ -373,7 +417,7 @@ static int readvmf3(const char *file, vmf3_grid_t *grid)
 
 /* 配套格网高程 orography_ell_5x5：每个格点一个椭球高，不是新一期气象产品。
  * 行序必须与 VMF3 格点相同，用于把格点天顶延迟归算到接收机椭球高。 */
-static int readvmf3orog(const char *file)
+static int readvmf3orog_into(const char *file, double *values)
 {
     FILE *fp;
     char buff[128];
@@ -385,14 +429,32 @@ static int readvmf3orog(const char *file)
         return 0;
     }
     while (fgets(buff, sizeof(buff), fp)) {
-        if (n < VMF3_NGRID && sscanf(buff, "%lf", vmf3_orog + n) == 1) n++;
+        if (n < VMF3_NGRID && sscanf(buff, "%lf", values + n) == 1) n++;
     }
     fclose(fp);
-    vmf3_orog_valid = n == VMF3_NGRID;
-    if (!vmf3_orog_valid) {
+    if (n != VMF3_NGRID) {
         trace(1, "vmf3: invalid orography file %s (records=%d)\n", file, n);
     }
-    return vmf3_orog_valid;
+    return n == VMF3_NGRID;
+}
+
+/* Inspect using the production readers, without replacing live VMF3 caches. */
+extern int pppvmf3inspect(const char *file0,const char *file1,const char *orog,
+    gtime_t *first,gtime_t *last)
+{
+    vmf3_grid_t *g=(vmf3_grid_t *)calloc(2,sizeof(*g));
+    double *h=(double *)calloc(VMF3_NGRID,sizeof(double));int ok=0,i,j;
+    if(!g || !h)goto done;
+    if(!readvmf3(file0,g) || !readvmf3(file1,g+1) ||
+       !readvmf3orog_into(orog,h) || timediff(g[1].time,g[0].time)<=0.0)goto done;
+    for(i=0;i<VMF3_NGRID;i++) {
+        if(!isfinite(h[i]))goto done;
+        for(j=0;j<2;j++)if(!isfinite(g[j].ah[i]) || !isfinite(g[j].aw[i]) ||
+            !isfinite(g[j].zhd[i]) || !isfinite(g[j].zwd[i]))goto done;
+    }
+    *first=g[0].time;*last=g[1].time;ok=1;
+done:
+    free(g);free(h);return ok;
 }
 
 /* 启动时加载两期 VMF3 及格网高程；要求后一期时间严格大于前一期。
@@ -403,7 +465,8 @@ extern int pppvmf3load(const char *file0, const char *file1, const char *orog)
     memset(vmf3_grid, 0, sizeof(vmf3_grid));
     vmf3_orog_valid = 0;
     return readvmf3(file0, vmf3_grid) && readvmf3(file1, vmf3_grid + 1) &&
-           readvmf3orog(orog) && timediff(vmf3_grid[1].time, vmf3_grid[0].time) > 0.0;
+           (vmf3_orog_valid=readvmf3orog_into(orog,vmf3_orog)) &&
+           timediff(vmf3_grid[1].time, vmf3_grid[0].time) > 0.0;
 }
 
 /* 两期之间线性时间插值，再取接收机周围四格点做双线性空间插值。
@@ -523,6 +586,17 @@ static int vmf3_ztd_prior(gtime_t time, const double *pos, double *ztd)
     return 1;
 }
 
+static double ppp_model_zhd(gtime_t time,const double *pos)
+{
+    double ah,aw,zhd,zwd;const double zenith[]={0,PI/2};
+    if(vmf3_grid_interp(time,pos,&ah,&aw,&zhd,&zwd))return zhd;
+    return tropmodel(time,pos,zenith,0.0);
+}
+static double ppp_total_trop(const rtk_t *rtk,const double *x)
+{
+    if(!rtk->opt.ppp_wet_correction)return x[IT(&rtk->opt)];
+    return rtk->ppp_trop_zhd+rtk->ppp_trop_base+x[IT(&rtk->opt)];
+}
 /* -VMF3SIG 是初始化 ZTD 的标准差（米），不是持续 ZWD 约束标准差。
  * 未设置时采用本文件默认值，并按上下限保护；平方后才作为初始方差。 */
 static double vmf3_init_sigma(const prcopt_t *opt)
@@ -631,12 +705,16 @@ extern int pppoutstat(rtk_t* rtk, char* buff)
             "GPS_C5Q", "GAL_C5Q", "BDS_C7I", "BDS_C5P", "BDS_C1P"
         };
 
-        for (i = 0; i < ND(&rtk->opt) && i < NIFB_PPP; i++) {
+        for (i = 0; i < ND(&rtk->opt); i++) {
             int idx = ID(i, &rtk->opt);
 
             if (idx >= 0 && idx < rtk->nx) {
                 p += sprintf(p, "$RCB,%d,%.3f,%d,%s,%.4f,%.4f\n",
-                    week, tow, rtk->sol.stat, name[i], x[idx], STD(rtk, idx));
+                    week, tow, rtk->sol.stat,
+                    rtk->opt.ppp_gal_e5b && i==ND_BASE(&rtk->opt)?
+                    (rtk->opt.ppp_rcb_datum?"GAL_C7Q_PAIR":"GAL_C7Q"):
+                    rtk->opt.ppp_rcb_datum?
+                    (i==0?"BDS_C5P_PAIR":"BDS_C1P_PAIR"):name[i], x[idx], STD(rtk, idx));
             }
         }
     }
@@ -645,7 +723,7 @@ extern int pppoutstat(rtk_t* rtk, char* buff)
     if (rtk->opt.tropopt == TROPOPT_EST || rtk->opt.tropopt == TROPOPT_ESTG) {
         i = IT(&rtk->opt);
         p += sprintf(p, "$TROP,%d,%.3f,%d,%d,%.4f,%.4f\n", week, tow, rtk->sol.stat,
-            1, x[i], STD(rtk, i));
+            1, ppp_total_trop(rtk,x), STD(rtk, i));
     }
     if (rtk->opt.tropopt == TROPOPT_ESTG) {
         i = IT(&rtk->opt);
@@ -658,9 +736,13 @@ extern int pppoutstat(rtk_t* rtk, char* buff)
             ssat = rtk->ssat + i;
             if (!ssat->vs) continue;
             j = II(i + 1, &rtk->opt);
-            if (rtk->x[j] == 0.0) continue;
+            if((rtk->opt.ppp_rcb_datum || rtk->opt.ppp_physical_atmosphere)?rtk->P[j+j*rtk->nx]<=0.0:rtk->x[j]==0.0)continue;
             satno2id(i + 1, id);
-            p += sprintf(p, "$ION,%d,%.3f,%d,%s,%.1f,%.1f,%.4f,%.4f\n", week, tow,
+            p += sprintf(p, rtk->opt.ppp_rcb_datum && satsys(i+1,NULL)==SYS_GLO?
+                "$ION_SINGLE_G1,%d,%.3f,%d,%s,%.1f,%.1f,%.4f,%.4f\n":
+                rtk->opt.ppp_rcb_datum?
+                "$ION_EFFECTIVE,%d,%.3f,%d,%s,%.1f,%.1f,%.4f,%.4f\n":
+                "$ION,%d,%.3f,%d,%s,%.1f,%.1f,%.4f,%.4f\n", week, tow,
                 rtk->sol.stat, id, rtk->ssat[i].azel[0] * R2D,
                 rtk->ssat[i].azel[1] * R2D, x[j], STD(rtk, j));
         }
@@ -1073,7 +1155,8 @@ static double mwmeas(const obsd_t* obs, const nav_t* nav, int f)
  * ============================================================================= */
 static void corr_meas(const obsd_t* obs, const nav_t* nav, const double* azel,
     const prcopt_t* opt, const double* dantr,
-    const double* dants, double phw, double* L, double* P,
+    const double* dants, const uint8_t *sat_pco_valid,
+    double phw, double* L, double* P,
     double* Lc, double* Pc)
 {
     double freq[NFREQ] = { 0 }, C1, C2, osb;
@@ -1082,6 +1165,7 @@ static void corr_meas(const obsd_t* obs, const nav_t* nav, const double* azel,
 
     for (i = 0; i < opt->nf && i < NFREQ; i++) {
         L[i] = P[i] = 0.0;
+        if(sat_pco_valid && !sat_pco_valid[i])continue;
         freq[i] = sat2freq(obs->sat, obs->code[i], nav);
         if (freq[i] == 0.0) continue;
         if (testsnr(0, i, azel[1], obs->SNR[i] * SNR_UNIT, &opt->snrmask)) continue;
@@ -1120,6 +1204,14 @@ static void corr_meas(const obsd_t* obs, const nav_t* nav, const double* azel,
                 /* A known but expired OSB must not be silently reused or
                  * replaced with an uncalibrated code observation. */
                 P[i] = 0.0;
+            }
+            else if (!nav->legacy_product_reference && nav->nosb>0 &&
+                     bias_clock_ref_status(nav,obs->sat)>0) {
+                /* The precise clock and pseudo-absolute OSBs share the BIA
+                 * datum.  A missing satellite/signal OSB is not a zero bias,
+                 * and a legacy DCB is not proven compatible with this clock. */
+                P[i] = 0.0;
+                trace(3,"PPP_OSB_MISSING,sat=%d,code=%d\n",obs->sat,obs->code[i]);
             }
             else {
                 frq = i;
@@ -1542,9 +1634,41 @@ static void detslp_ll(rtk_t* rtk, const obsd_t* obs, int n)
 /* =============================================================================
  * 功能：利用 GF 组合 (Geometry-Free) 探测周跳，阈值为 thresslip（米）。
  * 对每个次频与首频分别检测；无合适的单信号检测依据时标记组合的两频。
- * CORRECTED 只向本历元确实执行过的两条 Doppler 检测让渡。
+ * CORRECTED 从时间对齐的原始相位历史形成 GF；零组合也是有效数据。
+ * 缺测错时/待重启弧段不能提供配对证据。只向已标记异常的 Doppler 让渡。
+ * 两频检测均通过不能抵消独立的 GF 超限证据；未能归因时重启组合两频。
  * LEGACY 保留原来的 Doppler-ready 判断，供历史复现。
  * ============================================================================= */
+
+/* GF differences require two raw phase pairs with matching endpoints. A
+ * cached scalar has neither a timestamp nor a valid-zero representation.
+ * Individual phase histories are maintained by rtkpos, also after startup. */
+static int gf_history_pair_ppp(const rtk_t *rtk,const obsd_t *ob,
+    const nav_t *nav,int f,double *previous,double *current,const char **reason)
+{
+    const ssat_t *ss=&rtk->ssat[ob->sat-1];
+    double f0=sat2freq(ob->sat,ob->code[0],nav);
+    double ff=sat2freq(ob->sat,ob->code[f],nav),dt;
+    *reason="MISSING_CURRENT_PAIR";
+    if(f0<=0.0 || ff<=0.0 || ob->L[0]==0.0 || ob->L[f]==0.0)return 0;
+    *current=(ob->L[0]/f0-ob->L[f]/ff)*CLIGHT;
+    *reason="MISSING_PREVIOUS_PAIR";
+    if(!ss->pt[0][0].time || !ss->pt[0][f].time ||
+        ss->ph[0][0]==0.0 || ss->ph[0][f]==0.0)return 0;
+    *reason="UNALIGNED_PREVIOUS_PAIR";
+    if(fabs(timediff(ss->pt[0][0],ss->pt[0][f]))>1E-6)return 0;
+    *reason="NONCONTINUOUS_PAIR";
+    dt=timediff(ob->time,ss->pt[0][0]);
+    if(dt<=0.0 || dt>smartphone_ppp_policy(&rtk->opt).arc_gap_seconds)return 0;
+    *reason="PENDING_ARC";
+    if(ss->ppp_arc_pending[0] || ss->ppp_arc_pending[f])return 0;
+    *previous=(ss->ph[0][0]/f0-ss->ph[0][f]/ff)*CLIGHT;
+    *reason="NONFINITE_PAIR";
+    if(!isfinite(*previous) || !isfinite(*current))return 0;
+    *reason="RAW_TIME_PAIRED";
+    return 1;
+}
+
 static void detslp_gf(rtk_t* rtk, const obsd_t* obs, int n, const nav_t* nav,
     const unsigned char tested[MAXSAT][NFREQ])
 {
@@ -1558,23 +1682,38 @@ static void detslp_gf(rtk_t* rtk, const obsd_t* obs, int n, const nav_t* nav,
         for (f = 1; f < rtk->opt.nf && f < NFREQ; f++) {
             if (!ppp_signal_supported(satsys(sat, NULL), f,
                                       obs[i].code[f], &rtk->opt)) continue;
-            if ((g1 = gfmeas(obs + i, nav, f)) == 0.0) continue;
-            g0 = rtk->ssat[sat - 1].gf[f - 1];
-            rtk->ssat[sat - 1].gf[f - 1] = g1;
-            if (g0 != 0.0) {
+            int available;
+            if(smartphone_ppp_policy(&rtk->opt).corrected_lifecycle) {
+                const char *reason;
+                available=gf_history_pair_ppp(rtk,obs+i,nav,f,&g0,&g1,&reason);
+                if(!available) {
+                    trace(3,"$GF_UNAVAILABLE,sat=%d,F%d,reason=%s\n",sat,f+1,reason);
+                    continue;
+                }
+                trace(3,"$GF_PAIR,sat=%d,F%d,dt=%.9g,dGF=%.9g,source=RAW_TIME_PAIRED\n",
+                    sat,f+1,timediff(obs[i].time,rtk->ssat[sat-1].pt[0][0]),g1-g0);
+            }
+            else {
+                if ((g1 = gfmeas(obs + i, nav, f)) == 0.0) continue;
+                g0 = rtk->ssat[sat - 1].gf[f - 1];
+                rtk->ssat[sat - 1].gf[f - 1] = g1;
+                available=g0!=0.0;
+            }
+            if (available) {
                 rtk->ssat[sat-1].ppp_slip_evidence[0] |= PPP_EVIDENCE_GF;
                 rtk->ssat[sat-1].ppp_slip_evidence[f] |= PPP_EVIDENCE_GF;
             }
-            if (g0 != 0.0 && fabs(g1 - g0) > thres) {
+            if (available && fabs(g1 - g0) > thres) {
                 ssat_t *ss = rtk->ssat + sat - 1;
                 double dt0 = timediff(obs[i].time, ss->ppp_dop_time[0]);
                 double dtf = timediff(obs[i].time, ss->ppp_dop_time[f]);
 
-                /* When both single-signal Doppler continuity tests can run,
-                 * let them attribute the jump. A noisy secondary signal must
-                 * not automatically reset the good primary ambiguity. */
+                /* Keep per-frequency attribution when Doppler marked a slip.
+                 * Execution alone does not explain a GF jump: if neither
+                 * frequency was marked, retain the independent GF evidence. */
                 if ((smartphone_ppp_policy(&rtk->opt).corrected_lifecycle ?
-                    (tested && tested[sat-1][0] && tested[sat-1][f]) :
+                    (tested && tested[sat-1][0] && tested[sat-1][f] &&
+                    ((ss->slip[0] | ss->slip[f]) & LLI_SLIP)) :
                     (pppopt_number(&rtk->opt, "-PREPROC=", 0.0, 0.0, 1.0) >= 0.5 &&
                     pppopt_number(&rtk->opt, "-DOPPSLIP=", 0.0, 0.0, 10.0) > 0.0 &&
                     ss->ppp_dop_valid[0] && ss->ppp_dop_valid[f] &&
@@ -1584,7 +1723,7 @@ static void detslp_gf(rtk_t* rtk, const obsd_t* obs, int n, const nav_t* nav,
                     dt0 >= 0.2 && dt0 <= 5.0 && dtf >= 0.2 && dtf <= 5.0))) {
                     trace(3, "$GF_DEFER,sat=%d,F%d,dGF=%.3f,reason=%s\n",
                           sat, f + 1, g1 - g0,smartphone_ppp_policy(&rtk->opt).corrected_lifecycle?
-                          "DOPPLER_TESTED":"LEGACY_DOPPLER_READY");
+                          "DOPPLER_ATTRIBUTED":"LEGACY_DOPPLER_READY");
                     continue;
                 }
                 rtk->ssat[sat - 1].slip[0] |= LLI_SLIP;
@@ -1676,6 +1815,35 @@ static double ppp_median(double *a, int n)
  * 5. MW 作为补充；最后才推进 Doppler 历史，避免“当前减当前”的伪检测。
  * 仅用当前/过去观测，不访问未来历元或参考真值；缺历史不能完成此类检测。
  * CORRECTED 历史持续保存，与 STARTQC 窗口无关；LEGACY 保留原窗口。 */
+
+/* A clock increment is defined over two timestamps. Mixed intervals cannot
+ * share a common increment. Count each satellite once, even with many bands. */
+static int doppler_interval_consensus_ppp(const rtk_t *rtk,const obsd_t *obs,
+    const int *poi,const int *pof,const int *pgrp,const double *piv,int np,
+    int row,double *common)
+{
+    double votes[MAXSAT],samples[NFREQ];
+    int seen[MAXSAT]={0},i,j,n=0,k,sat,target=poi[row],f=pof[row];
+    gtime_t begin=rtk->ssat[obs[target].sat-1].ppp_dop_time[f];
+    gtime_t end=obs[target].time;
+    *common=0.0;
+    for(i=0;i<np;i++) {
+        sat=obs[poi[i]].sat;
+        if(seen[sat-1] || pgrp[i]!=pgrp[row])continue;
+        k=0;
+        for(j=0;j<np && k<NFREQ;j++) {
+            if(obs[poi[j]].sat!=sat || pgrp[j]!=pgrp[row] ||
+                fabs(timediff(obs[poi[j]].time,end))>1E-6 ||
+                fabs(timediff(rtk->ssat[sat-1].ppp_dop_time[pof[j]],begin))>1E-6)continue;
+            samples[k++]=piv[j];
+        }
+        if(!k)continue;
+        seen[sat-1]=1;votes[n++]=ppp_median(samples,k);
+    }
+    if(n>=3)*common=ppp_median(votes,n);
+    return n;
+}
+
 static void precheck_obs_ppp(rtk_t *rtk, const obsd_t *obs, int n,
                              const nav_t *nav)
 {
@@ -1753,7 +1921,9 @@ static void precheck_obs_ppp(rtk_t *rtk, const obsd_t *obs, int n,
                     if(!pseen[grp][sat-1]){pcnt[grp]++;pseen[grp][sat-1]=1;} np++;
                 }
                 if (code_thres > 0.0 && obs[i].P[f] != 0.0 &&
-                    ss->psmvalid[f] && nc < NWORK) {
+                    ss->psmvalid[f] && nc < NWORK &&
+                    (!smartphone_ppp_policy(&rtk->opt).verified_repairs ||
+                     fabs(timediff(ss->psmt[f],ss->ppp_dop_time[f]))<1E-6)) {
                     innov = obs[i].P[f] -
                         (ss->psmP[f] - lambda * avgd * dt);
                     civ[nc] = innov; coi[nc] = i; cof[nc] = f; cgrp[nc] = grp;
@@ -1766,6 +1936,27 @@ static void precheck_obs_ppp(rtk_t *rtk, const obsd_t *obs, int n,
             if (q >= 3) medp[grp] = ppp_median(work, q);
             for (i = q = 0; i < nc; i++) if (cgrp[i] == grp) work[q++] = civ[i];
             if (q >= 3) medc[grp] = ppp_median(work, q);
+            {
+                /* Candidate policy: a common code/phase reference discontinuity
+                 * changes the ambiguity datum. Rebuild affected arcs, preserve
+                 * every raw observation, and reset only their code smoothers.
+                 * Reuse the existing CODEJUMP gate; no new tuned threshold. */
+                if(smartphone_ppp_policy(&rtk->opt).verified_repairs && corrected &&
+                    smartphone_ppp_policy(&rtk->opt).common_clock &&
+                    pcnt[grp]>=3 && ccnt[grp]>=3 && code_thres>0.0 &&
+                    fabs(medp[grp]-medc[grp])>MAX(5.0,code_thres)) {
+                    int resets=0;char ts[40];time2str(obs[0].time,ts,3);
+                    for(i=0;i<n && i<MAXOBS;i++)if(ppp_clk_index(satsys(obs[i].sat,NULL))==grp)
+                        for(f=0;f<rtk->opt.nf && f<NFREQ;f++) {
+                            ssat_t *ss=rtk->ssat+obs[i].sat-1;
+                            ss->psmvalid[f]=0;
+                            if(rtk->x[IB(obs[i].sat,f,&rtk->opt)]!=0.0) {
+                                invalidate_arc_ppp(rtk,obs[i].sat,f,"CODE_PHASE_REFERENCE_CHANGE");resets++;
+                            }
+                        }
+                    trace(2,"$AUDIT_REFERENCE_CHANGE,%s,group=%d,code_common=%.9f,phase_common=%.9f,arcs_reset=%d,raw_observations_preserved=1\n",ts,grp,medc[grp],medp[grp],resets);
+                }
+            }
             /* A code+phase common clock step is not a constellation-wide
              * cycle slip. Reset the code smoother's clock datum instead of
              * propagating last epoch's offset into current code for seconds. */
@@ -1778,15 +1969,23 @@ static void precheck_obs_ppp(rtk_t *rtk, const obsd_t *obs, int n,
                     grp,medc[grp],medp[grp]);
             }
         }
-        for (i = 0; i < np; i++) if (pcnt[pgrp[i]] >= 3) {
+        for (i = 0; i < np; i++) {
+            double common=medp[pgrp[i]];
+            int peers=pcnt[pgrp[i]];
+            if(corrected)peers=doppler_interval_consensus_ppp(rtk,obs,poi,pof,pgrp,piv,np,i,&common);
             sat = obs[poi[i]].sat; f = pof[i];
+            if(peers<3) {
+                if(corrected)trace(3,"$PRE_DOP_UNAVAILABLE,sat=%d,F%d,reason=NO_ALIGNED_PEERS,peers=%d,dt=%.9g\n",
+                    sat,f+1,peers,timediff(obs[poi[i]].time,rtk->ssat[sat-1].ppp_dop_time[f]));
+                continue;
+            }
             dop_tested[sat-1][f]=1;
             rtk->ssat[sat-1].ppp_slip_evidence[f] |= PPP_EVIDENCE_DOPPLER;
-            if(fabs(piv[i]-medp[pgrp[i]])<=phase_thres)continue;
+            if(fabs(piv[i]-common)<=phase_thres)continue;
             rtk->ssat[sat - 1].slip[f] |= LLI_SLIP;
             rtk->ssat[sat - 1].psmvalid[f] = 0;
             trace(2, "$PRE_DOP_SLIP,sat=%d,F%d,res=%.3f,common=%.3f,thres=%.3f\n",
-                sat, f + 1, piv[i] - medp[pgrp[i]], medp[pgrp[i]], phase_thres);
+                sat, f + 1, piv[i] - common, common, phase_thres);
         }
         for (i = 0; i < nc; i++) if (ccnt[cgrp[i]] >= 3 &&
             fabs(civ[i] - medc[cgrp[i]]) > code_thres) {
@@ -1869,7 +2068,7 @@ static void precheck_startup_code_ppp(rtk_t *rtk,const obsd_t *obs,int n,
         ion*=ppp_iono_mapf(nav,pos,azel);
         if(vmf3_trop(obs[i].time,pos,azel,&mh,&mw,&zhd,&zwd))dtrop=mh*zhd+mw*zwd;
         else if(!tropcorr(obs[i].time,nav,pos,azel,TROPOPT_SAAS,&dtrop,&vtr))continue;
-        corr_meas(obs+i,nav,azel,opt,zero,zero,0.0,L,P,&Lc,&Pc);
+        corr_meas(obs+i,nav,azel,opt,zero,zero,NULL,0.0,L,P,&Lc,&Pc);
         for(f=0;f<opt->nf&&f<NFREQ;f++) {
             double freq,y,freq0;int reference=0;
             if(P[f]==0.0||rtk->ssat[sat-1].ppp_code_bad[f]||
@@ -2026,7 +2225,8 @@ static void udpos_ppp(rtk_t* rtk)
 }
 /* =============================================================================
  * 功能：卡尔曼滤波时间更新 (预测) -> 接收机钟差 (以及多系统系统时差)
- * 说明：仅 GPS/QZS 公共钟差每历元按白噪声重建，初值来自 SPP dtr[0]。
+ * 说明：公共钟差保持既有白噪声方差。LEGACY 用 SPP；COMMON 用上一
+ *       提交的 PPP 钟差作起点，再在每次试算内对齐当前公共钟差。
  *       GLO/GAL/BDS/IRN 存的是相对 GPS 的 ISB，保留跨历元连续性并加
  *       (0.10 m/sqrt(s))^2*abs(tt) 过程方差，不是每秒全部重置。
  *       内部钟差单位米，输出 dtr 是秒；非 GPS 方程依赖 GPS 钟差+本系统 ISB。
@@ -2037,9 +2237,16 @@ static void udclk_ppp(rtk_t* rtk)
 
     trace(3, "udclk_ppp:\n");
 
-    /* GPS/QZS receiver clock: white-noise state */
-    initx(rtk, CLIGHT * rtk->sol.dtr[0], VAR_CLK, IC(0, &rtk->opt));
-    if(ppp_innovation_spp_current())ppp_innovation_note_current_init(IC(0,&rtk->opt),0,0,0);
+    /* Recentring below changes only the trial linearization point, not this
+     * white-clock variance. A current SPP candidate cannot replace a committed
+     * PPP clock in the COMMON path. */
+    {
+        int common=smartphone_ppp_policy(&rtk->opt).common_clock;
+        double clock=common && rtk->ppp_clock_valid?rtk->ppp_clock_m:CLIGHT*rtk->sol.dtr[0];
+        initx(rtk,common && clock==0.0?1E-6:clock,VAR_CLK,IC(0,&rtk->opt));
+        if((!common || !rtk->ppp_clock_valid) && ppp_innovation_spp_current())
+            ppp_innovation_note_current_init(IC(0,&rtk->opt),0,0,0);
+    }
 
     /* Inter-system biases: keep temporal continuity */
     for (i = 1; i < NCLK_PPP; i++) {
@@ -2075,14 +2282,34 @@ static void udtrop_ppp(rtk_t* rtk, gtime_t epoch)
     int i = IT(&rtk->opt), j;
     /* sol.time can be clock-corrected by SPP: prior bookkeeping must use
        the same observation timestamp as subsequent pseudo-observations. */
-    gtime_t prior_time=(statistical_model_ppp(&rtk->opt)&2)?epoch:rtk->sol.time;
+    gtime_t prior_time=((statistical_model_ppp(&rtk->opt)&2) ||
+        rtk->opt.ppp_physical_atmosphere)?epoch:rtk->sol.time;
 
     trace(3, "udtrop_ppp:\n");
-
-    if (rtk->x[i] == 0.0) {
+    if(rtk->opt.ppp_wet_correction) {
+        double base,ah,aw,zhd,zwd,unused;
+        int initialized=rtk->P[i+i*rtk->nx]>0.0;
+        ecef2pos(norm(rtk->x,3)>0.0?rtk->x:rtk->sol.rr,pos);
+        if(vmf3_grid_interp(prior_time,pos,&ah,&aw,&zhd,&zwd))base=zwd;
+        else {zhd=ppp_model_zhd(prior_time,pos);base=sbstropcorr(prior_time,pos,azel,&unused)-zhd;}
+        if(!isfinite(base) || !isfinite(zhd)){rtk->ppp_failure=FILTER_NAN_STATE;return;}
+        if(initialized)rtk->x[i]+=rtk->ppp_trop_base-base;
+        rtk->ppp_trop_base=base;rtk->ppp_trop_zhd=zhd;rtk->ppp_trop_time=prior_time;
+    }
+    if (rtk->opt.ppp_wet_correction?rtk->P[i+i*rtk->nx]<=0.0:rtk->x[i] == 0.0) {
         ecef2pos(rtk->sol.rr, pos);
         time2str(prior_time, tstr, 0);
-        if (smartphone_ppp_policy(&rtk->opt).atmosphere_constraints && vmf3_ztd_prior(prior_time, pos, &ztd)) {
+        if(rtk->opt.ppp_physical_atmosphere && rtk->opt.ppp_wet_correction &&
+            vmf3_ztd_prior(prior_time,pos,&ztd)) {
+            /* Independent forecast initialization, not a second wet row.
+             * Retain the existing declared uncertainty; no truth tuning. */
+            ztd=rtk->ppp_trop_zhd+rtk->ppp_trop_base;
+            var=SQR(vmf3_init_sigma(&rtk->opt));
+            rtk->ppp_zwd_prior_time=epoch;
+            trace(2,"$PHYS_WET_INIT,%s,delta=0,var=%.9f,model_zwd=%.9f,Q_unchanged=1,pseudo_rows=0\n",
+                tstr,var,rtk->ppp_trop_base);
+        }
+        else if (smartphone_ppp_policy(&rtk->opt).atmosphere_constraints && vmf3_ztd_prior(prior_time, pos, &ztd)) {
             /* Start at the external forecast, but retain a conservative
              * variance because this is a 5-degree forecast grid. */
             var = SQR(vmf3_init_sigma(&rtk->opt));
@@ -2097,7 +2324,8 @@ static void udtrop_ppp(rtk_t* rtk, gtime_t epoch)
             trace(2, "$VMF3_INIT,time=%s,fallback=SBAS,ZTD=%.4f\n",
                 tstr, ztd);
         }
-        initx(rtk, ztd, var, i);
+        initx(rtk, ztd-(rtk->opt.ppp_wet_correction?
+            rtk->ppp_trop_zhd+rtk->ppp_trop_base:0.0), var, i);
 
         if (rtk->opt.tropopt >= TROPOPT_ESTG) {
             for (j = i + 1; j < i + 3; j++) initx(rtk, 1E-6, VAR_GRA, j);
@@ -2149,6 +2377,19 @@ static double ion_constraint_interval(const prcopt_t* opt)
     return MIN(86400.0, MAX(1.0, sec));
 }
 
+/* Product map cadence supplies an explicit conservative information budget,
+ * not a measured correlation time. Never inherit legacy IONCONSINT=1 s.
+ * No usable cadence means no repeated product rows (initialization only). */
+static double physical_iono_interval(const nav_t *nav)
+{
+    int i;double dt,interval=0.0;
+    if(!nav || !nav->tec)return 0.0;
+    for(i=1;i<nav->nt;i++) {
+        dt=timediff(nav->tec[i].time,nav->tec[i-1].time);
+        if(isfinite(dt) && dt>0.0 && (!interval || dt<interval))interval=dt;
+    }
+    return interval;
+}
 /* Keep the estimated vertical TEC state, its IONEX prior, and its design
  * matrix on the same single-layer geometry. iontec() uses the IONEX grid's
  * earth radius and shell height; ionmapf() instead hard-codes HION=350 km.
@@ -2194,7 +2435,7 @@ static int ionex_vertical_prior(gtime_t time, const nav_t* nav,
     sig = ion_constraint_sigma(opt);
     if (*var_v < SQR(sig)) *var_v = SQR(sig);
 
-    if (*ion_v != *ion_v || *var_v != *var_v || fabs(*ion_v) > 1E4 || *var_v <= 0.0) {
+    if (!isfinite(*ion_v) || !isfinite(*var_v) || fabs(*ion_v) > 1E4 || *var_v <= 0.0) {
         return 0;
     }
     return 1;
@@ -2212,6 +2453,10 @@ static void udiono_ppp(rtk_t* rtk, const obsd_t* obs, int n, const nav_t* nav)
     double ion, vari, sinel, pos[3], * azel;
     char* p;
     int i, j, f, gap_resion = GAP_RESION, sat, outage;
+    unsigned char seen[MAXSAT]={0},predicted[MAXSAT]={0};
+    double observed_dt[MAXSAT]={0};
+    int observation_lifecycle=rtk->opt.ppp_physical_atmosphere ||
+        smartphone_ppp_policy(&rtk->opt).verified_repairs;
 
     trace(3, "udiono_ppp (IONEX constrained):\n");
 
@@ -2219,6 +2464,25 @@ static void udiono_ppp(rtk_t* rtk, const obsd_t* obs, int n, const nav_t* nav)
         sscanf(p, "-GAP_RESION=%d", &gap_resion);
     }
 
+    if(observation_lifecycle) {
+        /* Physical ionosphere belongs to the satellite, not its phase arc.
+         * A continuing valid code still observes I even without a carrier.
+         * Below-cutoff/unsupported data must not repeatedly seed GIM. */
+        for(i=0;i<n && i<MAXOBS;i++) {
+            ssat_t *ss=&rtk->ssat[obs[i].sat-1];
+            sat=obs[i].sat;
+            if(ss->azel[1]<rtk->opt.elmin)continue;
+            for(f=0;f<NF(&rtk->opt) && f<NFREQ;f++) {
+                if(!ppp_signal_supported(satsys(sat,NULL),f,obs[i].code[f],&rtk->opt) ||
+                    sat2freq(sat,obs[i].code[f],nav)<=0.0)continue;
+                if((obs[i].P[f]!=0.0 && !ss->ppp_code_bad[f] &&
+                    ppp_code_modelled(satsys(sat,NULL),f,obs[i].code[f],&rtk->opt)) ||
+                    (obs[i].L[f]!=0.0 && !(obs[i].LLI[f]&LLI_HALFC)))seen[sat-1]=1;
+            }
+            if(seen[sat-1])observed_dt[sat-1]=ss->ppp_ion_observation_time.time?
+                MAX(0.0,timediff(obs[i].time,ss->ppp_ion_observation_time)):fabs(rtk->tt);
+        }
+    }
     /* Reset an ionosphere state only if every usable frequency of the satellite
      * has been absent for the configured gap. Using outc[0] alone incorrectly
      * resets L5/E5-only phone measurements when L1 is temporarily missing. */
@@ -2228,7 +2492,23 @@ static void udiono_ppp(rtk_t* rtk, const obsd_t* obs, int n, const nav_t* nav)
         for (f = 0; f < NF(&rtk->opt) && f < NFREQ; f++) {
             if ((int)rtk->ssat[i].outc[f] < outage) outage = (int)rtk->ssat[i].outc[f];
         }
-        if (rtk->x[j] != 0.0 && outage > gap_resion) {
+        if(observation_lifecycle) {
+            /* GAP_RESION is elapsed seconds here, preserving 1 Hz intent.
+             * Do not substitute accepted-phase outc for P/L continuity. */
+            gtime_t last=rtk->ssat[i].ppp_ion_observation_time;
+            double dt=last.time?timediff(obs[0].time,last):0.0;
+            if(rtk->P[j+j*rtk->nx]>0.0 && dt>gap_resion) {
+                initx(rtk,0.0,0.0,j);
+                rtk->ssat[i].ppp_ion_prior_time.time=0;rtk->ssat[i].ppp_ion_prior_time.sec=0;
+                trace(2,"$PHYS_ION_RESET,sat=%d,reason=OBSERVATION_GAP,dt=%.9f,gap_seconds=%d\n",i+1,dt,gap_resion);
+                rtk->ssat[i].ppp_ion_observation_time.time=0;rtk->ssat[i].ppp_ion_observation_time.sec=0;
+            }
+            if(seen[i] && (!rtk->ssat[i].ppp_ion_observation_time.time ||
+                timediff(obs[0].time,rtk->ssat[i].ppp_ion_observation_time)>0.0))
+                rtk->ssat[i].ppp_ion_observation_time=obs[0].time;
+            continue;
+        }
+        if ((rtk->opt.ppp_rcb_datum?rtk->P[j+j*rtk->nx]>0.0:rtk->x[j] != 0.0) && outage > gap_resion) {
             initx(rtk, 0.0, 0.0, j);
             rtk->ssat[i].ppp_ion_prior_time.time=0;
             rtk->ssat[i].ppp_ion_prior_time.sec=0.0;
@@ -2242,19 +2522,28 @@ static void udiono_ppp(rtk_t* rtk, const obsd_t* obs, int n, const nav_t* nav)
         sat = obs[i].sat;
         j = II(sat, &rtk->opt);
         azel = rtk->ssat[sat - 1].azel;
+        if(observation_lifecycle) {
+            if(!seen[sat-1] || predicted[sat-1])continue;
+            predicted[sat-1]=1;
+        }
 
-        if (rtk->x[j] == 0.0) {
+        if ((rtk->opt.ppp_rcb_datum || rtk->opt.ppp_physical_atmosphere)?rtk->P[j+j*rtk->nx]<=0.0:rtk->x[j] == 0.0) {
             rtk->ssat[sat-1].ppp_ion_prior_time.time=0;
             rtk->ssat[sat-1].ppp_ion_prior_time.sec=0.0;
             /* First choice: initialize from the same IONEX product that will be
              * used as a soft constraint. This avoids noisy phone code-difference
              * initialization being contaminated by receiver IFB/code noise. */
-            if (smartphone_ppp_policy(&rtk->opt).atmosphere_constraints &&
+            if ((smartphone_ppp_policy(&rtk->opt).atmosphere_constraints ||
+                rtk->opt.ppp_physical_atmosphere) &&
                 ionex_vertical_prior(obs[i].time, nav, pos, azel, &rtk->opt, &ion, &vari)) {
-                if (fabs(ion) < 1E-8) ion = 1E-6; /* RTKLIB filter active-state sentinel */
+                if (!rtk->opt.ppp_physical_atmosphere && fabs(ion) < 1E-8)
+                    ion = 1E-6; /* legacy active-state sentinel */
                 initx(rtk, ion, vari, j);
-                if (statistical_model_ppp(&rtk->opt)&2)
+                if ((statistical_model_ppp(&rtk->opt)&2) || rtk->opt.ppp_physical_atmosphere)
                     rtk->ssat[sat-1].ppp_ion_prior_time=obs[i].time;
+                if(rtk->opt.ppp_physical_atmosphere)
+                    trace(2,"$PHYS_ION_INIT,sat=%d,Iv=%.9f,var=%.9f,source=IONEX,consumed_epoch=1,map_interval=%.3f\n",
+                        sat,ion,vari,physical_iono_interval(nav));
                 trace(3, "ion init IONEX: sat=%d Iv=%.4f sig=%.3f\n",
                     sat, ion, sqrt(vari));
             }
@@ -2277,7 +2566,8 @@ static void udiono_ppp(rtk_t* rtk, const obsd_t* obs, int n, const nav_t* nav)
         }
         else {
             sinel = sin(MAX(azel[1], 5.0 * D2R));
-            rtk->P[j + j * rtk->nx] += SQR(rtk->opt.prn[1] / sinel) * fabs(rtk->tt);
+            rtk->P[j + j * rtk->nx] += SQR(rtk->opt.prn[1] / sinel) *
+                (observation_lifecycle?observed_dt[sat-1]:fabs(rtk->tt));
         }
     }
 }
@@ -2287,7 +2577,7 @@ static void udiono_ppp(rtk_t* rtk, const obsd_t* obs, int n, const nav_t* nav)
  * 这里没有读“接收机偏差产品”；RCB 是利用观测估计的未知数，不是卫星 OSB。
  * ============================================================================= */
  /* 状态只对应前面枚举的信号，不是为所有次频自动建立通用公共偏差。 */
-static void uddcb_ppp(rtk_t* rtk)
+static void uddcb_ppp(rtk_t* rtk,const obsd_t *obs,int n)
 {
     int i, j;
 
@@ -2297,9 +2587,17 @@ static void uddcb_ppp(rtk_t* rtk)
         j = ID(i, &rtk->opt);
         if (j < 0 || j >= rtk->nx) continue;
 
-        if (rtk->x[j] == 0.0) {
+        if ((rtk->opt.ppp_rcb_datum || rtk->opt.ppp_physical_atmosphere)?rtk->P[j+j*rtk->nx]<=0.0:rtk->x[j] == 0.0) {
+            if(rtk->opt.ppp_rcb_datum || rtk->opt.ppp_physical_atmosphere ||
+                (rtk->opt.ppp_gal_e5b && i==ND_BASE(&rtk->opt))) {
+                int oi,f,seen=0;
+                for(oi=0;oi<n;oi++)for(f=0;f<rtk->opt.nf;f++)
+                    if(obs[oi].P[f]!=0.0 && !rtk->ssat[obs[oi].sat-1].ppp_code_bad[f] &&
+                        ppp_ifb_index(satsys(obs[oi].sat,NULL),f,obs[oi].code[f],&rtk->opt)==i)seen=1;
+                if(!seen)continue; /* no unused receiver-bias states activated */
+            }
             /* A nonzero value activates the state in RTKLIB's reduced filter. */
-            initx(rtk, 1E-6, VAR_IFB, j);
+            initx(rtk, rtk->opt.ppp_physical_atmosphere?0.0:1E-6, VAR_IFB, j);
         }
         else {
             /* Receiver code hardware delay is nearly constant but not perfectly
@@ -2345,6 +2643,7 @@ static void udbias_ppp(rtk_t* rtk, const obsd_t* obs, int n, const nav_t* nav)
     }
     ecef2pos(rtk->sol.rr, pos);
     id_ifb = -1;
+    int reference_seed=smartphone_ppp_policy(&rtk->opt).verified_repairs;
 
     for (f = 0; f < NF(&rtk->opt); f++) {
         offset = 0.0;
@@ -2402,7 +2701,7 @@ static void udbias_ppp(rtk_t* rtk, const obsd_t* obs, int n, const nav_t* nav)
                 continue;
             }
 
-            corr_meas(obs + i, nav, rtk->ssat[sat - 1].azel, &rtk->opt, dantr, dants,
+            corr_meas(obs + i, nav, rtk->ssat[sat - 1].azel, &rtk->opt, dantr, dants,NULL,
                 0.0, L, P, &Lc, &Pc);
             applydoppsm_ppp(rtk, obs + i, P);
             if (rtk->ssat[sat - 1].ppp_code_bad[f]) P[f] = 0.0;
@@ -2420,12 +2719,14 @@ static void udbias_ppp(rtk_t* rtk, const obsd_t* obs, int n, const nav_t* nav)
                 if (f >= NFREQ || L[f] == 0.0) continue;
                 if ((freq = sat2freq(sat, obs[i].code[f], nav)) == 0.0) continue;
                 sys = satsys(sat, NULL);
-                if (f > 0 && !ppp_code_modelled(sys, f, obs[i].code[f],
-                                                &rtk->opt) &&
+                int seed_frequency=f;
+                if (f > 0 && (!ppp_code_modelled(sys,f,obs[i].code[f],&rtk->opt) ||
+                    (reference_seed && P[f]==0.0)) &&
                     P[0] != 0.0 && !rtk->ssat[sat - 1].ppp_code_bad[0]) {
                     double freq0 = sat2freq(sat, obs[i].code[0], nav);
                     if (freq0 == 0.0) continue;
                     P_clean = P[0];
+                    seed_frequency=0;
                     gamma = SQR(FREQL1 / freq) + SQR(FREQL1 / freq0);
                 }
                 else {
@@ -2438,7 +2739,8 @@ static void udbias_ppp(rtk_t* rtk, const obsd_t* obs, int n, const nav_t* nav)
                  * Receiver code IFB for every non-reference frequency.
                  * Subtract it before forming the phase-code ambiguity seed.
                  */
-                ifb_slot = ppp_ifb_index(sys, f, obs[i].code[f], &rtk->opt);
+                ifb_slot = ppp_ifb_index(sys,reference_seed?seed_frequency:f,
+                    obs[i].code[reference_seed?seed_frequency:f],&rtk->opt);
                 id_ifb = (ifb_slot >= 0 && ifb_slot < ND(&rtk->opt)) ?
                     ID(ifb_slot, &rtk->opt) : -1;
                 if (id_ifb >= 0 && id_ifb < rtk->nx) {
@@ -2453,6 +2755,13 @@ static void udbias_ppp(rtk_t* rtk, const obsd_t* obs, int n, const nav_t* nav)
                 /* L_f - P_ref needs (gamma_f + gamma_ref)*I; same-band
                  * code uses 2*gamma_f*I. */
                 bias[i] = L[f] - P_clean + gamma * dion;
+                if(reference_seed && seed_frequency==0 && f>0 && (rtk->x[j]==0.0 || slip[i])) {
+                    char ts[40],sid[8];time2str(obs[i].time,ts,3);satno2id(sat,sid);
+                    trace(2,"$PHASE_REFERENCE_SEED,%s,sat=%s,F%d,phase=%s,reference=%s,own_code_missing=%d,gamma=%.17g,I_slant=%.17g,P_ref_corrected=%.17g,reference_RCB=%.17g,N_seed=%.17g,slip=%d\n",
+                        ts,sid,f+1,code2obs(obs[i].code[f]),code2obs(obs[i].code[0]),P[f]==0.0,gamma,dion,P_clean,
+                        id_ifb>=0 && id_ifb<rtk->nx?rtk->x[id_ifb]:0.0,bias[i],slip[i]);
+                }
+
                 if (bias[i] == 0.0) bias[i] = 1E-4;
             }
 
@@ -2546,24 +2855,42 @@ static void udstate_ppp(rtk_t* rtk, const obsd_t* obs, int n, const nav_t* nav)
 
     /* temporal update of position */
     udpos_ppp(rtk);
+#ifdef ENABLE_FILTER_DIAGNOSTIC
+    ppp_fd_state("AFTER_POSITION",rtk->x,rtk->P,NT(&rtk->opt)?ppp_total_trop(rtk,rtk->x):0.0,rtk->ppp_trop_base,rtk->ppp_trop_zhd);
+#endif
 
     /* temporal update of clock */
     udclk_ppp(rtk);
+#ifdef ENABLE_FILTER_DIAGNOSTIC
+    ppp_fd_state("AFTER_CLOCK",rtk->x,rtk->P,NT(&rtk->opt)?ppp_total_trop(rtk,rtk->x):0.0,rtk->ppp_trop_base,rtk->ppp_trop_zhd);
+#endif
 
     /* temporal update of tropospheric parameters */
     if (rtk->opt.tropopt == TROPOPT_EST || rtk->opt.tropopt == TROPOPT_ESTG) {
         udtrop_ppp(rtk,obs[0].time);
     }
+#ifdef ENABLE_FILTER_DIAGNOSTIC
+    ppp_fd_state("AFTER_TROP",rtk->x,rtk->P,NT(&rtk->opt)?ppp_total_trop(rtk,rtk->x):0.0,rtk->ppp_trop_base,rtk->ppp_trop_zhd);
+#endif
     /* temporal update of ionospheric parameters */
     if (rtk->opt.ionoopt == IONOOPT_EST) {
         udiono_ppp(rtk, obs, n, nav);
     }
+#ifdef ENABLE_FILTER_DIAGNOSTIC
+    ppp_fd_state("AFTER_IONO",rtk->x,rtk->P,NT(&rtk->opt)?ppp_total_trop(rtk,rtk->x):0.0,rtk->ppp_trop_base,rtk->ppp_trop_zhd);
+#endif
     /* 预测当前已配置的各系统/实际信号 RCB，不仅仅是 GPS L5。 */
     if (rtk->opt.nf >= 3) {
-        uddcb_ppp(rtk);
+        uddcb_ppp(rtk,obs,n);
     }
+#ifdef ENABLE_FILTER_DIAGNOSTIC
+    ppp_fd_state("AFTER_RCB",rtk->x,rtk->P,NT(&rtk->opt)?ppp_total_trop(rtk,rtk->x):0.0,rtk->ppp_trop_base,rtk->ppp_trop_zhd);
+#endif
     /* temporal update of phase-bias */
     udbias_ppp(rtk, obs, n, nav);
+#ifdef ENABLE_FILTER_DIAGNOSTIC
+    ppp_fd_state("PREDICTED",rtk->x,rtk->P,NT(&rtk->opt)?ppp_total_trop(rtk,rtk->x):0.0,rtk->ppp_trop_base,rtk->ppp_trop_zhd);
+#endif
 }
 /* =============================================================================
  * 功能：根据卫星到接收机方向与卫星天底方向的夹角，查询卫星天线 PCV。
@@ -2571,7 +2898,7 @@ static void udstate_ppp(rtk_t* rtk, const obsd_t* obs, int n, const nav_t* nav)
  * 不应把此处 PCV 查询当作全部天线改正。天线型号来自已加载的 ANTEX。
  * ============================================================================= */
 static void satantpcv(const double* rs, const double* rr, const pcv_t* pcv,
-    double* dant)
+    const uint8_t *codes,int n,int product,double* dant,uint8_t *valid)
 {
     double ru[3], rz[3], eu[3], ez[3], nadir, cosa;
     int i;
@@ -2580,13 +2907,23 @@ static void satantpcv(const double* rs, const double* rr, const pcv_t* pcv,
         ru[i] = rr[i] - rs[i];
         rz[i] = -rs[i];
     }
-    if (!normv3(ru, eu) || !normv3(rz, ez)) return;
+    if (!normv3(ru, eu) || !normv3(rz, ez)) {
+        if(product)for(i=0;i<n && i<NFREQ;i++)valid[i]=0;
+        return;
+    }
 
     cosa = dot3(eu, ez);
     cosa = cosa < -1.0 ? -1.0 : (cosa > 1.0 ? 1.0 : cosa);
     nadir = acos(cosa);
 
     antmodel_s(pcv, nadir, dant);
+    if (!product) return;
+    for (i=0;i<n && i<NFREQ;i++) {
+        const char *signal=code2obs(codes[i]);
+        int id=signal && signal[0]>='1' && signal[0]<='9' ? signal[0]-'0' : 0;
+        if(codes[i] && (!id || !pcv_antex_nadir(pcv,id,nadir,dant+i)))
+            valid[i]=0;
+    }
 }
 /* =============================================================================
  * 功能：精密对流层投影函数与偏导数模型计算
@@ -2599,15 +2936,16 @@ static void satantpcv(const double* rs, const double* rr, const pcv_t* pcv,
  *       model_trop 在 EST 模式把梯度设 0，ESTG 才读取三维状态。
  * ============================================================================= */
 static double trop_model_prec(gtime_t time, const double* pos,
-    const double* azel, const double* x, double* dtdx,
+    const double* azel, const double* x, double wet_base, double dry_base, int wet_correction, double* dtdx,
     double* var)
 {
     const double zazel[] = { 0.0,PI / 2.0 };
-    double zhd, zwd_init, m_h, m_w, cotz, grad_n, grad_e;
+    double zhd, zwd_init, m_h, m_w, cotz, grad_n, grad_e,wet;
 
     /*
      * VMF3 provides the hydrostatic delay and mapping factors. The forecast
-     * ZWD is intentionally not used here: (x[0]-zhd) is the locally estimated
+     * ZWD is not used in LEGACY; WET_CORRECTION uses a frozen epoch model
+     * ZHD and ZWD with a freely estimated wet correction. In LEGACY: (x[0]-zhd) is the locally estimated
      * PPP wet zenith delay and remains free to evolve as a random walk.
      */
     if (!vmf3_trop(time, pos, azel, &m_h, &m_w, &zhd, &zwd_init)) {
@@ -2615,6 +2953,8 @@ static double trop_model_prec(gtime_t time, const double* pos,
         m_h = tropmapf(time, pos, azel, &m_w);
     }
 
+    if(wet_correction)zhd=dry_base; /* epoch model is deterministic inside IEKF */
+    wet=wet_correction?wet_base+x[0]:x[0]-zhd;
     if (azel[1] > 0.0) {
 
         /* m_w=m_0+m_0*cot(el)*(Gn*cos(az)+Ge*sin(az)): ref [6] */
@@ -2622,18 +2962,18 @@ static double trop_model_prec(gtime_t time, const double* pos,
         grad_n = m_w * cotz * cos(azel[0]);
         grad_e = m_w * cotz * sin(azel[0]);
         m_w += grad_n * x[1] + grad_e * x[2];
-        dtdx[1] = grad_n * (x[0] - zhd);
-        dtdx[2] = grad_e * (x[0] - zhd);
+        dtdx[1] = grad_n * wet;
+        dtdx[2] = grad_e * wet;
     }
     dtdx[0] = m_w;
     *var = SQR(0.01);
-    return m_h * zhd + m_w * (x[0] - zhd);
+    return m_h * zhd + m_w * wet;
 }
 /* 按 tropopt 分派：SAAS/SBAS 是纯模型改正；EST/ESTG 从滤波 x 取状态。
  * EST 下本地 trp[3] 的梯度初值为 0，避免误读不存在的两个梯度状态。
  * 返回值是模型可用标志，dtrp 是米，var 是模型残差方差（m^2）。 */
 static int model_trop(gtime_t time, const double* pos, const double* azel,
-    const prcopt_t* opt, const double* x, double* dtdx,
+    const prcopt_t* opt, const double* x, double base, double dry_base, double* dtdx,
     const nav_t* nav, double* dtrp, double* var)
 {
     double trp[3] = { 0 };
@@ -2649,7 +2989,7 @@ static int model_trop(gtime_t time, const double* pos, const double* azel,
     }
     if (opt->tropopt == TROPOPT_EST || opt->tropopt == TROPOPT_ESTG) {
         matcpy(trp, x + IT(opt), opt->tropopt == TROPOPT_EST ? 1 : 3, 1);
-        *dtrp = trop_model_prec(time, pos, azel, trp, dtdx, var);
+        *dtrp = trop_model_prec(time, pos, azel, trp, base, dry_base, opt->ppp_wet_correction, dtdx, var);
         return 1;
     }
     return 0;
@@ -2950,10 +3290,27 @@ static int reject_postfit_ppp(int post, double z0)
  * RTKLIB stores each measurement's H column contiguously (nx x nv).
  * Existing A/B paths never call this function. Pseudo observations stay at
  * their original variance; no weights persist to the next epoch. */
-static int apply_huber_robust_ppp(const double *x,const double *P,
+/* S itself is unchanged; expose the activation convention of the actual
+ * update, including a valid exactly-zero wet correction. */
+static int ppp_diag_activation(const double *x,const double *P,const double *v,
+    const double *H,const double *R,int nx,int nv,ppp_innovation_value_t *out,
+    double *S,int covariance_active)
+{
+    int info=ppp_innovation_diag(x,P,v,H,R,nx,nv,out,S),i,k,a;
+    if(info || !covariance_active)return info;
+    for(i=0;i<nv;i++) {
+        out[i].inactive_state_support=0;
+        for(a=0;a<nx;a++)if(H[a+i*nx]!=0.0 && !(P[a+a*nx]>0.0))
+            for(k=0;k<nx;k++)if(P[a+k*nx]!=0.0 || P[k+a*nx]!=0.0) {
+                out[i].inactive_state_support=1;break;
+            }
+    }
+    return info;
+}
+static int apply_huber_robust_ppp_masked(const double *x,const double *P,
     const double *v,const double *H,double *R,int nx,int nv,
     const unsigned char *gnss,const ppp_innovation_meta_t *meta,
-    gtime_t time,int trial)
+    gtime_t time,int trial,int covariance_active)
 {
     ppp_innovation_value_t *value;
     double *candidate;
@@ -2966,7 +3323,7 @@ static int apply_huber_robust_ppp(const double *x,const double *P,
         free(value);free(candidate);
         return FILTER_NO_MEMORY;
     }
-    if(ppp_innovation_diag(x,P,v,H,R,nx,nv,value,NULL)<0) {
+    if(ppp_diag_activation(x,P,v,H,R,nx,nv,value,NULL,covariance_active)<0) {
         free(value);free(candidate);return FILTER_BAD_DIM;
     }
     for(i=0;i<nv;i++)if(gnss[i]) {
@@ -3003,6 +3360,11 @@ static int apply_huber_robust_ppp(const double *x,const double *P,
     }
     free(value);free(candidate);return info;
 }
+/* Original signature retained for legacy tests/updates. No new weight rule. */
+static int apply_huber_robust_ppp(const double *x,const double *P,const double *v,
+    const double *H,double *R,int nx,int nv,const unsigned char *gnss,
+    const ppp_innovation_meta_t *meta,gtime_t time,int trial)
+{return apply_huber_robust_ppp_masked(x,P,v,H,R,nx,nv,gnss,meta,time,trial,0);}
 static int ppp_res(int post, const obsd_t* obs, int n, const double* rs,
     const double* dts, const double* var_rs, const int* svh,
     const double* dr, int* exc, unsigned char* mexc, const nav_t* nav,
@@ -3014,6 +3376,9 @@ static int ppp_res(int post, const obsd_t* obs, int n, const double* rs,
     double y, r, cdtr, bias, rr[3], pos[3], e[3], dtdx[3], L[NFREQ], P[NFREQ], Lc, Pc;
     double var[MAXOBS * 2 * NFREQ + MAXSAT + 3], dtrp = 0.0, dion = 0.0, vart = 0.0, vari = 0.0, dcb, freq;
     double dantr[NFREQ] = { 0 }, dants[NFREQ] = { 0 };
+    double sat_pco_delta[NFREQ] = { 0 };
+    uint8_t sat_pco_valid[NFREQ] = { 0 };
+    uint8_t sat_pcv_valid[NFREQ] = { 0 };
     double ve[MAXOBS * 2 * NFREQ] = { 0 };
     double ze[MAXOBS * 2 * NFREQ] = { 0 };
     double se[MAXOBS * 2 * NFREQ] = { 0 };
@@ -3029,6 +3394,7 @@ static int ppp_res(int post, const obsd_t* obs, int n, const double* rs,
     int i, j, k, sat, sys, nv = 0, nx = rtk->nx, stat = 1, frq, code;
     int ionex_constraints = 0, vmf3_zwd_constraints = 0;
     int statmodel=statistical_model_ppp(opt);
+    unsigned char gnss_used[MAXSAT]={0};
     double res, C;
 
     time2str(obs[0].time, str, 2);
@@ -3099,12 +3465,29 @@ static int ppp_res(int post, const obsd_t* obs, int n, const double* rs,
             continue;
         }
 
-        if (!model_trop(obs[i].time, pos, azel + i * 2, opt, x, dtdx, nav, &dtrp, &vart) ||
+        if (!model_trop(obs[i].time, pos, azel + i * 2, opt, x, rtk->ppp_trop_base, rtk->ppp_trop_zhd, dtdx, nav, &dtrp, &vart) ||
             !model_iono(obs[i].time, pos, azel + i * 2, opt, sat, x, nav, &dion, &vari)) {
             continue;
         }
 
-        if (opt->posopt[0]) satantpcv(rs + i * 6, rr, nav->pcvs + sat - 1, dants);
+        memset(dants,0,sizeof(dants));
+        for(j=0;j<NFREQ;j++) {
+            sat_pco_delta[j]=0.0;sat_pco_valid[j]=sat_pcv_valid[j]=1;
+        }
+        if (opt->posopt[0]) satantpcv(rs + i * 6, rr, nav->pcvs + sat - 1,
+            obs[i].code,NF(opt),opt->sateph==EPHOPT_PREC &&
+            !nav->legacy_product_reference && bias_clock_ref_status(nav,sat)==1,
+            dants,sat_pcv_valid);
+        if(opt->sateph==EPHOPT_PREC) {
+            /* Satellite attitude is evaluated near the emission epoch, as
+             * in peph2pos(), rather than at receiver measurement time. */
+            satantpco_delta(timeadd(obs[i].time,-r/CLIGHT),rs+i*6,rr,sat,nav,obs[i].code,
+                NF(opt)<NFREQ?NF(opt):NFREQ,sat_pco_delta,sat_pco_valid);
+            for(j=0;j<NF(opt) && j<NFREQ;j++) {
+                sat_pco_valid[j]&=sat_pcv_valid[j];
+                if(sat_pco_valid[j])dants[j]+=sat_pco_delta[j];
+            }
+        }
         antmodel(opt->pcvr, opt->antdel[0], azel + i * 2, opt->posopt[1], dantr);
 
         if (!model_phw(rtk->sol.time, sat, nav->pcvs[sat - 1].type,
@@ -3114,8 +3497,12 @@ static int ppp_res(int post, const obsd_t* obs, int n, const double* rs,
 
         /* 先统一码/相位单位与产品/天线改正，再保存未平滑 CMC，最后应用
          * 原始码域的平滑差值。诊断漂移与滤波用平滑码不应混成同一个量。 */
-        corr_meas(obs + i, nav, azel + i * 2, &rtk->opt, dantr, dants,
+        corr_meas(obs + i, nav, azel + i * 2, &rtk->opt, dantr, dants,sat_pco_valid,
             rtk->ssat[sat - 1].phw, L, P, &Lc, &Pc);
+        for(j=0;j<NF(opt) && j<NFREQ;j++)if(!sat_pco_valid[j]) {
+            if(!post)trace(3,"PPP_SAT_ANTEX_MISSING,sat=%d,slot=%d,code=%d,pcv_valid=%d\n",
+                           sat,j,obs[i].code[j],sat_pcv_valid[j]);
+        }
         if (diag && opt->ionoopt != IONOOPT_IFLC) {
             for (j = 0; j < NF(opt) && j < NFREQ; j++) {
                 ppp_diag_signal_t* d = &diag->obs[i][j];
@@ -3217,7 +3604,7 @@ static int ppp_res(int post, const obsd_t* obs, int n, const double* rs,
             }
 
             if (opt->ionoopt == IONOOPT_EST) {
-                if (x[II(sat, opt)] == 0.0) continue;
+                if((opt->ppp_rcb_datum || opt->ppp_physical_atmosphere)?rtk->P[II(sat,opt)*(nx+1)]<=0.0:x[II(sat,opt)]==0.0)continue;
                 if (H) H[II(sat, opt) + nx * nv] = C * ppp_iono_mapf(nav, pos, azel + i * 2);
             }
 
@@ -3370,7 +3757,7 @@ static int ppp_res(int post, const obsd_t* obs, int n, const double* rs,
                     m->isb_m=ci>0?x[IC(ci,opt)]:0.0;
                     m->isb_var=ci>0?rtk->P[IC(ci,opt)*(nx+1)]:0.0;
                     m->iono_m=ii>=0?x[ii]:NAN;m->iono_var=ii>=0?rtk->P[ii*(nx+1)]:NAN;
-                    m->trop_m=NT(opt)?x[IT(opt)]:NAN;m->trop_var=NT(opt)?rtk->P[IT(opt)*(nx+1)]:NAN;
+                    m->trop_m=NT(opt)?ppp_total_trop(rtk,x):NAN;m->trop_var=NT(opt)?rtk->P[IT(opt)*(nx+1)]:NAN;
                     m->ambiguity_m=x[IB(sat,frq,opt)];
                 }
                 m->slip_flag=(obs[i].LLI[frq]|ss->slip[frq])&LLI_SLIP;
@@ -3385,6 +3772,7 @@ static int ppp_res(int post, const obsd_t* obs, int n, const double* rs,
                 }
             }
             if(!post && robust_gnss)robust_gnss[nv]=code?1:2;
+            gnss_used[sat-1]=1;
             nv++;
         }
     }
@@ -3402,7 +3790,7 @@ static int ppp_res(int post, const obsd_t* obs, int n, const double* rs,
      * 设计矩阵仅该星 II 列为 1；单位与状态一致：v=Iv_product-Iv_state。
      * STATMOD 位2使初始化已用过的本历元先验不再加入；后续按 dt 分配信息。
      * product_use 只记试算里用了哪些先验，成功提交 xp/Pp 后才更新使用时间。 */
-    if (smartphone_ppp_policy(opt).atmosphere_constraints &&
+    if ((smartphone_ppp_policy(opt).atmosphere_constraints || opt->ppp_physical_atmosphere) &&
         !post && opt->ionoopt == IONOOPT_EST && v && H) {
         unsigned char used[MAXSAT] = { 0 };
         int logged_interval = 0;
@@ -3418,14 +3806,17 @@ static int ppp_res(int post, const obsd_t* obs, int n, const double* rs,
             if (azel[1 + i * 2] < opt->elmin) continue;
 
             ii = II(sat, opt);
-            if (ii < 0 || ii >= nx || x[ii] == 0.0) continue;
+            if (ii < 0 || ii >= nx || (opt->ppp_physical_atmosphere?
+                rtk->P[ii+ii*nx]<=0.0:x[ii]==0.0)) continue;
+            if(opt->ppp_physical_atmosphere && !gnss_used[sat-1])continue;
 
             if (!ionex_vertical_prior(obs[i].time, nav, pos, azel + i * 2,
                 opt, &ion_prior, &var_prior)) {
                 continue;
             }
-            interval = ion_constraint_interval(opt);
-            if (statmodel&2) {
+            interval = opt->ppp_physical_atmosphere?physical_iono_interval(nav):ion_constraint_interval(opt);
+            if(opt->ppp_physical_atmosphere && interval<=0.0)continue;
+            if ((statmodel&2) || opt->ppp_physical_atmosphere) {
                 information=atmosphere_information_ppp(obs[i].time,
                     rtk->ssat[sat-1].ppp_ion_prior_time,interval);
                 if(information<=0.0)continue;
@@ -3442,15 +3833,18 @@ static int ppp_res(int post, const obsd_t* obs, int n, const double* rs,
              * to IONEX. This is essential for disturbed/local ionosphere. */
             sigma_prior = sqrt(MAX(var_prior, 1E-12));
             zc = fabs(v[nv]) / sigma_prior;
-            if (zc > ION_CONSTR_ROBUST) {
+            if (!opt->ppp_physical_atmosphere && zc > ION_CONSTR_ROBUST) {
                 penalty = SQR(zc / ION_CONSTR_ROBUST);
                 if (penalty > ION_CONSTR_MAXPEN) penalty = ION_CONSTR_MAXPEN;
                 var_prior *= penalty;
             }
-            dt = (statmodel&2)&&rtk->ssat[sat-1].ppp_ion_prior_time.time ?
+            dt = ((statmodel&2) || opt->ppp_physical_atmosphere)&&rtk->ssat[sat-1].ppp_ion_prior_time.time ?
                 timediff(obs[i].time,rtk->ssat[sat-1].ppp_ion_prior_time):MAX(0.1,fabs(rtk->tt));
-            temporal_factor = (statmodel&2)?1.0/information:MAX(1.0,interval/dt);
+            temporal_factor = ((statmodel&2) || opt->ppp_physical_atmosphere)?1.0/information:MAX(1.0,interval/dt);
             var[nv] = var_prior * temporal_factor;
+            if(opt->ppp_physical_atmosphere)
+                trace(3,"$PHYS_ION_PRIOR,%s,sat=%d,Iv=%.9f,res=%.9f,base_var=%.9f,information=%.9f,R=%.9f,map_interval=%.3f,robust_penalty=1\n",
+                    str,sat,ion_prior,v[nv],var_prior,information,var[nv],interval);
             if(product_use)product_use[3+sat-1]=1;
             trace(3,"$ATM_STAT,%s,type=IONEX,sat=%d,dt=%.6f,information=%.9f,base_sigma=%.6f,robust_penalty=%.6f,effective_variance=%.9f,mode=%d\n",
                 str,sat,dt,1.0/temporal_factor,sigma_prior,penalty,var[nv],statmodel);
@@ -3505,13 +3899,13 @@ static int ppp_res(int post, const obsd_t* obs, int n, const double* rs,
         if(statmodel&2)information=atmosphere_information_ppp(obs[0].time,
             rtk->ppp_zwd_prior_time,interval);
 
-        if (information>0.0 && sig_zwd > 0.0 && it >= 0 && it < nx && x[it] != 0.0 &&
+        if (information>0.0 && sig_zwd > 0.0 && it >= 0 && it < nx && (opt->ppp_wet_correction?rtk->P[it+it*nx]>0.0:x[it] != 0.0) &&
             vmf3_grid_interp(obs[0].time, pos, &ah, &aw,
                 &zhd_vmf, &zwd_vmf) &&
             nv < MAXOBS * 2 * NFREQ + MAXSAT + 3) {
             for (k = 0; k < nx; k++) H[k + nx * nv] = 0.0;
             H[it + nx * nv] = 1.0;
-            v[nv] = zwd_vmf - (x[it] - zhd_vmf);
+            v[nv] = zwd_vmf - (ppp_total_trop(rtk,x) - zhd_vmf);
 
             zc = fabs(v[nv]) / sig_zwd;
             if (zc > VMF3_ZWD_ROBUST) {
@@ -3529,7 +3923,7 @@ static int ppp_res(int post, const obsd_t* obs, int n, const double* rs,
             trace(zc > VMF3_ZWD_ROBUST ? 2 : 4,
                 "$VMF3_ZWD_CONSTR,%s,ZWDest=%.4f,ZWDvmf=%.4f,res=%.4f,"
                 "sig=%.3f,interval=%.0f,effsig=%.3f,z=%.2f,pen=%.2f\n",
-                str, x[it] - zhd_vmf, zwd_vmf, v[nv], sig_zwd,
+                str, ppp_total_trop(rtk,x) - zhd_vmf, zwd_vmf, v[nv], sig_zwd,
                 interval, sqrt(var[nv]), zc, penalty);
             if(row_meta) {
                 ppp_innovation_meta_t *m=&row_meta[nv];memset(m,0,sizeof(*m));
@@ -3595,6 +3989,63 @@ static int ppp_res(int post, const obsd_t* obs, int n, const double* rs,
     }
 
     return post ? stat : nv;
+}
+
+/* Robust clock location, not an R/Q adjustment or a pseudo measurement.
+ * Each satellite gets one vote (lowest available frequency slot); newly
+ * initialized/slipped/gapped ambiguities cannot define the phase location.
+ * GPS is the reference datum. With no GPS consensus an available system's
+ * residual already contains its predicted ISB and can define the location.
+ * Three distinct satellites is the minimum for one contaminated vote to be
+ * isolated by a median; no metre/sigma threshold is used here. */
+static int ppp_common_clock_seed(const rtk_t *rtk,const double *v,
+    const ppp_innovation_meta_t *meta,int nv,
+    const unsigned char eligible[MAXSAT][NFREQ],double *shift,int *peers,
+    int *group,int *phase)
+{
+    double value[MAXSAT],work[MAXSAT];
+    int slot[MAXSAT],sys[MAXSAT],count[NCLK_PPP],kind,i,sat,f,g,chosen,q;
+    *shift=0.0;*peers=0;*group=-1;*phase=0;
+    if(!rtk || !v || !meta || !eligible || nv<1)return 0;
+    for(kind=0;kind<2;kind++) {
+        for(i=0;i<MAXSAT;i++)slot[i]=NFREQ;
+        memset(count,0,sizeof(count));
+        for(i=0;i<nv;i++) {
+            const ppp_innovation_meta_t *m=meta+i;
+            if(m->source_obs_index<0 || m->sat<1 || m->sat>MAXSAT)continue;
+            if(m->measurement_class!=(kind?INNOV_GNSS_CODE:INNOV_GNSS_PHASE))continue;
+            sat=m->sat-1;f=m->frequency_slot;g=ppp_clk_index(m->sys);
+            if(f<0 || f>=NFREQ || g<0 || g>=NCLK_PPP || !isfinite(v[i]))continue;
+            if(!kind && (m->combined || !eligible[sat][f] ||
+                rtk->ssat[sat].ppp_arc_reset[f] || rtk->ssat[sat].ppp_arc_pending[f] ||
+                ((rtk->ssat[sat].slip[f]|m->slip_flag)&LLI_SLIP)))continue;
+            if(f>=slot[sat])continue;
+            slot[sat]=f;sys[sat]=g;value[sat]=v[i];
+        }
+        for(i=0;i<MAXSAT;i++)if(slot[i]<NFREQ)count[sys[i]]++;
+        chosen=0;
+        if(count[0]<3)for(g=1;g<NCLK_PPP;g++)if(count[g]>count[chosen])chosen=g;
+        if(count[chosen]<3)continue;
+        for(i=q=0;i<MAXSAT;i++)if(slot[i]<NFREQ && sys[i]==chosen)work[q++]=value[i];
+        *shift=ppp_median(work,q);*peers=q;*group=chosen;*phase=!kind;
+        return isfinite(*shift);
+    }
+    return 0;
+}
+
+static int ppp_clock_phase_ready(const rtk_t *rtk,const obsd_t *ob,int f)
+{
+    const prcopt_t *opt=&rtk->opt;
+    const ssat_t *ss;
+    int sat,b;
+    if(!rtk->ppp_clock_valid || !ob || f<0 || f>=NF(opt) || f>=NFREQ ||
+        (sat=ob->sat)<1 || sat>MAXSAT)return 0;
+    ss=rtk->ssat+sat-1;b=IB(sat,f,opt);
+    /* An ambiguity value alone does not prove this signal participated in the
+     * previous accepted PPP update. Missing/rejected phase loses the vote. */
+    return ss->vsat[f] && !ss->ppp_arc_pending[f] && !ss->ppp_arc_reset[f] &&
+        !(ob->LLI[f]&LLI_SLIP) && !(ss->slip[f]&LLI_SLIP) &&
+        rtk->x[b]!=0.0 && rtk->P[b+b*rtk->nx]>0.0;
 }
 
 /* Count rejections across epochs, never across editing iterations. Only a
@@ -3705,7 +4156,7 @@ static void ppp_diag_emit(rtk_t* rtk, const obsd_t* obs, int n,
     if (!obs || n <= 0) return;
     time2str(obs[0].time, str, 2);
     if (opt->tropopt == TROPOPT_EST || opt->tropopt == TROPOPT_ESTG) {
-        ztd = rtk->x[IT(opt)];
+        ztd = ppp_total_trop(rtk,rtk->x);
         sigma = sqrt(MAX(rtk->P[IT(opt) + IT(opt) * rtk->nx], 0.0));
         if (norm(rtk->x, 3) > 1E6) {
             ecef2pos(rtk->x, pos);
@@ -3931,12 +4382,127 @@ static int test_hold_amb(rtk_t* rtk)
  * 多次循环是同一历元的粗差编辑试算：每次从相同预测 x/P 出发，只提交
  * 最终验后通过的 xp/Pp 一次；否则会重复把同一秒数据当作新观测强化。
  * ============================================================================= */
+/* IEKF uses one immutable prediction distribution for all linearizations.
+ * H has state rows/measurement columns. The adjusted innovation is
+ * v(x_j)+H_j'*(x_j-x_minus); covariance is updated only from P_minus.
+ * The callback changes the model, never the fixed R or prediction. */
+typedef int (*ppp_linearize_fn)(void *,const double *,double *,double *);
+static int ppp_iekf_update_core(double *x,double *P,double *H,double *v,const double *R,
+    int nx,int nv,ppp_linearize_fn linearize,void *context,int *iterations,int physical)
+{
+    double *prior=mat(nx,1),*priorP=mat(nx,nx),*at=mat(nx,1),*next=mat(nx,1),
+        *nextP=mat(nx,nx),*workH=mat(nx,nv),*raw=mat(nv,1),*q=mat(nv,1);
+    int it,k,j,info=PPP_FAILURE_IEKF_LIMIT;
+    *iterations=0;
+    matcpy(prior,x,nx,1);matcpy(priorP,P,nx,nx);matcpy(at,x,nx,1);
+    matcpy(workH,H,nx,nv);matcpy(raw,v,nv,1);
+    for(it=0;it<PPP_IEKF_MAX_ITER;it++) {
+        double change=0.0;
+        if(it && (info=linearize(context,at,raw,workH)))break;
+        for(j=0;j<nv;j++) {
+            q[j]=raw[j];
+            for(k=0;k<nx;k++)q[j]+=workH[k+j*nx]*(at[k]-prior[k]);
+        }
+        matcpy(next,prior,nx,1);matcpy(nextP,priorP,nx,nx);
+#ifdef ENABLE_FILTER_DIAGNOSTIC
+        ppp_fd_iteration(it,at,raw,q,nx,nv);
+#endif
+        info=physical?filter_physical(next,nextP,workH,q,R,nx,nv):
+            filter_active(next,nextP,workH,q,R,nx,nv);
+        *iterations=it+1;
+        if(info)break;
+        for(k=0;k<nx;k++)if(priorP[k+k*nx]>0.0)
+            change=MAX(change,fabs(next[k]-at[k]));
+        trace(3,"$PPP_IEKF_LINEARIZATION,iteration=%d,max_state_change_m=%.17g,R_recomputed_ignored=1\n",it+1,change);
+        if(change<=PPP_IEKF_POSITION_TOL) {
+            matcpy(x,next,nx,1);matcpy(P,nextP,nx,nx);
+            matcpy(H,workH,nx,nv);matcpy(v,q,nv,1);
+            info=0;break;
+        }
+        matcpy(at,next,nx,1);info=PPP_FAILURE_IEKF_LIMIT;
+    }
+    free(prior);free(priorP);free(at);free(next);free(nextP);
+    free(workH);free(raw);free(q);
+    return info;
+}
+/* Preserve the existing non-PHYSICAL IEKF entry and regression contract. */
+static int ppp_iekf_update(double *x,double *P,double *H,double *v,const double *R,
+    int nx,int nv,ppp_linearize_fn linearize,void *context,int *iterations)
+{
+    return ppp_iekf_update_core(x,P,H,v,R,nx,nv,linearize,context,iterations,0);
+}
+/* Only the verified legacy-estimator B path opts into Joseph safety.
+ * A/old B and the PHYSICAL active-state semantics remain unchanged. */
+static int ppp_verified_joseph(const prcopt_t *opt)
+{
+    return opt->ppp_baseline==PPP_BASELINE_B_LEGACY &&
+        smartphone_ppp_policy(opt).verified_repairs && !opt->ppp_iekf &&
+        !opt->ppp_wet_correction && !opt->ppp_rcb_datum && !opt->ppp_physical_atmosphere;
+}
+static int ppp_safe_covariance(const prcopt_t *opt)
+{
+    return opt->ppp_physical_atmosphere || ppp_verified_joseph(opt);
+}
+static int ppp_covariance_gate(const double *P,int nx,int physical,int posterior)
+{
+    int info=physical?numeric_covariance_psd(P,nx):numeric_covariance(P,nx);
+    return info==FILTER_NOT_PSD?(posterior?FILTER_PSD_POSTERIOR:FILTER_PSD_PRIOR):info;
+}
+typedef struct {
+    rtk_t *rtk;const obsd_t *obs;const nav_t *nav;
+    const double *rs,*dts,*var,*dr;const int *svh;
+    int n,nv,capacity,exc[MAXOBS];
+    unsigned char mexc[MAXOBS*2*NFREQ];
+    const ppp_innovation_meta_t *rows;ppp_innovation_meta_t *meta;
+    double *azel,*R,*model_v,*model_H;
+} ppp_iekf_context_t;
+static int ppp_same_row(const ppp_innovation_meta_t *a,const ppp_innovation_meta_t *b)
+{
+    return a->measurement_class==b->measurement_class && a->sat==b->sat &&
+        a->source_obs_index==b->source_obs_index && a->frequency_slot==b->frequency_slot &&
+        a->signal==b->signal && a->signal2==b->signal2 && a->combined==b->combined;
+}
+static int ppp_iekf_linearize(void *opaque,const double *x,double *v,double *H)
+{
+    ppp_iekf_context_t *c=(ppp_iekf_context_t *)opaque;
+    double phw[MAXSAT];int exc[MAXOBS],j,nv;
+    unsigned char mexc[MAXOBS*2*NFREQ];
+    memcpy(exc,c->exc,sizeof(exc));memcpy(mexc,c->mexc,sizeof(mexc));
+    for(j=0;j<MAXSAT;j++)phw[j]=c->rtk->ssat[j].phw;
+    trace(3,"$PPP_IEKF_MODEL_BEGIN,recomputed_R_used=0,new_diagnostic_sample=0\n");
+    nv=ppp_res(0,c->obs,c->n,c->rs,c->dts,c->var,c->svh,c->dr,
+        exc,mexc,c->nav,x,c->rtk,c->model_v,c->model_H,c->R,c->azel,NULL,NULL,c->meta,NULL);
+    for(j=0;j<MAXSAT;j++)c->rtk->ssat[j].phw=phw[j];
+    trace(3,"$PPP_IEKF_MODEL_END,rows=%d\n",nv);
+    if(nv<0)return nv;
+    if(nv!=c->nv)return PPP_FAILURE_IEKF_ROWS;
+    for(j=0;j<nv;j++)if(!ppp_same_row(c->rows+j,c->meta+j))return PPP_FAILURE_IEKF_ROWS;
+    matcpy(v,c->model_v,nv,1);matcpy(H,c->model_H,c->rtk->nx,nv);
+    return 0;
+}
+
+static void ppp_iekf_failed_evidence(rtk_t *rtk)
+{
+    int s,f;
+    if(!rtk->opt.ppp_iekf || !rtk->ppp_failure)return;
+    for(s=0;s<MAXSAT;s++)for(f=0;f<NFREQ;f++)rtk->ssat[s].vsat[f]=0;
+}
+static int ppp_estimator_guard(rtk_t *rtk)
+{
+    int flags=rtk->opt.ppp_rcb_datum | (rtk->opt.ppp_wet_correction<<1) |
+        (rtk->opt.ppp_iekf<<2) | (rtk->opt.ppp_gal_e5b<<3) |
+        (rtk->opt.ppp_physical_atmosphere<<4);
+    if(rtk->ppp_estimator_locked && flags!=rtk->ppp_estimator_flags)return 0;
+    rtk->ppp_estimator_flags=flags;rtk->ppp_estimator_locked=1;return 1;
+}
+
 extern void pppos(rtk_t* rtk, const obsd_t* obs, int n, const nav_t* nav)
 {
     const prcopt_t* opt = &rtk->opt;
     double *rs=NULL,*dts=NULL,*var=NULL,*v=NULL,*H=NULL,*R=NULL,*azel=NULL,
         *xp=NULL,*Pp=NULL,*xprior=NULL,*Pprior=NULL,dr[3]={0},std[3];
-    gtime_t zwd_prior,ion_prior[MAXSAT];
+    gtime_t zwd_prior,ion_prior[MAXSAT],ion_observation_prior[MAXSAT],trop_time_prior=rtk->ppp_trop_time;
+    double trop_base_prior=rtk->ppp_trop_base,trop_dry_prior=rtk->ppp_trop_zhd;
     char str[40];
     const char* diag_opt;
     ppp_diag_epoch_t diag, evidence;
@@ -3946,6 +4512,7 @@ extern void pppos(rtk_t* rtk, const obsd_t* obs, int n, const nav_t* nav)
     unsigned char *robust_gnss=NULL;
     unsigned char observed_slip[MAXOBS][NFREQ]={{0}},observed_uninitialized[MAXOBS][NFREQ]={{0}};
     unsigned int observed_slipc[MAXOBS][NFREQ]={{0}};
+    unsigned char clock_phase_eligible[MAXSAT][NFREQ]={{0}};
     int i, j, nv, info, nsmooth, warmup, diag_enabled = 0,
         product_use[MAXSAT+3] = {0},
         svh[MAXOBS], exc[MAXOBS] = { 0 }, stat = SOLQ_SINGLE;
@@ -3956,6 +4523,17 @@ extern void pppos(rtk_t* rtk, const obsd_t* obs, int n, const nav_t* nav)
         rtk->nx!=pppnx(opt) || opt->ppp_baseline<0 || opt->ppp_baseline>MODE_C_NEW_ROBUST) {
         rtk->ppp_failure=FILTER_BAD_DIM;rtk->sol.stat=SOLQ_NONE;
         trace(2,"$PPP_FAILURE,reason=BAD_DIM,stage=PPP_ENTRY\n");return;
+    }
+    if(opt->ppp_rcb_datum || opt->ppp_wet_correction || opt->ppp_iekf || opt->ppp_gal_e5b || opt->ppp_physical_atmosphere) {
+        char error[256];
+        if(!smartphone_ppp_validate(opt,error,sizeof(error))) {
+            rtk->ppp_failure=FILTER_BAD_DIM;rtk->sol.stat=SOLQ_NONE;
+            trace(2,"$PPP_FAILURE,reason=INVALID_ESTIMATOR_CONFIG,detail=%s\n",error);return;
+        }
+    }
+    if(!ppp_estimator_guard(rtk)) {
+        rtk->ppp_failure=FILTER_BAD_DIM;rtk->sol.stat=SOLQ_NONE;
+        trace(2,"$PPP_FAILURE,reason=ESTIMATOR_PROFILE_CHANGED,start_new_session=1\n");return;
     }
     for(i=0;i<n;i++) {
         if(obs[i].sat<1 || obs[i].sat>MAXSAT || !isfinite(obs[i].time.sec)) {
@@ -3969,7 +4547,7 @@ extern void pppos(rtk_t* rtk, const obsd_t* obs, int n, const nav_t* nav)
         }
     }
     if(!numeric_finite(rtk->x,rtk->nx))rtk->ppp_failure=FILTER_NAN_STATE;
-    else rtk->ppp_failure=numeric_covariance(rtk->P,rtk->nx);
+    else rtk->ppp_failure=ppp_covariance_gate(rtk->P,rtk->nx,ppp_safe_covariance(opt),0);
     if(rtk->ppp_failure) {
         rtk->sol.stat=SOLQ_NONE;
         trace(2,"$PPP_FAILURE,reason=%s,stage=PRIOR\n",filter_reason(rtk->ppp_failure));return;
@@ -3977,8 +4555,30 @@ extern void pppos(rtk_t* rtk, const obsd_t* obs, int n, const nav_t* nav)
 
     time2str(obs[0].time, str, 2);
     ppp_innovation_core_begin(rtk->nx,obs,n,opt->nf,rtk);
+#ifdef ENABLE_FILTER_DIAGNOSTIC
+    ppp_fd_epoch(rtk,obs,n,NP(opt),NC(opt),NT(opt),NI(opt),ND(opt),NF(opt));
+#endif
+#ifdef ENABLE_FILTER_DIAGNOSTIC
+    ppp_fd_state("ENTRY",rtk->x,rtk->P,NT(opt)?ppp_total_trop(rtk,rtk->x):0.0,rtk->ppp_trop_base,rtk->ppp_trop_zhd);
+#endif
+
     if ((diag_opt = strstr(opt->pppopt, "-PPPDIAG="))) {
         sscanf(diag_opt, "-PPPDIAG=%d", &diag_enabled);
+    }
+    if(opt->ppp_physical_atmosphere)
+        trace(2,"$PPP_PHYSICAL_MODEL,%s,iono=PHYSICAL_VERTICAL_L1,RCB=RELATIVE_ACTUAL_CODE,reference=GPS_1C/GAL_1C/BDS_2I/GLO_1C,wet=MODEL_PLUS_ESTIMATED_DELTA,gim_information=MAP_CADENCE,legacy_penalties=OFF\n",str);
+    if(opt->ppp_rcb_datum)
+        trace(2,"$PPP_RCB_DATUM,%s,GPS=1C/5Q,GAL=1C/5Q,BDS=2I/7I,iono=EFFECTIVE_VERTICAL_L1,ion_init=LOOSE_BRDC_SEED,code_osb=UNCHANGED\n",str);
+    if(opt->ppp_rcb_datum && (opt->navsys&SYS_GLO)) {
+        trace(2,"$PPP_GLO_MODEL,%s,signal=1C,iono=SINGLE_FREQ_VERTICAL_L1,receiver_bias=GLO_CLOCK,no_dual_frequency_datum=1\n",str);
+        for(i=0;i<n;i++)if(satsys(obs[i].sat,NULL)==SYS_GLO) {
+            double hz=sat2freq(obs[i].sat,obs[i].code[0],nav);
+            char id[8];satno2id(obs[i].sat,id);
+            trace(3,"$PPP_GLO_INPUT,%s,%s,signal=%s,freq_hz=%.3f,channel=%.3f,status=%s\n",
+                str,id,code2obs(obs[i].code[0]),hz,hz>0?(hz-FREQ1_GLO)/DFRQ1_GLO:0,
+                !ppp_signal_supported(SYS_GLO,0,obs[i].code[0],opt)?"UNSUPPORTED_SIGNAL":
+                hz<=0?"MISSING_OR_INVALID_CHANNEL":"AVAILABLE");
+        }
     }
     trace(3, "pppos   : time=%s nx=%d n=%d\n", str, rtk->nx, n);
     trace(3,"$STAT_MODEL,%s,mode=%d,doppler_sigma_hz=%.3f,ion_interval=%.1f,zwd_interval=%.1f\n",
@@ -4030,25 +4630,36 @@ extern void pppos(rtk_t* rtk, const obsd_t* obs, int n, const nav_t* nav)
     xprior=mat(rtk->nx,1);Pprior=mat(rtk->nx,rtk->nx);
     matcpy(xprior,rtk->x,rtk->nx,1);matcpy(Pprior,rtk->P,rtk->nx,rtk->nx);
     zwd_prior=rtk->ppp_zwd_prior_time;
-    for(j=0;j<MAXSAT;j++)ion_prior[j]=rtk->ssat[j].ppp_ion_prior_time;
-    if(ppp_innovation_log_enabled())for(i=0;i<n;i++)for(j=0;j<NFREQ;j++)
+    for(j=0;j<MAXSAT;j++) {
+        ion_prior[j]=rtk->ssat[j].ppp_ion_prior_time;
+        ion_observation_prior[j]=rtk->ssat[j].ppp_ion_observation_time;
+    }
+    if(ppp_innovation_log_enabled() || smartphone_ppp_policy(opt).common_clock)
+        for(i=0;i<n;i++)for(j=0;j<NFREQ;j++)
         {
         const ssat_t *ss=&rtk->ssat[obs[i].sat-1];
         observed_slip[i][j]=(obs[i].LLI[j]|ss->slip[j])&LLI_SLIP;
         observed_slipc[i][j]=ss->slipc[j];
         if(j<NF(opt))observed_uninitialized[i][j]=rtk->x[IB(obs[i].sat,j,opt)]==0.0;
+        if(smartphone_ppp_policy(opt).common_clock &&
+            ppp_clock_phase_ready(rtk,obs+i,j))
+            clock_phase_eligible[obs[i].sat-1][j]=1;
     }
+#ifdef ENABLE_FILTER_DIAGNOSTIC
+    ppp_fd_state("PRE_PREDICTION",rtk->x,rtk->P,NT(opt)?ppp_total_trop(rtk,rtk->x):0.0,rtk->ppp_trop_base,rtk->ppp_trop_zhd);
+#endif
     udstate_ppp(rtk, obs, n, nav);
     ppp_innovation_core_events(obs,n,rtk,&observed_slip[0][0]);
     info=!numeric_finite(rtk->x,rtk->nx)?FILTER_NAN_STATE:
-        numeric_covariance(rtk->P,rtk->nx);
+        ppp_covariance_gate(rtk->P,rtk->nx,ppp_safe_covariance(opt),0);
     if(info) {
         rtk->ppp_failure=info;
         matcpy(rtk->x,xprior,rtk->nx,1);matcpy(rtk->P,Pprior,rtk->nx,rtk->nx);
-        rtk->ppp_zwd_prior_time=zwd_prior;
+        rtk->ppp_zwd_prior_time=zwd_prior;rtk->ppp_trop_base=trop_base_prior;rtk->ppp_trop_zhd=trop_dry_prior;rtk->ppp_trop_time=trop_time_prior;
         for(j=0;j<MAXSAT;j++) {
             int f;
             rtk->ssat[j].ppp_ion_prior_time=ion_prior[j];
+            rtk->ssat[j].ppp_ion_observation_time=ion_observation_prior[j];
             /* Rollback must never resurrect a confirmed old arc. */
             if(smartphone_ppp_policy(opt).corrected_lifecycle)
                 for(f=0;f<NF(opt);f++)if(rtk->ssat[j].ppp_arc_reset[f])
@@ -4086,9 +4697,7 @@ extern void pppos(rtk_t* rtk, const obsd_t* obs, int n, const nav_t* nav)
                     "IN_RANGE" : "OUT_OF_RANGE";
         }
         if (nav->nt > 0 && nav->tec) {
-            ionex = timediff(epoch, nav->tec[0].time) >= 0.0 &&
-                    timediff(epoch, nav->tec[nav->nt - 1].time) <= 0.0 ?
-                    "IN_RANGE" : "OUT_OF_RANGE";
+            ionex = ionex_in_range(epoch,nav) ? "IN_RANGE" : "OUT_OF_RANGE";
         }
         if (vmf3_grid[0].valid && vmf3_grid[1].valid && vmf3_orog_valid) {
             vmf3 = timediff(epoch, vmf3_grid[0].time) >= 0.0 &&
@@ -4142,9 +4751,17 @@ extern void pppos(rtk_t* rtk, const obsd_t* obs, int n, const nav_t* nav)
         robust_gnss=(unsigned char *)calloc(capacity,sizeof(*robust_gnss));
         if(!robust_gnss){rtk->ppp_failure=FILTER_NO_MEMORY;goto cleanup;}
     }
-    if(ppp_innovation_log_enabled() || opt->ppp_baseline==MODE_C_NEW_ROBUST) {
+    if(ppp_innovation_log_enabled() || opt->ppp_baseline==MODE_C_NEW_ROBUST ||
+        smartphone_ppp_policy(opt).common_clock || opt->ppp_iekf
+#ifdef ENABLE_FILTER_DIAGNOSTIC
+        || ppp_fd_enabled()
+#endif
+        ) {
         row_meta=(ppp_innovation_meta_t *)calloc(capacity,sizeof(*row_meta));
         if(!row_meta)trace(2,"$INNOV_DIAG_FAILURE,reason=NO_MEMORY,estimator_unchanged=1\n");
+        if(!row_meta && (smartphone_ppp_policy(opt).common_clock || opt->ppp_iekf)) {
+            rtk->ppp_failure=FILTER_NO_MEMORY;goto cleanup;
+        }
     }
 
     /* 第 7 步：测量更新 + 单观测粗差编辑，最多 MAX_ITER 次。
@@ -4162,10 +4779,35 @@ extern void pppos(rtk_t* rtk, const obsd_t* obs, int n, const nav_t* nav)
             trace(2, "%s ppp (%d) no valid obs data\n", str, i + 1);
             break;
         }
+#ifdef ENABLE_FILTER_DIAGNOSTIC
+    ppp_fd_state("BEFORE_CLOCK_SEED",xp,Pp,NT(opt)?ppp_total_trop(rtk,xp):0.0,rtk->ppp_trop_base,rtk->ppp_trop_zhd);
+#endif
+        if(smartphone_ppp_policy(opt).common_clock) {
+            double shift;int peers,group,phase;
+            int have=ppp_common_clock_seed(rtk,v,row_meta,nv,clock_phase_eligible,
+                &shift,&peers,&group,&phase);
+            if(have) {
+                int ci=IC(0,opt);double seeded=xp[ci]+shift;
+                if(!isfinite(seeded)){rtk->ppp_failure=FILTER_NAN_STATE;break;}
+                xp[ci]=seeded==0.0?1E-6:seeded;
+                ppp_innovation_note_current_init(ci,0,0,0);
+                /* Re-form the entire PPP equation at this trial's clock.
+                 * No covariance is tightened and no extra information added.
+                 * Removed rows cannot seed later editing trials. */
+                nv=ppp_res(0,obs,n,rs,dts,var,svh,dr,exc,mexc,nav,xp,rtk,
+                    v,H,R,azel,NULL,product_use,row_meta,robust_gnss);
+                if(nv<=0){if(!rtk->ppp_failure)rtk->ppp_failure=PPP_FAILURE_NO_OBS;break;}
+            }
+            trace(2,"$PPP_CLOCK_TRIAL,%s,trial=%d,source=%s,group=%d,peers=%d,shift_m=%.17g,seed_m=%.17g,variance_m2=%.17g,spp_candidate_valid=%d,spp_candidate_m=%.17g,current_obs_conditioned=%d\n",
+                str,i,have?(phase?"CONTINUOUS_PHASE_MEDIAN":"CODE_MEDIAN"):"NO_CONSENSUS",
+                group,peers,shift,xp[IC(0,opt)],Pp[IC(0,opt)*(rtk->nx+1)],
+                rtk->ppp_spp_clock_valid,rtk->ppp_spp_clock_m,have);
+        }
         /* Snapshot pre-fit diagnostics before filter mutates xp/Pp. Outputs
          * have independent ownership; allocation failure affects logs only. */
-        if(robust_gnss && (info=apply_huber_robust_ppp(xp,Pp,v,H,R,
-            rtk->nx,nv,robust_gnss,row_meta,obs[0].time,i))) {
+        if(robust_gnss && (info=apply_huber_robust_ppp_masked(xp,Pp,v,H,R,
+            rtk->nx,nv,robust_gnss,row_meta,obs[0].time,i,
+            opt->ppp_iekf || opt->ppp_wet_correction || opt->ppp_rcb_datum || opt->ppp_physical_atmosphere))) {
             rtk->ppp_failure=info;
             trace(2,"$PPP_HUBER_FAILURE,%s,reason=%s\n",str,filter_reason(info));
             break;
@@ -4183,13 +4825,38 @@ extern void pppos(rtk_t* rtk, const obsd_t* obs, int n, const nav_t* nav)
                 }
                 for(j=0;j<nv;j++)ppp_innovation_meta_provenance(&row_meta[j],H,rtk->nx,i);
                 memcpy(trial_meta[i],row_meta,nv*sizeof(*row_meta));
-                if(!ppp_innovation_diag(xp,Pp,v,H,R,rtk->nx,nv,trial_value[i],NULL))trial_count[i]=nv;
+                if(!ppp_diag_activation(xp,Pp,v,H,R,rtk->nx,nv,trial_value[i],NULL,
+                    opt->ppp_iekf || opt->ppp_wet_correction || opt->ppp_rcb_datum || opt->ppp_physical_atmosphere))trial_count[i]=nv;
             }
             else trace(2,"$INNOV_DIAG_FAILURE,reason=NO_MEMORY,estimator_unchanged=1\n");
         }
+#ifdef ENABLE_FILTER_DIAGNOSTIC
+        ppp_fd_trial(i,row_meta,nv,xp,Pp,NT(opt)?ppp_total_trop(rtk,xp):0.0,rtk->ppp_trop_base,rtk->ppp_trop_zhd);
+#endif
         /* filter 在 rtkcmn 中完成 EKF 测量更新：根据 v/H/R 算增益，更新
          * xp/Pp。info!=0 为数值更新失败，不能把该试算状态提交成有效 PPP。 */
-        if ((info = filter(xp, Pp, H, v, R, rtk->nx, nv))) {
+        if(opt->ppp_iekf) {
+            ppp_iekf_context_t ctx;int iterations=0;
+            memset(&ctx,0,sizeof(ctx));ctx.rtk=rtk;ctx.obs=obs;ctx.n=n;ctx.nav=nav;
+            ctx.rs=rs;ctx.dts=dts;ctx.var=var;ctx.svh=svh;ctx.dr=dr;ctx.rows=row_meta;
+            ctx.nv=nv;ctx.capacity=capacity;ctx.azel=azel;
+            memcpy(ctx.exc,exc,sizeof(exc));memcpy(ctx.mexc,mexc,sizeof(mexc));
+            ctx.meta=(ppp_innovation_meta_t *)calloc(capacity,sizeof(*ctx.meta));
+            ctx.R=mat(capacity,capacity);ctx.model_v=mat(capacity,1);ctx.model_H=mat(rtk->nx,capacity);
+            info=ctx.meta?ppp_iekf_update_core(xp,Pp,H,v,R,rtk->nx,nv,
+                ppp_iekf_linearize,&ctx,&iterations,opt->ppp_physical_atmosphere):FILTER_NO_MEMORY;
+            free(ctx.meta);free(ctx.R);free(ctx.model_v);free(ctx.model_H);
+            trace(2,"$PPP_IEKF,%s,trial=%d,iterations=%d,reason=%s,fixed_prior=1,fixed_R=1,posterior_committed=0\n",
+                str,i,iterations,filter_reason(info));
+        }
+        else info=opt->ppp_physical_atmosphere?filter_physical(xp,Pp,H,v,R,rtk->nx,nv):
+            (opt->ppp_wet_correction || opt->ppp_rcb_datum)?filter_active(xp,Pp,H,v,R,rtk->nx,nv):
+            ppp_verified_joseph(opt)?filter_verified(xp,Pp,H,v,R,rtk->nx,nv):
+            filter(xp,Pp,H,v,R,rtk->nx,nv);
+#ifdef ENABLE_FILTER_DIAGNOSTIC
+        ppp_fd_trial_result(info,xp,Pp,NT(opt)?ppp_total_trop(rtk,xp):0.0,rtk->ppp_trop_base,rtk->ppp_trop_zhd);
+#endif
+        if(info) {
             rtk->ppp_failure=info;
             trace(2, "%s ppp (%d) filter error info=%d\n", str, i + 1, info);
             break;
@@ -4209,18 +4876,27 @@ extern void pppos(rtk_t* rtk, const obsd_t* obs, int n, const nav_t* nav)
             /* Final transaction gate: post-fit model checks plus the exact
              * pre-fit innovation/H/R actually used in this filter trial. */
             info=!numeric_finite(xp,rtk->nx)?FILTER_NAN_STATE:
-                numeric_covariance(Pp,rtk->nx);
+                ppp_covariance_gate(Pp,rtk->nx,ppp_safe_covariance(opt),1);
             if(!info && (!numeric_finite(v,nv) || !numeric_finite(H,(size_t)rtk->nx*nv)))info=FILTER_NAN_INPUT;
-            if(!info)info=numeric_covariance(R,nv);
+            if(!info) {
+                info=ppp_safe_covariance(opt)?numeric_covariance_psd(R,nv):numeric_covariance(R,nv);
+                if(info==FILTER_NOT_PSD)info=FILTER_PSD_R;
+            }
             if(info) {rtk->ppp_failure=info;break;}
             /* 仅验后通过才提交测量更新；成功使用的产品先验时间也在此提交。
              * 初值已消耗的先验和编辑失败的试算不会被当作额外独立信息。 */
             matcpy(rtk->x, xp, rtk->nx, 1);
             matcpy(rtk->P, Pp, rtk->nx, rtk->nx);
+#ifdef ENABLE_FILTER_DIAGNOSTIC
+            ppp_fd_commit(i,rtk->x,rtk->P,NT(opt)?ppp_total_trop(rtk,rtk->x):0.0,rtk->ppp_trop_base,rtk->ppp_trop_zhd);
+#endif
+            if(opt->ppp_iekf)trace(2,"$PPP_IEKF_COMMIT,%s,trial=%d,posterior_commits=1\n",str,i);
+            rtk->ppp_clock_valid=1;rtk->ppp_clock_m=rtk->x[IC(0,opt)];
+            rtk->ppp_clock_time=obs[0].time;
             stat = SOLQ_PPP;
             /* Trial editing iterations start from the same prior P: they are
                not extra measurements. Commit consumption only on success. */
-            if(statistical_model_ppp(opt)&2) {
+            if((statistical_model_ppp(opt)&2) || opt->ppp_physical_atmosphere) {
                 for(j=0;j<MAXSAT;j++)if(product_use[3+j])
                     rtk->ssat[j].ppp_ion_prior_time=obs[0].time;
                 if(product_use[2])rtk->ppp_zwd_prior_time=obs[0].time;
@@ -4259,7 +4935,8 @@ extern void pppos(rtk_t* rtk, const obsd_t* obs, int n, const nav_t* nav)
         if (opt->modear != ARMODE_OFF &&
             ppp_ar(rtk, obs, n, exc, nav, azel, xp, Pp) &&
             ppp_res(9, obs, n, rs, dts, var, svh, dr, exc, mexc, nav, xp, rtk, NULL, NULL, NULL, azel, NULL, NULL, NULL,NULL)>0 &&
-            numeric_finite(xp,rtk->nx) && !numeric_covariance(Pp,rtk->nx)) {
+            numeric_finite(xp,rtk->nx) &&
+            !ppp_covariance_gate(Pp,rtk->nx,ppp_safe_covariance(opt),1)) {
 
             matcpy(rtk->xa, xp, rtk->nx, 1);
             matcpy(rtk->Pa, Pp, rtk->nx, rtk->nx);
@@ -4321,13 +4998,20 @@ extern void pppos(rtk_t* rtk, const obsd_t* obs, int n, const nav_t* nav)
      * 都由调用层持续保留，整个会话结束才 rtkfree/释放产品。 */
 cleanup:
     if(rtk->ppp_failure) {
+        ppp_iekf_failed_evidence(rtk);
         rtk->sol.stat=SOLQ_NONE;
         trace(2,"$PPP_FAILURE,%s,reason=%s,code=%d,posterior_committed=0,state_policy=FINITE_PREDICTION_OR_PRIOR\n",
             str,filter_reason(rtk->ppp_failure),rtk->ppp_failure);
+        if(opt->ppp_physical_atmosphere)
+            trace(2,"$PPP_UPDATE_SKIPPED,%s,reason=%s,Q=0,state_policy=LEGAL_PREDICTION_OR_PRIOR,all_state_reset=0\n",
+                str,filter_reason(rtk->ppp_failure));
     }
+    if(opt->ppp_wet_correction && NT(opt))
+        trace(2,"$PPP_TROP_COORD,%s,model_ZWD=%.17g,model_ZHD=%.17g,wet_correction=%.17g,total_ZTD=%.17g\n",
+            str,rtk->ppp_trop_base,rtk->ppp_trop_zhd,rtk->x[IT(opt)],ppp_total_trop(rtk,rtk->x));
     trace(2,"$PPP_STATE,%s,Q=%d,failure=%d,x=%.12f,y=%.12f,z=%.12f,clock_m=%.12f,ZTD=%.12f\n",
         str,rtk->sol.stat,rtk->ppp_failure,rtk->x[0],rtk->x[1],rtk->x[2],
-        rtk->x[IC(0,opt)],NT(opt)?rtk->x[IT(opt)]:0.0);
+        rtk->x[IC(0,opt)],NT(opt)?ppp_total_trop(rtk,rtk->x):0.0);
     for(j=0;j<MAX_ITER;j++) {
         if(trial_count[j])ppp_innovation_log_trial(j,opt->ppp_baseline,
             smartphone_ppp_policy(opt).corrected_lifecycle,trial_meta[j],trial_value[j],
@@ -4335,6 +5019,9 @@ cleanup:
             stat==SOLQ_PPP || stat==SOLQ_FIX);
         free(trial_meta[j]);free(trial_value[j]);
     }
+    #ifdef ENABLE_FILTER_DIAGNOSTIC
+    ppp_fd_end(rtk->ppp_failure,rtk->sol.stat);
+    #endif
     free(row_meta);
     free(robust_gnss);
     free(xprior);free(Pprior);

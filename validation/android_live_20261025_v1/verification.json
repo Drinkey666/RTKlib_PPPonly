@@ -1,0 +1,15 @@
+{
+  "formal_protected_files_unchanged": 52,
+  "same_window_obs_exact": true,
+  "same_window_Q_ns_exact": true,
+  "same_window_XYZ_max_m": 5.81890344619751e-06,
+  "app_ENU_max_diff_m": 1.3197631876238347e-09,
+  "phone_post_prefix_max_XYZ_m": 9.294389747083187e-05,
+  "analysis_after_gzip_passed": true,
+  "old_test_suite_rerun": false,
+  "solver_model_modified": false,
+  "phone_original_files_deleted": false,
+  "ATX_single_factor_complete": true,
+  "completed_new_replays": 4,
+  "ATX_default_replaced": false
+}

@@ -1,0 +1,16 @@
+{
+  "CLK": {
+    "url": "ftp://igs.gnsswhu.cn/pub/whu/phasebias/2026/clock/WUM0MGXRTS_20263040000_01D_05S_CLK.CLK.gz",
+    "purpose": "check matched RTS series availability; original replay products unchanged",
+    "status": "unavailable",
+    "error": "<urlopen error timed out>",
+    "seconds": 13.567546300007962
+  },
+  "SP3": {
+    "url": "ftp://igs.gnsswhu.cn/pub/whu/phasebias/2026/orbit/WUM0MGXRTS_20263040000_01D_05M_ORB.SP3.gz",
+    "purpose": "check matched RTS series availability; original replay products unchanged",
+    "status": "unavailable",
+    "error": "<urlopen error timed out>",
+    "seconds": 15.019780899980105
+  }
+}

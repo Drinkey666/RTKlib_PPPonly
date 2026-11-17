@@ -1,0 +1,17 @@
+{
+  "source": "rinex",
+  "usage": "ARCHIVED_REGRESSION",
+  "files": {
+    "OBS": "E:/YOUR_DATA/observation.rnx",
+    "NAV": "E:/YOUR_DATA/navigation.rnx",
+    "SP3": "E:/YOUR_DATA/WUM0MGXNRT_YYYYDDDHHMM_02D_05M_ORB.SP3",
+    "CLK": "E:/YOUR_DATA/WUM0MGXNRT_YYYYDDDHHMM_02D_30S_CLK.CLK",
+    "BIA": "E:/YOUR_DATA/compatible_valid_OSB.BIA",
+    "IONEX": "E:/YOUR_DATA/forecast_ionosphere.INX",
+    "VMF_FIRST": "E:/YOUR_DATA/VMF3_first",
+    "VMF_SECOND": "E:/YOUR_DATA/VMF3_second",
+    "OROGRAPHY": "E:/YOUR_DATA/orography_ell_5x5",
+    "ATX": "E:/YOUR_DATA/product_declared_antenna_model.atx"
+  },
+  "note": "Copy and replace file paths only. B_VERIFIED is shared with the strict forecast gate. No per-file R/Q/P0 overrides. ARCHIVED_REGRESSION does not certify historical forecast availability. TXT uses source txt-fast or txt-realtime and replaces OBS with TXT."
+}

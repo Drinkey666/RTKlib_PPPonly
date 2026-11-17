@@ -102,9 +102,9 @@ int pc_files_validate(const pc_ppp_files_t *files, char *error, size_t capacity)
         }
         {
             char companion[PC_PPP_PATH_CAP];
-            const char *suffix[]={".stat",".trace",".obs.csv"};
+            const char *suffix[]={".stat",".trace",".obs.csv",".products.log"};
             int j;
-            for(j=0;j<3;j++) {
+            for(j=0;j<4;j++) {
                 snprintf(companion,sizeof(companion),"%s%s",full,suffix[j]);
                 if(!_stricmp(companion,other)) {
                     if(error && capacity) snprintf(error,capacity,"Output diagnostics must not overwrite %s",pc_file_keys[i]);return 0;

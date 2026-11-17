@@ -1,0 +1,156 @@
+{
+  "reference": {
+    "latitude_deg": 30.76717661111111,
+    "longitude_deg": 103.97949563888889,
+    "height_m": 486.963,
+    "height_type": "ELLIPSOIDAL",
+    "frame": "WGS84",
+    "source": "User authorized using current App reference; ppp_manual_reference.xml/reference_wgs84_dms",
+    "stored_value": "v1|30.76717661111111|103.97949563888889|486.963|ELLIPSOIDAL|"
+  },
+  "files": {
+    "NAV": "E:\\RTKLIB_Data\\10.31\\products\\BRDC00WRD_R_20263040000_01D_MN.rnx",
+    "SP3": "E:\\RTKLIB_Data\\10.31\\products\\WUM0MGXNRT_20263030000_02D_05M_ORB.SP3",
+    "CLK": "E:\\RTKLIB_Data\\10.31\\products\\WUM0MGXNRT_20263030000_02D_30S_CLK.CLK",
+    "BIA": "E:\\RTKLIB_Data\\10.31\\products\\WUM0MGXRTS_20263040000_01D_05M_OSB.BIA",
+    "IONEX": "E:\\RTKLIB_Data\\10.31\\products\\COD0OPSP1D_20263040000_01D_01H_GIM.INX",
+    "VMF_FIRST": "E:\\RTKLIB_Data\\10.31\\products\\VMF3_20261031.H00",
+    "VMF_SECOND": "E:\\RTKLIB_Data\\10.31\\products\\VMF3_20261031.H06",
+    "ATX": "E:/RTKLIB_Data/Tables/igs20_20261110.atx",
+    "OROGRAPHY": "E:\\GNSS\\PPP_only\\validation\\android_live_20261025_v1\\inputs\\orography_ell_5x5"
+  },
+  "file_sha256": {
+    "NAV": "56c345de1fd74ed6b276cbf49a8662e00214622872d461b68966e66eb19f42f0",
+    "SP3": "01db668875001f1c8b9b85147d83765e913d297323806026e16d67b604d6f32d",
+    "CLK": "8857f210f3f9f8f8e04acd692ebb37f41f9b33418b25cc0616622324ca5091a1",
+    "BIA": "0001a8398375722761a8b92de056534e815e5de5b469bad3fc8b31a8d7e96593",
+    "IONEX": "c76b7e99fab621bac4816859be45d2faa450eccf49b594c423acb2034346c4b5",
+    "VMF_FIRST": "04a168903acd9a0e7711b143467df5511e6a6b7d9cec1a73c0500f02214c38d1",
+    "VMF_SECOND": "7109ddc6a9636b4a7e5fcd6180058610e5ef8397c14240b6ebabdb752b2fac04",
+    "ATX": "abdda8adc1cfdb3dae1f25fa22843365be2a33747d9131835c3117a559cd035a",
+    "OROGRAPHY": "2da6f83db2f5ac382b6c20d6ce3fc824aa6a5b573c16ba5a7c5737ca54c271ed"
+  },
+  "executable": "E:\\GNSS\\PPP_only\\x64\\Release\\PPP_only.exe",
+  "executable_sha256": "3720d038878e33d048e229aea75b75c8d8cfa6fddd9edfdff2a68ccc4a42d29e",
+  "profile": {
+    "PROFILE": "B_VERIFIED",
+    "BASELINE": "B",
+    "LIFECYCLE": "CORRECTED",
+    "CLOCK": "PPP_COMMON",
+    "ESTIMATOR": "LEGACY",
+    "NF": "4",
+    "SYSTEMS": "GEC",
+    "GLO": "0",
+    "GAL_E5B": "0"
+  },
+  "observation_generation": "FIXED_CLOCK_2023",
+  "common_coverage_gps": [
+    "2026-10-31T00:00:18",
+    "2026-10-31T06:00:18"
+  ],
+  "product_ranges": {
+    "SP3": {
+      "start": "2026-10-30T00:00:00",
+      "end": "2026-10-31T23:55:00",
+      "records": 576,
+      "time_system": "GPST"
+    },
+    "CLK": {
+      "start": "2026-10-30T00:00:00",
+      "end": "2026-11-01T00:01:00",
+      "records": 677142,
+      "time_system": "GPST"
+    },
+    "BIA_CODE": {
+      "start": "2026-10-31T00:00:00",
+      "end": "2026-11-01T00:00:00",
+      "records": 867,
+      "time_system": "GPST",
+      "end_exclusive": true
+    },
+    "OLD_BIA_CODE": {
+      "start": "2026-10-30T00:00:00",
+      "end": "2026-10-31T00:00:00",
+      "records": 886,
+      "time_system": "GPST",
+      "end_exclusive": true
+    },
+    "VMF_FIRST": {
+      "start": "2026-10-31T00:00:18",
+      "end": "2026-10-31T00:00:18",
+      "time_system": "UTC epoch converted to GPST (+18 s)"
+    },
+    "VMF_SECOND": {
+      "start": "2026-10-31T06:00:18",
+      "end": "2026-10-31T06:00:18",
+      "time_system": "UTC epoch converted to GPST (+18 s)"
+    },
+    "IONEX": {
+      "start": "2026-10-31T00:00:18",
+      "end": "2026-11-01T00:00:18",
+      "time_system": "UTC maps converted to GPST (+18 s)"
+    }
+  },
+  "parts": [
+    {
+      "part": 1,
+      "file": "E:\\RTKLIB_Data\\10.31\\split_10min\\RawData_20261031_101334_part01_00-10min.txt",
+      "epochs": 600,
+      "begin_gps": "2026-10-31T02:13:52.001000",
+      "end_gps": "2026-10-31T02:23:51.001000",
+      "fully_covered": true
+    },
+    {
+      "part": 2,
+      "file": "E:\\RTKLIB_Data\\10.31\\split_10min\\RawData_20261031_101334_part02_10-20min.txt",
+      "epochs": 600,
+      "begin_gps": "2026-10-31T02:23:52.001000",
+      "end_gps": "2026-10-31T02:33:51.002000",
+      "fully_covered": true
+    },
+    {
+      "part": 3,
+      "file": "E:\\RTKLIB_Data\\10.31\\split_10min\\RawData_20261031_101334_part03_20-30min.txt",
+      "epochs": 600,
+      "begin_gps": "2026-10-31T02:33:52.002000",
+      "end_gps": "2026-10-31T02:43:51.002000",
+      "fully_covered": true
+    },
+    {
+      "part": 4,
+      "file": "E:\\RTKLIB_Data\\10.31\\split_10min\\RawData_20261031_101334_part04_30-40min.txt",
+      "epochs": 600,
+      "begin_gps": "2026-10-31T02:43:52.002000",
+      "end_gps": "2026-10-31T02:53:51.001000",
+      "fully_covered": true
+    },
+    {
+      "part": 5,
+      "file": "E:\\RTKLIB_Data\\10.31\\split_10min\\RawData_20261031_101334_part05_40-50min.txt",
+      "epochs": 600,
+      "begin_gps": "2026-10-31T02:53:52.001000",
+      "end_gps": "2026-10-31T03:03:51.001000",
+      "fully_covered": true
+    },
+    {
+      "part": 6,
+      "file": "E:\\RTKLIB_Data\\10.31\\split_10min\\RawData_20261031_101334_part06_50-60min.txt",
+      "epochs": 601,
+      "begin_gps": "2026-10-31T03:03:52.001000",
+      "end_gps": "2026-10-31T03:13:52",
+      "fully_covered": true
+    },
+    {
+      "part": 7,
+      "file": "E:\\RTKLIB_Data\\10.31\\split_10min\\RawData_20261031_101334_part07_60-70min.txt",
+      "epochs": 109,
+      "begin_gps": "2026-10-31T03:13:53",
+      "end_gps": "2026-10-31T03:15:41",
+      "fully_covered": true
+    }
+  ],
+  "independent_initialization": true,
+  "reference_used_in_filter": false,
+  "convergence_diagnostic": "H<1m and separately 3D<1m, sustained 60 elapsed seconds of consecutive Q6 epochs; no threshold feedback",
+  "note": "Current NRT SP3/30s CLK + newly downloaded valid RTS code OSB; does not certify full mixed-product reference compatibility or historical real-time availability."
+}

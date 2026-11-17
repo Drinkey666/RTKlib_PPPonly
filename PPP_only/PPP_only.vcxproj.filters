@@ -19,10 +19,12 @@
     <ClInclude Include="..\src\pc_txt_replay.h"><Filter>头文件</Filter></ClInclude>
     <ClInclude Include="..\src\pc_live_view.h"><Filter>头文件</Filter></ClInclude>
     <ClInclude Include="..\src\gnss_replay.h"><Filter>头文件</Filter></ClInclude>
+    <ClInclude Include="..\src\ppp_product_check.h"><Filter>头文件</Filter></ClInclude>
     <ClInclude Include="..\src\gnss_adapter.h"><Filter>头文件</Filter></ClInclude>
     <ClInclude Include="..\src\gnss_signal_policy.h"><Filter>头文件</Filter></ClInclude>
     <ClInclude Include="..\src\gnss_raw.h"><Filter>头文件</Filter></ClInclude>
     <ClInclude Include="..\src\ppp_innovation_diag.h" />
+    <ClInclude Include="..\src\ppp_filter_diagnostic.h"><Filter>头文件</Filter></ClInclude>
     <ClInclude Include="..\src\smartphone_ppp_config.h"><Filter>头文件</Filter></ClInclude>
     <ClInclude Include="..\src\rtklib.h">
       <Filter>头文件</Filter>
@@ -35,12 +37,14 @@
     <ClCompile Include="..\src\gnss_replay.c"><Filter>源文件</Filter></ClCompile>
     <ClCompile Include="..\src\gnss_adapter.c"><Filter>源文件</Filter></ClCompile>
     <ClCompile Include="..\src\gnss_signal_policy.c"><Filter>源文件</Filter></ClCompile>
+    <ClCompile Include="..\src\ppp_product_check.c"><Filter>源文件</Filter></ClCompile>
     
     
     
     
     
     <ClCompile Include="..\src\ppp_innovation_diag.c" />
+    <ClCompile Include="..\src\ppp_filter_diagnostic.c"><Filter>源文件</Filter></ClCompile>
     <ClCompile Include="..\src\smartphone_ppp_config.c"><Filter>源文件</Filter></ClCompile>
     <ClCompile Include="..\src\ephemeris.c">
       <Filter>源文件</Filter>

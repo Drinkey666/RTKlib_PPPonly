@@ -1,0 +1,7 @@
+{
+  "phase1": "RESULT passed=45 failed=0",
+  "phase2": "RESULT passed=26 failed=0",
+  "physical_atmosphere": "PHYSICAL_RESULT passed=58 failed=0",
+  "rapppid_estimator": "ESTIMATOR_RESULT passed=47 failed=0",
+  "covariance_fix": "39 passed, 0 failed"
+}

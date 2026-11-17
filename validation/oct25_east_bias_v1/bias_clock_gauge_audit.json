@@ -1,0 +1,47 @@
+{
+  "reference_gauges": [
+    {
+      "product": "RTS",
+      "system": "G",
+      "reference_signals": "C1W/C2W",
+      "satellites": 32,
+      "max_abs_IF_clock_gauge_m": 4.5271364311094686e-05
+    },
+    {
+      "product": "RTS",
+      "system": "E",
+      "reference_signals": "C1C/C5Q",
+      "satellites": 30,
+      "max_abs_IF_clock_gauge_m": 4.37472380085957e-05
+    },
+    {
+      "product": "RTS",
+      "system": "C",
+      "reference_signals": "C2I/C6I",
+      "satellites": 29,
+      "max_abs_IF_clock_gauge_m": 6.21968279475027e-05
+    },
+    {
+      "product": "NRT",
+      "system": "G",
+      "reference_signals": "C1W/C2W",
+      "satellites": 32,
+      "max_abs_IF_clock_gauge_m": 5.168169681901702e-05
+    },
+    {
+      "product": "NRT",
+      "system": "E",
+      "reference_signals": "C1C/C5Q",
+      "satellites": 30,
+      "max_abs_IF_clock_gauge_m": 4.19898043830802e-05
+    },
+    {
+      "product": "NRT",
+      "system": "C",
+      "reference_signals": "C2I/C6I",
+      "satellites": 29,
+      "max_abs_IF_clock_gauge_m": 6.169931882116231e-05
+    }
+  ],
+  "note": "Both products satisfy these zero-IF code gauges to tabular precision. Not a full phase/antenna or all-signal compatibility certificate."
+}

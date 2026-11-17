@@ -133,7 +133,11 @@
       <AdditionalDependencies>winmm.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(EnableFilterDiagnostic)'=='true'">
+    <ClCompile><PreprocessorDefinitions>ENABLE_FILTER_DIAGNOSTIC;%(PreprocessorDefinitions)</PreprocessorDefinitions></ClCompile>
+  </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\src\ppp_filter_diagnostic.h" />
     <ClInclude Include="..\src\pc_file_picker.h" />
     <ClInclude Include="..\src\pc_txt_replay.h" />
     <ClInclude Include="..\src\pc_live_view.h" />
@@ -152,7 +156,9 @@
     <ClCompile Include="..\src\gnss_replay.c"><PreprocessorDefinitions>GNSS_REPLAY_EMBEDDED;%(PreprocessorDefinitions)</PreprocessorDefinitions></ClCompile>
     <ClCompile Include="..\src\gnss_adapter.c" />
     <ClCompile Include="..\src\gnss_signal_policy.c" />
+    <ClCompile Include="..\src\ppp_product_check.c" />
     <ClCompile Include="..\src\ppp_innovation_diag.c" />
+    <ClCompile Include="..\src\ppp_filter_diagnostic.c" />
     <ClCompile Include="..\src\smartphone_ppp_config.c" />
     
     
@@ -203,7 +209,7 @@
     <ClCompile Include="..\src\trace.c" />
   </ItemGroup>
   <ItemGroup>
-    
+    <ClInclude Include="..\src\ppp_product_check.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

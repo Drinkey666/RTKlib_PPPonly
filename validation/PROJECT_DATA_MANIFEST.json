@@ -1,0 +1,193 @@
+{
+  "runs": {
+    "oct31_k70_current": {
+      "NAV": "validation/oct31_reference_diagnosis_v1/inputs/products/BRDC00WRD_R_20263040000_01D_MN.rnx.gz",
+      "SP3": "validation/oct31_reference_diagnosis_v1/inputs/products/WUM0MGXNRT_20263030000_02D_05M_ORB.SP3.gz",
+      "CLK": "validation/oct31_reference_diagnosis_v1/inputs/products/WUM0MGXNRT_20263030000_02D_30S_CLK.CLK.gz",
+      "BIA": "validation/oct31_reference_diagnosis_v1/inputs/products/WUM0MGXRTS_20263040000_01D_05M_OSB.BIA.gz",
+      "IONEX": "validation/oct31_reference_diagnosis_v1/inputs/products/COD0OPSP1D_20263040000_01D_01H_GIM.INX.gz",
+      "VMF_FIRST": "validation/oct31_reference_diagnosis_v1/inputs/products/VMF3_20261031.H00.gz",
+      "VMF_SECOND": "validation/oct31_reference_diagnosis_v1/inputs/products/VMF3_20261031.H06.gz",
+      "ATX": "validation/oct31_reference_diagnosis_v1/inputs/products/igs20_20261110.atx.gz",
+      "OROGRAPHY": "validation/oct31_reference_diagnosis_v1/inputs/products/orography_ell_5x5.gz",
+      "TXT": "validation/oct31_reference_diagnosis_v1/inputs/raw/RawData_20261031_101334.txt.gz"
+    },
+    "oct31_iq_current": {
+      "NAV": "validation/oct31_reference_diagnosis_v1/inputs/products/BRDC00WRD_R_20263040000_01D_MN.rnx.gz",
+      "SP3": "validation/oct31_reference_diagnosis_v1/inputs/products/WUM0MGXNRT_20263030000_02D_05M_ORB.SP3.gz",
+      "CLK": "validation/oct31_reference_diagnosis_v1/inputs/products/WUM0MGXNRT_20263030000_02D_30S_CLK.CLK.gz",
+      "BIA": "validation/oct31_reference_diagnosis_v1/inputs/products/WUM0MGXRTS_20263040000_01D_05M_OSB.BIA.gz",
+      "IONEX": "validation/oct31_reference_diagnosis_v1/inputs/products/COD0OPSP1D_20263040000_01D_01H_GIM.INX.gz",
+      "VMF_FIRST": "validation/oct31_reference_diagnosis_v1/inputs/products/VMF3_20261031.H00.gz",
+      "VMF_SECOND": "validation/oct31_reference_diagnosis_v1/inputs/products/VMF3_20261031.H06.gz",
+      "ATX": "validation/oct31_reference_diagnosis_v1/inputs/products/igs20_20261110.atx.gz",
+      "OROGRAPHY": "validation/oct31_reference_diagnosis_v1/inputs/products/orography_ell_5x5.gz",
+      "TXT": "validation/oct31_reference_diagnosis_v1/inputs/raw/RawData_20261031_101333.txt.gz"
+    },
+    "oct25_live_window_current_core": {
+      "NAV": "validation/android_live_20261025_v1/inputs/BRDC00WRD_R_20262980000_01D_MN.rnx.gz",
+      "SP3": "validation/android_live_20261025_v1/inputs/WUM0MGXNRT_20262970300_02D_05M_ORB.SP3.gz",
+      "CLK": "validation/android_live_20261025_v1/inputs/WUM0MGXNRT_20262970300_02D_30S_CLK.CLK.gz",
+      "BIA": "validation/android_live_20261025_v1/inputs/WUM0MGXRTS_20262980000_01D_05M_OSB.BIA.gz",
+      "IONEX": "validation/android_live_20261025_v1/inputs/COD0OPSP1D_20262980000_01D_01H_GIM.INX.gz",
+      "VMF_FIRST": "validation/android_live_20261025_v1/inputs/VMF3_20261025.H00.gz",
+      "VMF_SECOND": "validation/android_live_20261025_v1/inputs/VMF3_20261025.H06.gz",
+      "OROGRAPHY": "validation/oct31_reference_diagnosis_v1/inputs/products/orography_ell_5x5.gz",
+      "ATX": "validation/oct31_reference_diagnosis_v1/inputs/products/igs20.atx.gz",
+      "TXT": "validation/android_live_20261025_v1/inputs/live_window_raw.txt.gz"
+    }
+  },
+  "files": [
+    {
+      "archive": "validation/android_live_20261025_v1/inputs/BRDC00WRD_R_20262980000_01D_MN.rnx.gz",
+      "sha256_unpacked": "a6a13aa6b043c6a88e6d5adf70cdccf88d092470b4ce55d6d5c6c578f7a6d151",
+      "sha256_gzip": "b620c0fe9a85f709c55549906bce8a2638df46e6f98fd139a429bee1989f4174",
+      "bytes_gzip": 257527
+    },
+    {
+      "archive": "validation/android_live_20261025_v1/inputs/COD0OPSP1D_20262980000_01D_01H_GIM.INX.gz",
+      "sha256_unpacked": "fb0786e6cb618c9526130248a76c1c59c6f3597deb461ce47371ad430c1859f4",
+      "sha256_gzip": "b7c5fba67fd86cef9368c6c114bbd6566623077f6ebd3c6bf1802398119869c9",
+      "bytes_gzip": 213091
+    },
+    {
+      "archive": "validation/android_live_20261025_v1/inputs/GEOL00CHN_R_20262980533_00U_01S_MO.rnx.gz",
+      "sha256_unpacked": "ab16fff76cedaa69977fd60f2014f8cc4a219212788f79b80130406c944f3acc",
+      "sha256_gzip": "7c9658a6d4968a13a154063fa6a139260f92d15076d46f43d9b9e98eafebb1be",
+      "bytes_gzip": 2052380
+    },
+    {
+      "archive": "validation/android_live_20261025_v1/inputs/RawData_20261025_133353.txt.gz",
+      "sha256_unpacked": "6819164cb2e667527a67089e4231993689b2ab1bdf2b588b0472e78b44bc6d2d",
+      "sha256_gzip": "0352712c177b8fa8363ae3341bdcf07381186663ead4346c32b18ab1606ed1ba",
+      "bytes_gzip": 5606932
+    },
+    {
+      "archive": "validation/android_live_20261025_v1/inputs/VMF3_20261025.H00.gz",
+      "sha256_unpacked": "588520c913c1f6bbfecd9c5a57f6f76457673879713e849ca327d927553b412e",
+      "sha256_gzip": "5004bc393157128a02aaf6a6984f921d492e0371d0563756a2dcc4754a2d7000",
+      "bytes_gzip": 37621
+    },
+    {
+      "archive": "validation/android_live_20261025_v1/inputs/VMF3_20261025.H06.gz",
+      "sha256_unpacked": "36c3963ae6507c389a72662f63a69999a76f8ad0b144cb5e6b9b39bd8e4fbe32",
+      "sha256_gzip": "0a3c44dd83e3fbd42d6b7f4b8db3b557e6e18740bd2bd6705067e24cc200aa16",
+      "bytes_gzip": 37748
+    },
+    {
+      "archive": "validation/android_live_20261025_v1/inputs/WUM0MGXNRT_20262970300_02D_05M_ORB.SP3.gz",
+      "sha256_unpacked": "a35e1b36220f5a7d4280234d2c0261125ba88ce2309f70e031b78eb732072ac4",
+      "sha256_gzip": "17253fae69f38b18c52521bfcb0bcee5f3ceb91f815feb4e5169625bed1a667b",
+      "bytes_gzip": 1907492
+    },
+    {
+      "archive": "validation/android_live_20261025_v1/inputs/WUM0MGXNRT_20262970300_02D_30S_CLK.CLK.gz",
+      "sha256_unpacked": "bfaf6706512b09091d8b8db20844f3cb3f5e86bfa8906cc9bb5df1357e13133d",
+      "sha256_gzip": "5ad9aef97039c24c9447465dd02706de671654db109c70077f2f75f02eede872",
+      "bytes_gzip": 7373068
+    },
+    {
+      "archive": "validation/android_live_20261025_v1/inputs/WUM0MGXRTS_20262980000_01D_05M_OSB.BIA.gz",
+      "sha256_unpacked": "a1435844c437d9852a493777de3a472c9f1d1f328c0ee9f3edc3bd97ca5e8a7c",
+      "sha256_gzip": "6580746370704d9d8abb5e26b408ba96dbe41af98435a6be3faa22224520263e",
+      "bytes_gzip": 187865
+    },
+    {
+      "archive": "validation/android_live_20261025_v1/inputs/live_window_raw.txt.gz",
+      "sha256_unpacked": "39f5d3fc0598411a6da543344de909b2c4df08adcc05a39213efd382893d6ace",
+      "sha256_gzip": "9344c70d6b332b76207b7d4fd9a4b4e138f162b2dcd8ef84112146361fe356ef",
+      "bytes_gzip": 6249159
+    },
+    {
+      "archive": "validation/observation_generation_2023_v1/inputs/RawData_20261018_082050.txt.gz",
+      "sha256_unpacked": "72ef33cc906f533227fab751e1a92b43e7a54216e7dab8f73d74309075ea29f3",
+      "sha256_gzip": "cadeee92fc1a2f6f7d188dc7b918e5d3b6cedf641d3ae8a8993942be76509372",
+      "bytes_gzip": 2673439
+    },
+    {
+      "archive": "validation/observation_generation_2023_v1/inputs/RawData_20261018_084040.txt.gz",
+      "sha256_unpacked": "c97ef536686d954dfbf771ffaeaa0e3ee2fe60e28fcbc3240ebc50260fa6f86a",
+      "sha256_gzip": "d38df60265bb46a8e0f120f08d871228ef50b154f184957724f79cdab059b46d",
+      "bytes_gzip": 2400759
+    },
+    {
+      "archive": "validation/observation_generation_2023_v1/inputs/RawData_20261021_102241.txt.gz",
+      "sha256_unpacked": "182368c32d12c08e251f18f49308180bd8a984fbff2af40a88eb443285cd39a1",
+      "sha256_gzip": "a58dbb0072b4008cf28fd99d418b5bc46deeba15a94643a4ff02db3ad2b26c25",
+      "bytes_gzip": 5528432
+    },
+    {
+      "archive": "validation/oct31_reference_diagnosis_v1/inputs/products/BRDC00WRD_R_20263040000_01D_MN.rnx.gz",
+      "sha256_unpacked": "56c345de1fd74ed6b276cbf49a8662e00214622872d461b68966e66eb19f42f0",
+      "sha256_gzip": "d5ea66c7b70a0ff4b6731a3c7651430d2859c68b381b0bb296a7953ec555329d",
+      "bytes_gzip": 219428
+    },
+    {
+      "archive": "validation/oct31_reference_diagnosis_v1/inputs/products/COD0OPSP1D_20263040000_01D_01H_GIM.INX.gz",
+      "sha256_unpacked": "c76b7e99fab621bac4816859be45d2faa450eccf49b594c423acb2034346c4b5",
+      "sha256_gzip": "a51e25b021ac0fa07b13711024d218370a644cc0a31bb388675d1fb3278e0c62",
+      "bytes_gzip": 207281
+    },
+    {
+      "archive": "validation/oct31_reference_diagnosis_v1/inputs/products/VMF3_20261031.H00.gz",
+      "sha256_unpacked": "04a168903acd9a0e7711b143467df5511e6a6b7d9cec1a73c0500f02214c38d1",
+      "sha256_gzip": "660e05dbae4ec5a18e81bfd11a4054b73c84e5d34d3ff2d6faa9d25ee4816496",
+      "bytes_gzip": 37652
+    },
+    {
+      "archive": "validation/oct31_reference_diagnosis_v1/inputs/products/VMF3_20261031.H06.gz",
+      "sha256_unpacked": "7109ddc6a9636b4a7e5fcd6180058610e5ef8397c14240b6ebabdb752b2fac04",
+      "sha256_gzip": "6917c59abd6bc3302cccd086133b30a5b7b72430949e7579345371101b2658f5",
+      "bytes_gzip": 37697
+    },
+    {
+      "archive": "validation/oct31_reference_diagnosis_v1/inputs/products/WUM0MGXNRT_20263030000_02D_05M_ORB.SP3.gz",
+      "sha256_unpacked": "01db668875001f1c8b9b85147d83765e913d297323806026e16d67b604d6f32d",
+      "sha256_gzip": "eee5897fb804ff4cd57d8d7ca9c7d7cf9b8dbe3b90a74465ae6234cef64215bb",
+      "bytes_gzip": 1921773
+    },
+    {
+      "archive": "validation/oct31_reference_diagnosis_v1/inputs/products/WUM0MGXNRT_20263030000_02D_30S_CLK.CLK.gz",
+      "sha256_unpacked": "8857f210f3f9f8f8e04acd692ebb37f41f9b33418b25cc0616622324ca5091a1",
+      "sha256_gzip": "3733277c37dfbeff25b121af601c307289de6d5c3c31dce640dafe99a3f7febb",
+      "bytes_gzip": 7396873
+    },
+    {
+      "archive": "validation/oct31_reference_diagnosis_v1/inputs/products/WUM0MGXRTS_20263040000_01D_05M_OSB.BIA.gz",
+      "sha256_unpacked": "0001a8398375722761a8b92de056534e815e5de5b469bad3fc8b31a8d7e96593",
+      "sha256_gzip": "bd16566c4c5bed5a50b04838b992559a6bc38ce042bff21c4d00f4f288f9710a",
+      "bytes_gzip": 166882
+    },
+    {
+      "archive": "validation/oct31_reference_diagnosis_v1/inputs/products/igs20.atx.gz",
+      "sha256_unpacked": "fd9955ae17d759291e62e144db8e47a3d4f38bb1d8aae7a8e093fbc6cad0b79f",
+      "sha256_gzip": "4bf551ac8b0bd19085a31360583284cef2d68b3e9203b8ad2c113d1f8e15a090",
+      "bytes_gzip": 5502257
+    },
+    {
+      "archive": "validation/oct31_reference_diagnosis_v1/inputs/products/igs20_20261110.atx.gz",
+      "sha256_unpacked": "abdda8adc1cfdb3dae1f25fa22843365be2a33747d9131835c3117a559cd035a",
+      "sha256_gzip": "39745a9962d935355ed9cab1ab3642e20ef6a74f9a017c5e868fee9eedc06f3d",
+      "bytes_gzip": 8292998
+    },
+    {
+      "archive": "validation/oct31_reference_diagnosis_v1/inputs/products/orography_ell_5x5.gz",
+      "sha256_unpacked": "2da6f83db2f5ac382b6c20d6ce3fc824aa6a5b573c16ba5a7c5737ca54c271ed",
+      "sha256_gzip": "a89ad8b0508e6c1ddc45f2cc9769d7bb4c2cf05dfe3021dbafd8016f796f5204",
+      "bytes_gzip": 8420
+    },
+    {
+      "archive": "validation/oct31_reference_diagnosis_v1/inputs/raw/RawData_20261031_101333.txt.gz",
+      "sha256_unpacked": "1316f10692c572ccac5444b207dcbc9e8bd662f6e25f5e395a76bec1a3909393",
+      "sha256_gzip": "131f2c0ce9eb131199f6a959dcc6395da6b6f610fbb85991df52846929771114",
+      "bytes_gzip": 22129532
+    },
+    {
+      "archive": "validation/oct31_reference_diagnosis_v1/inputs/raw/RawData_20261031_101334.txt.gz",
+      "sha256_unpacked": "39985f237acefcb27e120be2e1c2884c4b54d3af740dd0df0c1e79cbd9952ac0",
+      "sha256_gzip": "a0cb604115a554ded87e5804e7a6512a404f21804e43c9a5c8f7b3194fa87911",
+      "bytes_gzip": 21531924
+    }
+  ],
+  "note": "The exact original product and Raw bytes are represented by sha256_unpacked. The Oct 25 historical phone and PC solutions used the older core recorded in their receipts."
+}

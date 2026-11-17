@@ -1,0 +1,37 @@
+{
+  "control_passed": true,
+  "epochs": 1549,
+  "full_solution_non_timing_exact": true,
+  "full_STAT_exact": true,
+  "full_obs_exact": true,
+  "full_events_exact": true,
+  "executable": "38a23f91a29b31361cf9827c01b90ea709e15a396467c4af94adecff7096e184",
+  "inputs": {
+    "NAV": "E:\\GNSS\\PPP_only\\validation\\android_live_20261025_v1\\inputs\\BRDC00WRD_R_20262980000_01D_MN.rnx",
+    "SP3": "E:\\GNSS\\PPP_only\\validation\\android_live_20261025_v1\\inputs\\WUM0MGXNRT_20262970300_02D_05M_ORB.SP3",
+    "CLK": "E:\\GNSS\\PPP_only\\validation\\android_live_20261025_v1\\inputs\\WUM0MGXNRT_20262970300_02D_30S_CLK.CLK",
+    "BIA": "E:\\GNSS\\PPP_only\\validation\\android_live_20261025_v1\\inputs\\WUM0MGXRTS_20262980000_01D_05M_OSB.BIA",
+    "IONEX": "E:\\GNSS\\PPP_only\\validation\\android_live_20261025_v1\\inputs\\COD0OPSP1D_20262980000_01D_01H_GIM.INX",
+    "VMF_FIRST": "E:\\GNSS\\PPP_only\\validation\\android_live_20261025_v1\\inputs\\VMF3_20261025.H00",
+    "VMF_SECOND": "E:\\GNSS\\PPP_only\\validation\\android_live_20261025_v1\\inputs\\VMF3_20261025.H06",
+    "OROGRAPHY": "E:\\GNSS\\PPP_only\\validation\\android_live_20261025_v1\\inputs\\orography_ell_5x5",
+    "ATX": "E:\\GNSS\\PPP_only\\validation\\android_live_20261025_v1\\inputs\\igs20.atx",
+    "TXT": "E:\\GNSS\\PPP_only\\validation\\oct25_east_bias_v1\\OBSERVE\\live_window_raw.txt"
+  },
+  "input_sha256": {
+    "NAV": "a6a13aa6b043c6a88e6d5adf70cdccf88d092470b4ce55d6d5c6c578f7a6d151",
+    "SP3": "a35e1b36220f5a7d4280234d2c0261125ba88ce2309f70e031b78eb732072ac4",
+    "CLK": "bfaf6706512b09091d8b8db20844f3cb3f5e86bfa8906cc9bb5df1357e13133d",
+    "BIA": "a1435844c437d9852a493777de3a472c9f1d1f328c0ee9f3edc3bd97ca5e8a7c",
+    "IONEX": "fb0786e6cb618c9526130248a76c1c59c6f3597deb461ce47371ad430c1859f4",
+    "VMF_FIRST": "588520c913c1f6bbfecd9c5a57f6f76457673879713e849ca327d927553b412e",
+    "VMF_SECOND": "36c3963ae6507c389a72662f63a69999a76f8ad0b144cb5e6b9b39bd8e4fbe32",
+    "OROGRAPHY": "2da6f83db2f5ac382b6c20d6ce3fc824aa6a5b573c16ba5a7c5737ca54c271ed",
+    "ATX": "fd9955ae17d759291e62e144db8e47a3d4f38bb1d8aae7a8e093fbc6cad0b79f",
+    "TXT": "39f5d3fc0598411a6da543344de909b2c4df08adcc05a39213efd382893d6ace"
+  },
+  "formal_files_unchanged": 52,
+  "source": "same-window RAW, not RINEX",
+  "new_readonly_replays": 1,
+  "parameter_changes": false
+}

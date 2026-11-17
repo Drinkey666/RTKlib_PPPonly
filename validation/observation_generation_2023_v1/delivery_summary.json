@@ -1,0 +1,36 @@
+{
+  "policy": "FIXED_CLOCK_2023",
+  "scope": "observation generation only; no PPP parameter/model edits",
+  "native_tests": "OBS_GENERATION_2023: passed=51 failed=0",
+  "core_tests": {
+    "phase1": "RESULT passed=45 failed=0",
+    "phase2": "RESULT passed=26 failed=0",
+    "physical_atmosphere": "PHYSICAL_RESULT passed=58 failed=0",
+    "rapppid_estimator": "ESTIMATOR_RESULT passed=47 failed=0",
+    "covariance_fix": "39 passed, 0 failed"
+  },
+  "jvm_tests": {
+    "tests": 193,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 7
+  },
+  "unchanged_old_formal_files": 48,
+  "authorized_changed_old_formal_files": [
+    "src\\gnss_adapter.c",
+    "src\\gnss_adapter.h",
+    "src\\gnss_raw.h",
+    "src\\gnss_replay.c"
+  ],
+  "unchanged_android_core_files": 29,
+  "original_raw_sha256_verified": 4,
+  "old_formal_exe_sha256": "063f833581648fb1835a5413e8036c491690a39972eddeeae09f1997b27f49e5",
+  "new_isolated_exe_sha256": "b21c0420e7ebcf85251ede0dd4b06c20a05530cf4fe8560dd027f5d957826944",
+  "apk_path": "E:\\android\\test\\FTPGet\\app\\build\\outputs\\apk\\debug\\app-debug.apk",
+  "apk_sha256": "c5b570ffbd391c29a7e0daf32931623efcc0e3f7edc9a36ff6ec1f26c956ff58",
+  "apk_installed": false,
+  "new_outdoor_capture_verified": false,
+  "native_common_rows": 244046,
+  "rinex_numeric_checks": 747871,
+  "raw_field_checks": 297210
+}

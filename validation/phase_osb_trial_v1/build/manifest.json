@@ -1,0 +1,9 @@
+{
+  "returncode": 0,
+  "exe_sha256": "47aa1e1ab132665b9f4bfca659f93f61e97bf02fdcb4ad3e5225d4525968ce65",
+  "private_ppp_sha256": "b949240fbf59a975481a2b462c242229e8f7a164deb05d33595e931ad41aa304",
+  "header_sha256": "9ce18e4cce6e13f5cf0a32080b6d7d9547b3dd692b9393038459a5650937573c",
+  "ABI": "unchanged; NFREQ4 ENAGLO no ENAQZS; v143 x64",
+  "reused_objects": 31,
+  "model_defaults_unchanged": true
+}

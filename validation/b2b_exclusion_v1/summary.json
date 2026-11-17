@@ -1,0 +1,82 @@
+{
+  "date": "2026-11-10",
+  "B2b_excluded": [
+    "7D",
+    "7P",
+    "7Z"
+  ],
+  "scope": [
+    "Android TXT adapter policy",
+    "shared PPP core including RINEX"
+  ],
+  "B2I_and_B2a_policy_unchanged": true,
+  "IQ_paused": true,
+  "tests": {
+    "phase1": {
+      "returncode": 0,
+      "last_line": "RESULT passed=45 failed=0"
+    },
+    "phase2": {
+      "returncode": 0,
+      "last_line": "RESULT passed=26 failed=0"
+    },
+    "physical_atmosphere": {
+      "returncode": 0,
+      "last_line": "PHYSICAL_RESULT passed=58 failed=0"
+    },
+    "rapppid_estimator": {
+      "returncode": 0,
+      "last_line": "ESTIMATOR_RESULT passed=47 failed=0"
+    },
+    "covariance_fix": {
+      "returncode": 0,
+      "last_line": "39 passed, 0 failed"
+    },
+    "observation_generation": {
+      "returncode": 0,
+      "last_line": "OBS_GENERATION_2023: passed=51 failed=0"
+    },
+    "b2b_exclusion": {
+      "returncode": 0,
+      "last_line": "B2B_EXCLUSION_RESULT passed=23 failed=0"
+    }
+  },
+  "source_sha256": "57df3dee1c74fb33b21f4fbb560e9738b6d909a08477127fa4fc43defbb9b961",
+  "PC_exe_sha256": "38dacad8eced57c37b222e262338c2e0ae5dd5e826b0a33418ea5858c4491b89",
+  "android_source_matches_PC": true,
+  "APK_installed": false,
+  "control": {
+    "command": [
+      "E:\\GNSS\\PPP_only\\validation\\b2b_exclusion_v1\\pc_build\\PPP_only.exe",
+      "--source",
+      "txt-fast",
+      "--no-gui",
+      "--max-epochs",
+      "120"
+    ],
+    "returncode": 0,
+    "wall_seconds": 5.203421900048852,
+    "excluded_raw_signal": null,
+    "device": "k70",
+    "reference_used_in_filter": false,
+    "exe_sha256": "38dacad8eced57c37b222e262338c2e0ae5dd5e826b0a33418ea5858c4491b89",
+    "control_exact_except_processing_ms": true,
+    "completed": true,
+    "epochs": 120,
+    "solution_sha256": "53642357c417098920096244be76f91912651d7387852a41442762c5910e6899",
+    "compressed_logs": {
+      "solution.trace": {
+        "path": "E:\\GNSS\\PPP_only\\validation\\b2b_exclusion_v1\\k70_control120\\solution.trace.gz",
+        "uncompressed_sha256": "138f83343ec03d1861a1347039a33d9f5892e69f46488ac8e0fed013dd5e5ac6"
+      },
+      "solution.csv.stat": {
+        "path": "E:\\GNSS\\PPP_only\\validation\\b2b_exclusion_v1\\k70_control120\\solution.csv.stat.gz",
+        "uncompressed_sha256": "2d605f04e3337b5583848c68dc902042b33b1179b0d129ec81d365fb05ff2876"
+      },
+      "solution.csv.obs.csv": {
+        "path": "E:\\GNSS\\PPP_only\\validation\\b2b_exclusion_v1\\k70_control120\\solution.csv.obs.csv.gz",
+        "uncompressed_sha256": "1b6384666a2f13a28c76dd47481369adc97a5ce7a29a88db6e893ca413f17d07"
+      }
+    }
+  }
+}

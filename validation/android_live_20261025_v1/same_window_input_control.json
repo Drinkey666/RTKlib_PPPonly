@@ -1,0 +1,15 @@
+{
+  "live_rows": 64345,
+  "other_rows": 64345,
+  "common_rows": 64345,
+  "missing_live_identity": 0,
+  "max_value_difference": {
+    "P_m": 0.0,
+    "L_cycle": 0.0,
+    "D_Hz": 0.0,
+    "CN0_dBHz": 0.0
+  },
+  "LLI_differences": 0,
+  "code_differences": 0,
+  "slot_differences": 0
+}

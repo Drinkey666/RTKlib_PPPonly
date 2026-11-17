@@ -1,0 +1,52 @@
+PASS normal P
+PASS negative ADR preserved
+PASS Doppler sign
+PASS SNR unit
+PASS FullBias anchor held
+PASS Bias anchor held
+PASS no extra 76m code step
+PASS phase not retuned
+PASS FBN update is not a hardware slip
+PASS coarse estimate update does not reanchor
+PASS coarse estimate update does not reset arcs
+PASS known anchor survives missing current estimate
+PASS new segment waits for valid reference
+PASS reset evidence retained
+PASS HCDC establishes new FullBias
+PASS new segment has new identity
+PASS phase arc reset survives invalid clock
+PASS VALID RESET is not a phase sample
+PASS one ADR reset does not reset shared clock
+PASS other satellite remains continuous
+PASS phase-only recovery retains pending
+PASS complete recovery transfers reset
+PASS recovered arc continuous
+PASS half-cycle explicitly flagged
+PASS half-cycle transition splits phase arc
+PASS fractional ns preserved
+PASS actual offset timestamps
+PASS GPS week wrap
+PASS valid zero transmit time at boundary
+PASS BDT fourteen seconds and wrap
+PASS GLONASS channel wavelength
+PASS GLONASS day wrap and UTC leap
+PASS GLONASS channel wavelength
+PASS GLONASS day wrap and UTC leap
+PASS date-dependent leap fallback
+PASS historical leap zero
+PASS mixed signal times explicitly unsupported
+PASS overflow is failure, not zero filling
+PASS NaN anchor rejected
+PASS already normalized reference is not applied twice
+PASS normalization does not modify Raw
+PASS integer precision
+PASS small nonzero phase is not a missing-value threshold
+PASS RTKLIB exact-zero sentinel is diagnosed
+PASS NaN GLONASS frequency rejected before integer conversion
+PASS oversized GLONASS frequency rejected before integer conversion
+PASS invalid duplicate does not outrank a valid phase
+PASS production parser accepts complete integer clock
+PASS missing PRR is not valid zero
+PASS malformed TimeNanos rejected
+PASS missing clock and transmitter not zero-filled
+OBS_GENERATION_2023: passed=51 failed=0

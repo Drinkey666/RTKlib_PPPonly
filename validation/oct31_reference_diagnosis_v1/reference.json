@@ -1,0 +1,49 @@
+{
+  "source": "User supplied four surveyed points in chat on 2026-11-07",
+  "frame": "WGS84_INHERITED",
+  "height_type": "ELLIPSOIDAL_INHERITED_FROM_PREVIOUS_EVALUATION",
+  "points": [
+    {
+      "id": "Pt42",
+      "device": "iq",
+      "latitude_dms": "30°46′01.8362″",
+      "longitude_dms": "103°58′46.1935″",
+      "latitude_deg": 30.76717672222222,
+      "longitude_deg": 103.97949819444445,
+      "height_m": 483.989
+    },
+    {
+      "id": "Pt41",
+      "device": "iq",
+      "latitude_dms": "30°46′01.8362″",
+      "longitude_dms": "103°58′46.1935″",
+      "latitude_deg": 30.76717672222222,
+      "longitude_deg": 103.97949819444445,
+      "height_m": 483.984
+    },
+    {
+      "id": "Pt40",
+      "device": "k70",
+      "latitude_dms": "30°46′01.8358″",
+      "longitude_dms": "103°58′46.1843″",
+      "latitude_deg": 30.76717661111111,
+      "longitude_deg": 103.97949563888889,
+      "height_m": 483.963
+    },
+    {
+      "id": "Pt39",
+      "device": "k70",
+      "latitude_dms": "30°46′01.8359″",
+      "longitude_dms": "103°58′46.1841″",
+      "latitude_deg": 30.767176638888888,
+      "longitude_deg": 103.97949558333333,
+      "height_m": 483.962
+    }
+  ],
+  "working_assignment": {
+    "xiaomi": "Pt40",
+    "vivo": "Pt42"
+  },
+  "assignment_status": "Working choice using Pt40/Pt42; Pt39/Pt41 retained; user has not specified separate capture segments.",
+  "device_mapping_basis": "Pt40 and Pt42 DMS match prior Oct31 xiaomi and vivo reference lat/lon respectively."
+}

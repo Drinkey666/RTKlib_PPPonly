@@ -1,0 +1,32 @@
+{
+  "command": [
+    "E:\\GNSS\\PPP_only\\validation\\oct31_reference_diagnosis_v1\\b2a_build\\trial.exe",
+    "--source",
+    "txt-fast",
+    "--no-gui"
+  ],
+  "returncode": 0,
+  "wall_seconds": 113.4001344999997,
+  "excluded_raw_signal": "C:7I",
+  "device": "iq",
+  "reference_used_in_filter": false,
+  "exe_sha256": "4207ad6ba07a05d7dc255f3fe0524220e5922390cffc202d4e9c106c240fb4f1",
+  "excluded_signal_absent_from_observations": true,
+  "completed": true,
+  "epochs": 3710,
+  "solution_sha256": "3175975510a9cfa778a8799a744cfbd838da03d2b55a021f014d51cbd4241561",
+  "compressed_logs": {
+    "solution.trace": {
+      "path": "E:\\GNSS\\PPP_only\\validation\\oct31_reference_diagnosis_v1\\iq_without_c7i\\solution.trace.gz",
+      "uncompressed_sha256": "51874d8cda07a93f11a7cdb17bc17f8b6b73a899557760b10cd75376a4aa5158"
+    },
+    "solution.csv.stat": {
+      "path": "E:\\GNSS\\PPP_only\\validation\\oct31_reference_diagnosis_v1\\iq_without_c7i\\solution.csv.stat.gz",
+      "uncompressed_sha256": "f24237186d2918ce4d2995b92ee81dd591ac9594c5de093fe81dcd78f1a823c9"
+    },
+    "solution.csv.obs.csv": {
+      "path": "E:\\GNSS\\PPP_only\\validation\\oct31_reference_diagnosis_v1\\iq_without_c7i\\solution.csv.obs.csv.gz",
+      "uncompressed_sha256": "8d3df687302008dbe1b6a3e381a9bad73b21210937c6976ce33e11e8bcad0509"
+    }
+  }
+}

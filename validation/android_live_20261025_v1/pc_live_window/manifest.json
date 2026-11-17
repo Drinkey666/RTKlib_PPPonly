@@ -1,0 +1,16 @@
+{
+  "source": "txt-fast",
+  "usage": "ARCHIVED_REGRESSION",
+  "files": {
+    "NAV": "E:\\GNSS\\PPP_only\\validation\\android_live_20261025_v1\\inputs\\BRDC00WRD_R_20262980000_01D_MN.rnx",
+    "SP3": "E:\\GNSS\\PPP_only\\validation\\android_live_20261025_v1\\inputs\\WUM0MGXNRT_20262970300_02D_05M_ORB.SP3",
+    "CLK": "E:\\GNSS\\PPP_only\\validation\\android_live_20261025_v1\\inputs\\WUM0MGXNRT_20262970300_02D_30S_CLK.CLK",
+    "BIA": "E:\\GNSS\\PPP_only\\validation\\android_live_20261025_v1\\inputs\\WUM0MGXRTS_20262980000_01D_05M_OSB.BIA",
+    "IONEX": "E:\\GNSS\\PPP_only\\validation\\android_live_20261025_v1\\inputs\\COD0OPSP1D_20262980000_01D_01H_GIM.INX",
+    "VMF_FIRST": "E:\\GNSS\\PPP_only\\validation\\android_live_20261025_v1\\inputs\\VMF3_20261025.H00",
+    "VMF_SECOND": "E:\\GNSS\\PPP_only\\validation\\android_live_20261025_v1\\inputs\\VMF3_20261025.H06",
+    "OROGRAPHY": "E:\\GNSS\\PPP_only\\validation\\android_live_20261025_v1\\inputs\\orography_ell_5x5",
+    "ATX": "E:\\GNSS\\PPP_only\\validation\\android_live_20261025_v1\\inputs\\igs20.atx",
+    "TXT": "E:\\GNSS\\PPP_only\\validation\\android_live_20261025_v1\\inputs\\live_window_raw.txt"
+  }
+}

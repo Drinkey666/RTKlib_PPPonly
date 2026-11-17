@@ -1,0 +1,17 @@
+{
+  "command": [
+    "E:\\GNSS\\PPP_only\\validation\\oct31_reference_diagnosis_v1\\phase_mask_build\\trial.exe",
+    "--source",
+    "txt-fast",
+    "--no-gui"
+  ],
+  "returncode": 0,
+  "wall_seconds": 156.2024435000494,
+  "active": true,
+  "reference_used_in_filter": false,
+  "exe_sha256": "300f065e08adb1b652d9798232802f437d802082249bfc2e7d720ad5d66ac1f5",
+  "phase_only_deletions_verified": 27278,
+  "completed": true,
+  "epochs": 3710,
+  "solution_sha256": "2ced356afedc0ef1dab3cb3b5290e133d31a36a3a6eb1a468f084bd50259baea"
+}

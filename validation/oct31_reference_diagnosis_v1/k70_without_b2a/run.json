@@ -1,0 +1,31 @@
+{
+  "command": [
+    "E:\\GNSS\\PPP_only\\validation\\oct31_reference_diagnosis_v1\\b2a_build\\trial.exe",
+    "--source",
+    "txt-fast",
+    "--no-gui"
+  ],
+  "returncode": 0,
+  "wall_seconds": 154.80216180009302,
+  "excluded_raw_signal": "C:5P",
+  "reference_used_in_filter": false,
+  "exe_sha256": "4207ad6ba07a05d7dc255f3fe0524220e5922390cffc202d4e9c106c240fb4f1",
+  "no_BDS_5P_observations": true,
+  "completed": true,
+  "epochs": 3710,
+  "solution_sha256": "8556a2a79dd00205609cdffb654adfdf02f1708566038fb01fec5f738b7d6597",
+  "compressed_logs": {
+    "solution.trace": {
+      "path": "E:\\GNSS\\PPP_only\\validation\\oct31_reference_diagnosis_v1\\k70_without_b2a\\solution.trace.gz",
+      "uncompressed_sha256": "03d132bf77b6dc1dc7d17d7967cb628587943a0448f3e2573cc32fc60de4484a"
+    },
+    "solution.csv.stat": {
+      "path": "E:\\GNSS\\PPP_only\\validation\\oct31_reference_diagnosis_v1\\k70_without_b2a\\solution.csv.stat.gz",
+      "uncompressed_sha256": "c988a5341c414649a869b91dc2514eafa8995965c34d40ea5f6275f44b52c9b0"
+    },
+    "solution.csv.obs.csv": {
+      "path": "E:\\GNSS\\PPP_only\\validation\\oct31_reference_diagnosis_v1\\k70_without_b2a\\solution.csv.obs.csv.gz",
+      "uncompressed_sha256": "5630ef9ca964a43deca0d9a124be9cedd8d97509a73c17e8c2ca540e05fcbe5e"
+    }
+  }
+}
