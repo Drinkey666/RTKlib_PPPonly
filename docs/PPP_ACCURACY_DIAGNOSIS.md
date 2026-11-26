@@ -160,3 +160,20 @@ python tests/test_accuracy_audit.py
 ```
 
 `validation/` 不进入版本控制。报告与小型证据 JSON 入库；原始观测、产品和大体积日志保留在本地。证据中的 A/B 标识用于科研回归追踪，日常复现用户本次问题的基准是实际默认算法及 `test1.pos`。
+
+## 10. 观测可信前提下的程序模型复核补充
+
+用户确认采集数据可信。以下隔离试验继续固定 3/21 原始观测、NAV、WUM RTS 轨道/钟差/OSB、IONEX、VMF3 和 `igs20.atx`，只检查程序中的系统路径和天线参考。真值仅用于离线计算 ENU；没有据此调 R/Q、拒绝阈值或默认星座。
+
+| A + PPP_COMMON，同一 600 历元 | 最后 E/N/U (m) | 最后 3D (m) | 最后 60 历元 RMS (m) |
+|---|---|---:|---:|
+| GPS | +1.247 / +0.060 / −0.116 | 1.254 | 1.228 |
+| GPS + Galileo | +2.521 / +0.011 / −0.663 | 2.607 | 2.607 |
+| GPS + BDS | +1.407 / +0.034 / −1.175 | 1.834 | 1.799 |
+| GPS + Galileo + BDS | +2.082 / +0.050 / −1.619 | 2.637 | 2.610 |
+
+四组均输出 600 历元且没有滤波失败。添加系统后坐标呈系统性变化，提示继续核对卫星钟差参考、天线相位中心、OSB 和系统间钟差状态之间的一致性；它不证明某个星座观测有问题，也不能把 GPS 单系统解当作通用修复。脚本与输入 SHA256 记录于 `tests/run_mar21_constellation_isolation.py` 和 `validation/mar21_constellation_isolation/summary.json`。
+
+另以 `igs20.atx` 的隔离副本，将 BDS C07 PCO 向量替换为同块 C06 PCO 向量，让当前 `satantoff()` 的第二参考槽使用 B3I PCO 近似，未修改生产 ANTEX 或源码。3/21 A 最后 Up −1.619→−1.560 m、3D 2.637→2.600 m；B 最后 Up −6.091→−6.638 m、3D 6.345→6.917 m。因此，单独改变这个参考 PCO 不能解释当前 B 的 6 m 偏差，更不能按是否接近真值合并该试验。脚本及哈希在 `tests/run_bds_apc_reference_trial.py` 和 `validation/bds_apc_reference_trial/summary.json`。
+
+代码目前在 `src/preceph.c:satantoff()` 为 Galileo 固定 E1/E5b、BDS 固定 B1I/B2I IF PCO；`src/rtkcmn.c:readantex()` 没有独立存储 BDS C06。WUM RTS 钟差头明确声明 `igs20.atx`，但这不足以从产品文件本身推导每系统精密钟差的参考频率、OSB 是否已经包含逐信号 APC 改正。这里保留为待证明的模型边界，不把一个未经证实的参考组合更改成生产行为。程序精度问题仍未宣告解决。

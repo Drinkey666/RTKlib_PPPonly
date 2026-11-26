@@ -17,6 +17,7 @@ int gnss_ppp_signal_priority(int sys, int slot, uint8_t code)
         if (slot == 0 && !strcmp(sig, "2I")) return 100;
         if (slot == 1 && !strcmp(sig, "7I")) return 100;
         if (slot == 2 && !strcmp(sig, "5P")) return 100;
+        if (slot == 3 && !strcmp(sig, "1P")) return 100;
     }
     return 0;
 }
@@ -32,8 +33,9 @@ const char *gnss_ppp_signal_reason(int sys, int slot, uint8_t code)
     if (gnss_ppp_signal_allowed(sys, slot, code)) return "PPP_POLICY_ALLOWED";
     if (sys == SYS_CMP && slot == 2 && sig && !strcmp(sig, "5Q"))
         return "NO_BDS_C5Q_RCB";
-    if (sys == SYS_CMP && slot == 0 && sig && !strcmp(sig, "1P"))
-        return "BDS_2I_REFERENCE_SLOT_PRIORITY";
+    if (sys == SYS_CMP && slot == 1 &&
+        (code == CODE_L7D || code == CODE_L7P || code == CODE_L7Z))
+        return "BDS_B2B_NOT_ENABLED_IN_CURRENT_PPP";
     if (sys == SYS_GAL && slot == 1)
         return "GAL_E5B_ISOLATED_IN_CURRENT_PPP";
     return "NOT_IN_CURRENT_PPP_SIGNAL_POLICY";

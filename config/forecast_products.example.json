@@ -1,0 +1,28 @@
+{
+  "source": "rinex",
+  "max_epochs": 0,
+  "files": {
+    "OBS": "E:/YOUR_DATA/observation.rnx",
+    "NAV": "E:/YOUR_DATA/navigation.rnx",
+    "SP3": "E:/YOUR_DATA/WUM0MGXNRT_YYYYDDDHHMM_02D_05M_ORB.SP3",
+    "CLK": "E:/YOUR_DATA/WUM0MGXNRT_YYYYDDDHHMM_02D_05M_CLK.CLK",
+    "BIA": "E:/YOUR_DATA/compatible_and_valid_OSB.BIA",
+    "IONEX": "E:/YOUR_DATA/available_ionosphere_map.INX",
+    "VMF_FIRST": "E:/YOUR_DATA/available_VMF3_first",
+    "VMF_SECOND": "E:/YOUR_DATA/available_VMF3_second",
+    "OROGRAPHY": "E:/YOUR_DATA/orography_ell_5x5",
+    "ATX": "E:/YOUR_DATA/product_declared_antenna_model.atx"
+  },
+  "availability": {
+    "NAV": {"received_gpst": null, "sha256": null, "evidence": ""},
+    "SP3": {"received_gpst": null, "sha256": null, "evidence": ""},
+    "CLK": {"received_gpst": null, "sha256": null, "evidence": ""},
+    "BIA": {"received_gpst": null, "sha256": null, "evidence": ""},
+    "IONEX": {"received_gpst": null, "sha256": null, "evidence": ""},
+    "VMF_FIRST": {"received_gpst": null, "sha256": null, "evidence": ""},
+    "VMF_SECOND": {"received_gpst": null, "sha256": null, "evidence": ""},
+    "OROGRAPHY": {"received_gpst": null, "sha256": null, "evidence": ""},
+    "ATX": {"received_gpst": null, "sha256": null, "evidence": ""}
+  },
+  "note": "Template only. Supply actual receipt records; never invent historical receipt times. All received_gpst timestamps are GPS time, not UTC or Beijing time."
+}

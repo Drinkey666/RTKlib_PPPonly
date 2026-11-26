@@ -4,17 +4,18 @@
 #include "gnss_signal_policy.h"
 #include "smartphone_ppp_config.h"
 #include "gnss_replay.h"
+#include "ppp_product_check.h"
 #include <windows.h>
 #include <ctype.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 
 #define RAW_PER_EPOCH 256
 #define CSV_COLS 80
 #define LINE_SIZE 8192
-#define NS_CLOCK_JUMP 50000LL
 
 /* Observer lifetime is scoped to the replay worker, not a mutable filter global. */
 static __declspec(thread) const gnss_replay_observer_t *replay_observer;
@@ -35,9 +36,7 @@ typedef struct {
 } replay_args_t;
 
 typedef struct {
-    int have_previous;
-    int64_t time_nanos, gps_nanos, correction_nanos;
-    int hcdc;
+    gnss_clock_reference_t reference;
 } clock_history_t;
 
 typedef struct {
@@ -220,6 +219,19 @@ static int split_csv(char *line, char **fields, int cap)
 static int64_t as_i64(const char *s) { return s && *s ? _strtoi64(s, NULL, 10) : 0; }
 static double as_double(const char *s) { return s && *s ? strtod(s, NULL) : 0.0; }
 static int as_int(const char *s) { return s && *s ? (int)strtol(s, NULL, 10) : 0; }
+static int raw_i64(const char *s,int64_t *v) {
+    char *end;int64_t value;
+    if(!s || !*s)return 0;
+    errno=0;value=_strtoi64(s,&end,10);
+    if(errno==ERANGE || end==s || *end)return 0;
+    *v=value;return 1;
+}
+static double raw_number(const char *s) {
+    char *end;double value;
+    if(!s || !*s)return NAN;
+    errno=0;value=strtod(s,&end);
+    return errno==ERANGE || end==s || *end?NAN:value;
+}
 
 static int parse_raw(char *line, android_clock_t *clock, android_meas_t *m,
                      const android_clock_t *last)
@@ -229,24 +241,24 @@ static int parse_raw(char *line, android_clock_t *clock, android_meas_t *m,
     if (n < 37 || strcmp(f[0], "Raw")) return 0;
     memset(clock, 0, sizeof(*clock));
     memset(m, 0, sizeof(*m));
-    clock->time_nanos = as_i64(f[2]);
-    clock->full_bias_nanos = *f[5] ? as_i64(f[5]) : last->full_bias_nanos;
-    clock->has_full_bias = *f[5] != 0 || last->has_full_bias;
-    clock->bias_nanos = *f[6] ? as_double(f[6]) : last->bias_nanos;
+    if(!raw_i64(f[2],&clock->time_nanos))return 0;
+    clock->has_full_bias=raw_i64(f[5],&clock->full_bias_nanos);
+    clock->bias_nanos = *f[6]?raw_number(f[6]):0.;
+    clock->has_leap_seconds=*f[3]!=0;clock->leap_seconds=as_int(f[3]);
     clock->hardware_clock_discontinuity_count = *f[10] ? as_int(f[10]) :
         last->hardware_clock_discontinuity_count;
     m->svid = as_int(f[11]);
-    m->time_offset_nanos = as_double(f[12]);
+    m->time_offset_nanos = *f[12]?raw_number(f[12]):0.;
     m->state = (uint32_t)as_int(f[13]);
-    m->received_sv_time_nanos = as_i64(f[14]);
-    m->received_sv_time_uncertainty_nanos = as_double(f[15]);
-    m->cn0_dbhz = as_double(f[16]);
-    m->pseudorange_rate_mps = as_double(f[17]);
-    m->pseudorange_rate_uncertainty_mps = as_double(f[18]);
+    m->sv_time_status=raw_i64(f[14],&m->received_sv_time_nanos)?1:-1;
+    m->received_sv_time_uncertainty_nanos = raw_number(f[15]);
+    m->cn0_dbhz = raw_number(f[16]);
+    m->pseudorange_rate_mps = raw_number(f[17]);
+    m->pseudorange_rate_uncertainty_mps = raw_number(f[18]);
     m->adr_state = (uint32_t)as_int(f[19]);
-    m->adr_meters = as_double(f[20]);
-    m->adr_uncertainty_meters = as_double(f[21]);
-    m->carrier_frequency_hz = as_double(f[22]);
+    m->adr_meters = raw_number(f[20]);
+    m->adr_uncertainty_meters = raw_number(f[21]);
+    m->carrier_frequency_hz = raw_number(f[22]);
     m->constellation_type = as_int(f[28]);
     if (*f[35]) {
         strncpy(m->code_type, f[35], sizeof(m->code_type) - 1);
@@ -255,29 +267,12 @@ static int parse_raw(char *line, android_clock_t *clock, android_meas_t *m,
     return 1;
 }
 
-static void normalize_clock(clock_history_t *h, android_clock_t *c)
+static void normalize_clock(clock_history_t *h,android_clock_t *clock)
 {
-    int64_t raw_gps, elapsed, step;
-    if (!c->has_full_bias) return;
-    raw_gps = c->time_nanos - c->full_bias_nanos;
-    if (h->have_previous) {
-        elapsed = c->time_nanos - h->time_nanos;
-        step = (raw_gps - h->gps_nanos) - elapsed;
-        if (c->hardware_clock_discontinuity_count == h->hcdc &&
-            elapsed > 0 && elapsed <= 5000000000LL &&
-            (step >= NS_CLOCK_JUMP || step <= -NS_CLOCK_JUMP)) {
-            h->correction_nanos += step;
-            c->clock_discontinuity = 1;
-            fprintf(stderr, "CLOCK_STEP,raw_ns=%lld,correction_ns=%lld\n",
-                    (long long)step, (long long)h->correction_nanos);
-        }
-    }
-    h->time_nanos = c->time_nanos;
-    h->gps_nanos = raw_gps;
-    h->hcdc = c->hardware_clock_discontinuity_count;
-    h->have_previous = 1;
-    c->clock_correction_nanos = h->correction_nanos;
+    android_clock_t raw=*clock;
+    gnss_clock_reference_apply(&h->reference,&raw,clock);
 }
+
 
 static void free_products(nav_t *nav)
 {
@@ -290,6 +285,36 @@ static void free_products(nav_t *nav)
     free(nav->tec); free(nav->erp.data);
 }
 
+int gnss_replay_scan_txt(const char *path,int max_epochs,
+    void (*visit)(void *,const obsd_t *,int),void *context)
+{
+    FILE *fp=fopen(path,"r");char line[LINE_SIZE];
+    android_clock_t parsed_clock={0},last={0},current={0};
+    android_meas_t parsed,raw[RAW_PER_EPOCH];obsd_t obs[MAXOBS];
+    clock_history_t history={0};gnss_adapter_t adapter;
+    int nraw=0,n,epochs=0;
+    if(!fp)return -1;
+    gnss_adapter_init(&adapter);gnss_adapter_set_ppp_safe(&adapter,1);
+    while(fgets(line,sizeof(line),fp)) {
+        if(!parse_raw(line,&parsed_clock,&parsed,&last))continue;
+        if(nraw && (parsed_clock.time_nanos!=current.time_nanos || parsed_clock.hardware_clock_discontinuity_count!=current.hardware_clock_discontinuity_count)) {
+            n=gnss_adapter_convert(&adapter,&current,raw,nraw,obs,MAXOBS,NULL);
+            if(n){visit(context,obs,n);epochs++;}
+            nraw=0;
+            if(max_epochs>0 && epochs>=max_epochs)break;
+        }
+        if(!nraw || (!current.has_full_bias && parsed_clock.has_full_bias)){current=parsed_clock;normalize_clock(&history,&current);}
+        last=parsed_clock;
+        if(nraw<RAW_PER_EPOCH)raw[nraw++]=parsed;
+    }
+    if(nraw && (!max_epochs || epochs<max_epochs)) {
+        n=gnss_adapter_convert(&adapter,&current,raw,nraw,obs,MAXOBS,NULL);
+        if(n){visit(context,obs,n);epochs++;}
+    }
+    if(ferror(fp))epochs=-1;
+    fclose(fp);return epochs;
+}
+
 /* Inspect actual TXT satellite/code availability after loading the BIA.
  * This is diagnostic only: OSB absence does not itself gate a signal because
  * the existing PPP engine may use its legacy DCB fallback. */
@@ -298,7 +323,8 @@ static int scan_signal_products(const char *path, const nav_t *nav)
     static const struct { int sys, slot; const char *name; } target[] = {
         {SYS_GPS,0,"1C"}, {SYS_GPS,2,"5Q"},
         {SYS_GAL,0,"1C"}, {SYS_GAL,1,"7Q"}, {SYS_GAL,2,"5Q"},
-        {SYS_CMP,0,"2I"}, {SYS_CMP,0,"1P"}, {SYS_CMP,1,"7I"},
+        {SYS_CMP,0,"2I"}, {SYS_CMP,3,"1P"}, {SYS_CMP,1,"7I"},
+        {SYS_CMP,1,"7D"}, {SYS_CMP,1,"7P"}, {SYS_CMP,1,"7Z"},
         {SYS_CMP,2,"5P"}, {SYS_CMP,2,"5Q"}
     };
     uint8_t seen[MAXSAT][MAXCODE + 1] = {{0}};
@@ -349,12 +375,19 @@ static int load_products(const replay_args_t *a, nav_t *nav, prcopt_t *opt)
     if (!exists(a->nav) || !exists(a->sp3) || !exists(a->clk) ||
         !exists(a->bia) || !exists(a->ionex) || !exists(a->vmf0) ||
         !exists(a->vmf6) || !exists(a->orog) || !exists(a->atx)) return 0;
+    if(!ionex_time_select(nav,getenv("RTK_PPP_IONEX_TIME")))return 0;
+    fprintf(stderr,"IONEX_TIME_MODEL,mode=%s,input=GPST,maps=UTC\n",
+        nav->ionex_time_mode==IONEX_TIME_LEGACY?"LEGACY":"CORRECTED");
     if (!readrnx(a->nav, 1, "", &unused_obs, nav, &sta)) return 0;
     freeobs(&unused_obs);
     uniqnav(nav);
     readsp3(a->sp3, nav, 0);
     if (!readrnxc(a->clk, nav)) return 0;
     if (!readdcb(a->bia, nav, &sta)) return 0;
+    nav->legacy_product_reference=getenv("RTK_PPP_REFERENCE_MODEL") &&
+        !strcmp(getenv("RTK_PPP_REFERENCE_MODEL"),"LEGACY");
+    fprintf(stderr,"PRODUCT_REFERENCE_MODEL,%s\n",
+        nav->legacy_product_reference?"LEGACY":"PRODUCT");
     readtec(a->ionex, nav, 1);
     if (!readpcv(a->atx, &pcvs)) return 0;
     for (i = 0; i < MAXSAT; i++) {
@@ -392,6 +425,8 @@ static const char *receiver_code_bias_slot(int sys, int f, uint8_t code,
         return "BDS_C7I";
     if (sys == SYS_CMP && f == 2 && !strcmp(sig, "5P"))
         return "BDS_C5P";
+    if (sys == SYS_CMP && nf >= 4 && f == 3 && !strcmp(sig, "1P"))
+        return "BDS_C1P";
     return "unmodelled";
 }
 
@@ -797,12 +832,11 @@ static int solve_obs_epoch(const obsd_t *obs, int nobs, double adapter_ms,
         if (obs[i].L[f]) perf->phase_meas++;
         if (obs[i].D[f]) perf->doppler_meas++;
     }
-    if (timediff(obs[0].time, nav->peph[0].time) < 0.0 ||
-        timediff(obs[0].time, nav->peph[nav->ne - 1].time) > 0.0 ||
-        timediff(obs[0].time, nav->pclk[0].time) < 0.0 ||
-        timediff(obs[0].time, nav->pclk[nav->nc - 1].time) > 0.0) {
-        fprintf(stderr, "PRODUCT_TIME_ERROR,observation outside SP3/CLK coverage\n");
-        return -1;
+    {
+        char reason[128];
+        if(!ppp_product_window(nav,obs[0].time,obs[0].time,reason,sizeof(reason))) {
+            fprintf(stderr,"PRODUCT_TIME_ERROR,reason=%s\n",reason);return -1;
+        }
     }
     if (!first_time->time) {
         *first_time = obs[0].time;
@@ -1006,7 +1040,7 @@ int gnss_replay_run_observed(int argc, char **argv, const prcopt_t *options,
     if (args.rinex) {
         rinex_nav = (nav_t *)calloc(1, sizeof(nav_t));
         if (!rinex_nav) goto done;
-        if (!exists(args.rinex) || !readrnx(args.rinex, 1, "", &rinex_obs, rinex_nav, &sta)) {
+        if (!exists(args.rinex) || !readrnx(args.rinex, 1, opt.rnxopt[0], &rinex_obs, rinex_nav, &sta)) {
             fprintf(stderr, "RINEX comparison load failed.\n"); goto done;
         }
         sortobs(&rinex_obs);
@@ -1071,7 +1105,7 @@ int gnss_replay_run_observed(int argc, char **argv, const prcopt_t *options,
     else {
         while (!replay_cancelled() && fgets(line, sizeof(line), input)) {
             if (!parse_raw(line, &parsed_clock, &parsed, &last_clock)) continue;
-            if (nraw && parsed_clock.time_nanos != current_clock.time_nanos) {
+            if (nraw && (parsed_clock.time_nanos != current_clock.time_nanos || parsed_clock.hardware_clock_discontinuity_count != current_clock.hardware_clock_discontinuity_count)) {
                 int result = process_txt_epoch(&current_clock, raw, nraw, &adapter, rtk, nav,
                                                dump, result_file, state_dump, use_dump,
                                                args.rinex ? &rinex_obs : NULL, &rnx_cursor,
@@ -1083,7 +1117,7 @@ int gnss_replay_run_observed(int argc, char **argv, const prcopt_t *options,
                 nraw = 0;
                 if (args.max_epochs > 0 && epochs >= args.max_epochs) break;
             }
-            if (!nraw) {
+            if (!nraw || (!current_clock.has_full_bias && parsed_clock.has_full_bias)) {
                 current_clock = parsed_clock;
                 normalize_clock(&history, &current_clock);
             }

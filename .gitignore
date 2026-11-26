@@ -11,3 +11,6 @@ validation/
 *.stat
 *.pos
 __pycache__/
+/tmp/
+/PROJECT_CONTINUATION/
+/regression.trace

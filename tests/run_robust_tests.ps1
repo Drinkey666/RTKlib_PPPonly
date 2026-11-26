@@ -3,7 +3,7 @@ $ErrorActionPreference = 'Stop'
 $taskRoot = Split-Path -Parent $PSScriptRoot
 Set-Location -LiteralPath $taskRoot
 New-Item -ItemType Directory -Force validation/robust | Out-Null
-$objects = 'rtkcmn','trace','preceph','ephemeris','ionex','sbas','sofa','tides','pntpos','ppp_ar','ppp_position','smartphone_ppp_config','ppp_innovation_diag'
+$objects = 'rtkcmn','trace','preceph','ephemeris','ionex','sofa','tides','pntpos','ppp_position','smartphone_ppp_config','ppp_innovation_diag'
 $taskArgs = '/nologo /utf-8 /O2 /Gy /MD /D_CRT_SECURE_NO_WARNINGS /DENAGLO /DWIN32 /DTRACE /Isrc /Fevalidation/robust/robust_tests.exe /Fovalidation/robust/ tests/robust_regression.c ' + (($objects | ForEach-Object { 'build/PPP_only/x64/Release/' + $_ + '.obj' }) -join ' ')
 Set-Content -LiteralPath validation/robust/tests.rsp -Encoding ascii -Value $taskArgs
 $taskBuild = '@echo off' + "`r`n" + 'call "' + $DevCmd + '" -arch=x64 -host_arch=x64 >nul' + "`r`n" + 'cl @validation\robust\tests.rsp /link /OPT:REF winmm.lib ws2_32.lib'

@@ -97,8 +97,9 @@ static void lifecycle_tests(rtk_t *rtk,nav_t *nav)
         rtk->ppp_start_time=gpst2time(2400,100);rtk->ssat[0].gf[1]=.25;
         for(f=0;f<3;f+=2){rtk->ssat[0].ppp_dop_valid[f]=1;rtk->ssat[0].ppp_dop_time[f]=timeadd(obs.time,-1);rtk->ssat[0].ppp_doppler[f]=1;}
         precheck_obs_ppp(rtk,&obs,1,nav);
-        CHECK(i?"GF missing phase history does not falsely defer":"B LEGACY GF deferral recoverable",
-            i?(rtk->ssat[0].slip[0] && rtk->ssat[0].slip[2]):(!rtk->ssat[0].slip[0] && !rtk->ssat[0].slip[2]));
+        CHECK(i?"GF missing raw pair is unavailable, not executed":"B LEGACY GF deferral recoverable",
+            !rtk->ssat[0].slip[0] && !rtk->ssat[0].slip[2] &&
+            (!i || !(rtk->ssat[0].ppp_slip_evidence[0]&PPP_EVIDENCE_GF)));
         rtkfree(rtk);
     }
     fixture(rtk,&obs,1,3);
@@ -175,6 +176,8 @@ int main(void)
     traceopen("validation/phase1/regression.trace");tracelevel(4);
     numerical_tests();lifecycle_tests(rtk,nav);transaction_tests(rtk,nav);residual_tests(rtk,nav);
     smartphone_ppp_configure(&opt,NULL);b=smartphone_ppp_policy(&opt);
+    CHECK("direct-run default retains legacy baseline and clock",opt.ppp_baseline==PPP_BASELINE_B_LEGACY &&
+        opt.ppp_lifecycle==PPP_LIFECYCLE_LEGACY && !b.common_clock);
     smartphone_ppp_select(&opt,"A",NULL,error,sizeof(error));a=smartphone_ppp_policy(&opt);
     CHECK("A disables experimental features and corrects lifecycle",a.corrected_lifecycle && !a.legacy_weighting && !a.quality_learning && !a.smoothing && !a.atmosphere_constraints && !a.empirical_guards && !a.startup_qc);
     CHECK("B retains legacy features",b.legacy_weighting && b.quality_learning && b.smoothing && b.atmosphere_constraints && b.empirical_guards && !b.corrected_lifecycle);

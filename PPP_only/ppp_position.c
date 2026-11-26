@@ -64,7 +64,12 @@ extern int rtkoutstat(rtk_t *rtk,int level,char *buff)
 
     for(i=0;i<MAXSAT;i++){
         ssat=rtk->ssat+i;
-        if(!ssat->vs)continue;
+        if(!ssat->vs) {
+            int accepted=0;
+            if(smartphone_ppp_policy(&rtk->opt).verified_repairs)
+                for(j=0;j<nfreq && j<NFREQ;j++)if(ssat->vsat[j])accepted=1;
+            if(!accepted)continue;
+        }
         satno2id(i+1,id);
         for(j=0;j<nfreq;j++){
             k=pppambidx(i+1,j,&rtk->opt);
@@ -154,6 +159,14 @@ extern void rtkinit(rtk_t* rtk, const prcopt_t* opt)
     rtk->tt = 0.0;
     rtk->epoch = 0;
     rtk->ppp_failure = 0;
+    /* New session: never inherit a model basis lock or atmospheric history. */
+    rtk->ppp_estimator_flags = rtk->ppp_estimator_locked = 0;
+    rtk->ppp_trop_base = rtk->ppp_trop_zhd = 0.0;
+    rtk->ppp_trop_time.time = 0;
+    rtk->ppp_trop_time.sec = 0.0;
+    rtk->ppp_clock_valid=rtk->ppp_spp_clock_valid=0;
+    rtk->ppp_clock_m=rtk->ppp_spp_clock_m=0.0;
+    rtk->ppp_clock_time.time=0;rtk->ppp_clock_time.sec=0.0;
     rtk->ppp_start_time.time = 0;
     rtk->ppp_start_time.sec = 0.0;
     rtk->ppp_zwd_prior_time.time = 0;
@@ -249,6 +262,7 @@ extern int rtkpos(rtk_t* rtk, const obsd_t* obs, int n, const nav_t* nav)
 
     char tstr[40];
     rtk->ppp_failure=0;
+    rtk->ppp_spp_clock_valid=0;
     if(!obs||!nav||n<=0||opt->mode<PMODE_PPP_KINEMA||opt->mode>PMODE_PPP_FIXED){rtk->sol.stat=SOLQ_NONE;return 0;}
     if(n>MAXOBS || opt->nf<1 || opt->nf>NFREQ || rtk->nx!=pppnx(opt) ||
         opt->ppp_baseline<0 || opt->ppp_baseline>MODE_C_NEW_ROBUST) {
@@ -295,11 +309,24 @@ extern int rtkpos(rtk_t* rtk, const obsd_t* obs, int n, const nav_t* nav)
     /* rover position and time by single point positioning, skip if
      position variance smaller than threshold */
     if (rtk->P[0] == 0 || rtk->P[0] > STD_PREC_VAR_THRESH) {
+        int isolated=smartphone_ppp_policy(opt).common_clock;
+        int bootstrap=!rtk->ppp_clock_valid || norm(rtk->x,3)<=0.0;
+        sol_t spp_candidate=rtk->sol;
+        sol_t *spp_output=isolated?&spp_candidate:&rtk->sol;
         int startup=startup_qc && (norm(rtk->x,3)<=0.0 ||
             fabs(timediff(obs[0].time,rtk->ppp_start_time))<=30.0);
-        int spp_ok=startup ? pntpos_startup(obs,nu,nav,opt,&rtk->sol,NULL,rtk->ssat,msg) :
-            pntpos(obs,nu,nav,opt,&rtk->sol,NULL,rtk->ssat,msg);
-        ppp_innovation_note_spp(spp_ok);
+        int spp_ok=startup ? pntpos_startup(obs,nu,nav,opt,spp_output,NULL,rtk->ssat,msg) :
+            pntpos(obs,nu,nav,opt,spp_output,NULL,rtk->ssat,msg);
+        if(spp_ok) {
+            rtk->ppp_spp_clock_valid=1;rtk->ppp_spp_clock_m=CLIGHT*spp_output->dtr[0];
+            if(isolated && bootstrap)rtk->sol=spp_candidate;
+        }
+        ppp_innovation_note_spp(spp_ok && (!isolated || bootstrap));
+        if(isolated) {
+            trace(2,"$SPP_CLOCK_CANDIDATE,ok=%d,used_for_bootstrap=%d,clock_m=%.17g,previous_ppp_clock_m=%.17g\n",
+                spp_ok,spp_ok&&bootstrap,spp_ok?rtk->ppp_spp_clock_m:0.0,rtk->ppp_clock_m);
+            if(!bootstrap)rtk->sol.time=obs[0].time;
+        }
         if(startup_qc&&spp_ok&&norm(rtk->x,3)<=0.0&&
             fabs(timediff(obs[0].time,rtk->ppp_start_time))>30.0) {
             /* Clock-only/sparse callbacks before the first usable SPP must
@@ -327,6 +354,9 @@ extern int rtkpos(rtk_t* rtk, const obsd_t* obs, int n, const nav_t* nav)
                 outsolstat(rtk, nav);
                 return 0;
             }
+            /* pntpos commits only accepted solutions. dtr therefore remains
+             * from the last trusted solution, never from a rejected SPP. */
+            trace(2,"$SPP_FALLBACK,clock_source=PREVIOUS_TRUSTED_SOLUTION,clock_s=%.17g\n",rtk->sol.dtr[0]);
             rtk->sol.time = obs[0].time;
             for (i = 0; i < 3; i++) rtk->sol.rr[i] = rtk->x[i];
             if (rtk->opt.dynamics) {

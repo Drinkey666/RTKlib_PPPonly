@@ -133,7 +133,11 @@
       <AdditionalDependencies>winmm.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(EnableFilterDiagnostic)'=='true'">
+    <ClCompile><PreprocessorDefinitions>ENABLE_FILTER_DIAGNOSTIC;%(PreprocessorDefinitions)</PreprocessorDefinitions></ClCompile>
+  </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\src\ppp_filter_diagnostic.h" />
     <ClInclude Include="..\src\pc_file_picker.h" />
     <ClInclude Include="..\src\pc_txt_replay.h" />
     <ClInclude Include="..\src\pc_live_view.h" />
@@ -152,7 +156,9 @@
     <ClCompile Include="..\src\gnss_replay.c"><PreprocessorDefinitions>GNSS_REPLAY_EMBEDDED;%(PreprocessorDefinitions)</PreprocessorDefinitions></ClCompile>
     <ClCompile Include="..\src\gnss_adapter.c" />
     <ClCompile Include="..\src\gnss_signal_policy.c" />
+    <ClCompile Include="..\src\ppp_product_check.c" />
     <ClCompile Include="..\src\ppp_innovation_diag.c" />
+    <ClCompile Include="..\src\ppp_filter_diagnostic.c" />
     <ClCompile Include="..\src\smartphone_ppp_config.c" />
     
     
@@ -160,15 +166,12 @@
     
     
     <ClCompile Include="..\src\ephemeris.c" />
-    <ClCompile Include="..\src\geoid.c" />
     
     <ClCompile Include="..\src\ionex.c" />
     
-    <ClCompile Include="..\src\options.c" />
     <ClCompile Include="..\src\pntpos.c" />
     <ClCompile Include="..\src\postpos.c" />
     <ClCompile Include="..\src\ppp.c" />
-    <ClCompile Include="..\src\ppp_ar.c" />
     <ClCompile Include="..\src\preceph.c" />
     
     
@@ -184,16 +187,11 @@
     
     <ClCompile Include="..\src\rinex.c" />
     <ClCompile Include="..\src\rnx2rtkp.c" />
-    <ClCompile Include="..\src\rtcm.c" />
     
-    <ClCompile Include="..\src\rtcm2.c" />
-    <ClCompile Include="..\src\rtcm3e.c" />
-    <ClCompile Include="..\src\rtcm3.c" />
     
     <ClCompile Include="..\src\rtkcmn.c" />
     <ClCompile Include="ppp_position.c" />
     
-    <ClCompile Include="..\src\sbas.c" />
     <ClCompile Include="..\src\sofa.c" />
     <ClCompile Include="..\src\solution.c" />
     
@@ -203,7 +201,7 @@
     <ClCompile Include="..\src\trace.c" />
   </ItemGroup>
   <ItemGroup>
-    
+    <ClInclude Include="..\src\ppp_product_check.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

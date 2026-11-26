@@ -3,6 +3,10 @@
 #include "rtklib.h"
 /* Reusable runner; NULL options retains the standalone replay defaults. */
 int gnss_replay_run(int argc, char **argv, const prcopt_t *options);
+/* Read-only preflight, same raw parser/clock normalization/default adapter as
+ * the PC TXT entry. No filter, products, output files or live observer. */
+int gnss_replay_scan_txt(const char *path, int max_epochs,
+    void (*visit)(void *, const obsd_t *, int), void *context);
 typedef struct {
     gtime_t time;
     sol_t solution; /* snapshot only; the UI cannot access/mutate rtk_t */

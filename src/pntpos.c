@@ -286,27 +286,14 @@ extern int ionocorr(gtime_t time, const nav_t* nav, int sat, const double* pos,
         time2str(time, tstr, 3), ionoopt, sat, pos[0] * R2D, pos[1] * R2D, azel[0] * R2D,
         azel[1] * R2D);
 
-    /* 1. SBAS (星基增强系统) 电离层模型 */
-    if (ionoopt == IONOOPT_SBAS) {
-        if (sbsioncorr(time, nav, pos, azel, ion, var)) return 1;
-        err = 1; // 如果 SBAS 数据不可用，标记错误并降级处理
-    }
-
-    /* 2. IONEX TEC 格网模型 (PPP 最常用) */
+    /* 1. IONEX TEC 格网模型 (PPP 最常用) */
     // 如果你加载了 .26i 这类文件，就会走这里，精度很高
     if (ionoopt == IONOOPT_TEC) {
         if (iontec(time, nav, pos, azel, 1, ion, var)) return 1;
         err = 1;
     }
 
-    /* 3. QZSS 广播电离层模型 (日本准天顶系统特有) */
-    if (ionoopt == IONOOPT_QZS && norm(nav->ion_qzs, 8) > 0.0) {
-        *ion = ionmodel(time, nav->ion_qzs, pos, azel);
-        *var = SQR(*ion * ERR_BRDCI);
-        return 1;
-    }
-
-    /* 4. GPS 广播电离层模型 (Klobuchar 模型) */
+    /* 2. GPS 广播电离层模型 (Klobuchar 模型) */
     // 这是单点定位最常见的保底方案。如果前面高级模型失败 (err==1)，也会退化到这里
     if (ionoopt == IONOOPT_BRDC || err == 1) {
         *ion = ionmodel(time, nav->ion_gps, pos, azel);
@@ -314,10 +301,70 @@ extern int ionocorr(gtime_t time, const nav_t* nav, int sat, const double* pos,
         return 1;
     }
 
-    /* 5. 关闭电离层改正 (或者使用双频无电离层组合时，直接设为0) */
+    /* 3. 关闭电离层改正 (或者使用双频无电离层组合时，直接设为0) */
     *ion = 0.0;
     *var = ionoopt == IONOOPT_OFF ? SQR(ERR_ION) : 0.0;
     return 1;
+}
+/* RTKLIB's message-independent MOPS model retained for PPP troposphere initialization. */
+/* get meterological parameters ----------------------------------------------*/
+static void getmet(double lat, double *met)
+{
+    static const double metprm[][10]={ /* lat=15,30,45,60,75 */
+        {1013.25,299.65,26.31,6.30E-3,2.77,  0.00, 0.00,0.00,0.00E-3,0.00},
+        {1017.25,294.15,21.79,6.05E-3,3.15, -3.75, 7.00,8.85,0.25E-3,0.33},
+        {1015.75,283.15,11.66,5.58E-3,2.57, -2.25,11.00,7.24,0.32E-3,0.46},
+        {1011.75,272.15, 6.78,5.39E-3,1.81, -1.75,15.00,5.36,0.81E-3,0.74},
+        {1013.00,263.65, 4.11,4.53E-3,1.55, -0.50,14.50,3.39,0.62E-3,0.30}
+    };
+    int i,j;
+    double a;
+    lat=fabs(lat);
+    if      (lat<=15.0) for (i=0;i<10;i++) met[i]=metprm[0][i];
+    else if (lat>=75.0) for (i=0;i<10;i++) met[i]=metprm[4][i];
+    else {
+        j=(int)(lat/15.0); a=(lat-j*15.0)/15.0;
+        for (i=0;i<10;i++) met[i]=(1.0-a)*metprm[j-1][i]+a*metprm[j][i];
+    }
+}
+/* Tropospheric delay correction -----------------------------------------------
+ * Compute SBAS tropospheric delay correction (mops model)
+ * Args   : gtime_t time     I   time
+ *          double   *pos    I   receiver position {lat,lon,height} (rad/m)
+ *          double   *azel   I   satellite azimuth/elavation (rad)
+ *          double   *var    O   variance of tropospheric error (m^2)
+ * Return : slant tropospheric delay (m)
+ *----------------------------------------------------------------------------*/
+extern double sbstropcorr(gtime_t time, const double *pos, const double *azel, double *var) {
+  const double k1 = 77.604, k2 = 382000.0, rd = 287.054, gm = 9.784, g = 9.80665;
+
+  trace(4, "sbstropcorr: pos=%.3f %.3f azel=%.3f %.3f\n", pos[0] * R2D, pos[1] * R2D, azel[0] * R2D,
+        azel[1] * R2D);
+
+  if (pos[2] < -100.0 || 10000.0 < pos[2] || azel[1] <= 0) {
+    *var = 0.0;
+    return 0.0;
+  }
+
+  static THREADLOCAL double pos_[3] = {0}, zh = 0.0, zw = 0.0;
+  if (zh == 0.0 || fabs(pos[0] - pos_[0]) > 1E-7 || fabs(pos[1] - pos_[1]) > 1E-7 ||
+      fabs(pos[2] - pos_[2]) > 1.0) {
+    double met[10];
+    getmet(pos[0] * R2D, met);
+    double c = cos(2.0 * PI * (time2doy(time) - (pos[0] >= 0.0 ? 28.0 : 211.0)) / 365.25);
+    for (int i = 0; i < 5; i++) met[i] -= met[i + 5] * c;
+    zh = 1E-6 * k1 * rd * met[0] / gm;
+    zw = 1E-6 * k2 * rd / (gm * (met[4] + 1.0) - met[3] * rd) * met[2] / met[1];
+    double h = pos[2];
+    zh *= pow(1.0 - met[3] * h / met[1], g / (rd * met[3]));
+    zw *= pow(1.0 - met[3] * h / met[1], (met[4] + 1.0) * g / (rd * met[3]) - 1.0);
+    for (int i = 0; i < 3; i++) pos_[i] = pos[i];
+  }
+
+  double sinel = sin(azel[1]);
+  double m = 1.001 / sqrt(0.002001 + sinel * sinel);
+  *var = 0.12 * 0.12 * m * m;
+  return (zh + zw) * m;
 }
 /* tropospheric correction -----------------------------------------------------
 * compute tropospheric correction
@@ -346,13 +393,7 @@ extern int tropcorr(gtime_t time, const nav_t* nav, const double* pos,
         return 1;
     }
 
-    /* 2. SBAS 对流层模型 */
-    if (tropopt == TROPOPT_SBAS) {
-        *trp = sbstropcorr(time, pos, azel, var);
-        return 1;
-    }
-
-    /* 3. 关闭对流层改正 */
+    /* 2. 关闭对流层改正 */
     *trp = 0.0;
     *var = tropopt == TROPOPT_OFF ? SQR(ERR_TROP) : 0.0;
     return 1;
@@ -563,7 +604,7 @@ static int estpos(const obsd_t* obs, int n, const double* rs, const double* dts,
 
             /* 5. 调用 valsol 进行质量检验 */
             if ((stat = valsol(azel, vsat, n, opt, v, nv, NX, msg))) {
-                sol->stat = opt->sateph == EPHOPT_SBAS ? SOLQ_SBAS : SOLQ_SINGLE; // 标记为单点定位解
+                sol->stat = SOLQ_SINGLE; // 标记为单点定位解
             }
             free(v); free(H); free(var);
             return stat; // 成功返回
@@ -835,12 +876,19 @@ static int pntpos_impl(const obsd_t *obs, int n, const nav_t *nav,
                   char *msg,int startup)
 {
     prcopt_t opt_=*opt;
+    sol_t candidate, *output=sol;
     double *rs,*dts,*var,*azel_,*resp;
     int i,stat,vsat[MAXOBS]={0},svh[MAXOBS];
     unsigned char rejected[MAXOBS]={0};
     
     char tstr[40];
     if(!obs||n<=0||n>MAXOBS){sol->stat=SOLQ_NONE;strcpy(msg,"invalid observation count");return 0;}
+    /* estpos/FDE may write a converged candidate before quality validation.
+     * Keep those writes local, including retries; only commit an accepted SPP.
+     * On failure retain the caller's last trusted numeric solution and mark
+     * its status invalid for this epoch. Satellite fields remain diagnostics. */
+    candidate=*sol;
+    sol=&candidate;
     trace(3,"pntpos  : tobs=%s n=%d\n",time2str(obs[0].time,tstr,3),n);
     
     sol->stat=SOLQ_NONE;
@@ -903,6 +951,11 @@ static int pntpos_impl(const obsd_t *obs, int n, const nav_t *nav,
         }
     }
     free(rs); free(dts); free(var); free(azel_); free(resp);
+    if (stat) *output=*sol;
+    else {
+        output->stat=SOLQ_NONE;
+        trace(2,"$SPP_FAILURE,reason=QUALITY_OR_ESTIMATION,action=KEEP_TRUSTED_SOLUTION,msg=%s\n",msg);
+    }
     return stat;
 }
 extern int pntpos(const obsd_t *obs,int n,const nav_t *nav,const prcopt_t *opt,

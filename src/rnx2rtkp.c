@@ -55,6 +55,7 @@
 #include "./rtklib.h"                  /* RTKLIB 公共类型、常量和解算接口。 */
 #include "smartphone_ppp_config.h"      /* PC/replay/JNI 共享默认配置接口。 */
 #include "pc_file_picker.h"             /* 文件列表、输入类型和中文文件窗口。 */
+#include "ppp_product_check.h"
 #include "pc_txt_replay.h"              /* TXT 无窗口回放入口。 */
 #include "pc_live_view.h"               /* TXT 坐标窗口及后台回放入口。 */
 
@@ -92,7 +93,7 @@ static const char* help[] = {
 "  No arguments: open the file-selection window (Windows).",
 "  --select-files: explicitly open the window, even with environment overrides.",
 "  --no-gui: unattended processing with existing defaults/environment variables.",
-"  --check-files: validate paths only; do not run PPP.",
+"  --check-files: validate product content/coverage and observations; do not run PPP.",
 "  --source rinex|txt-realtime|txt-fast: unattended observation source.",
 "  RTK_PPP_TXT selects Android raw TXT; never set it together with RTK_PPP_OBS.",
 "  TXT uses ppp-safe, ADR uncertainty limit 1.0m, no RINEX OBS dependency.",
@@ -105,6 +106,7 @@ static const char* help[] = {
 "RTK_PPP_OUTPUT and RTK_PPP_TRACE select diagnostic output files.",
 "RTK_PPP_BASELINE=A|B|C selects CLEAN|LEGACY|HUBER (default B). D is unavailable.",
 "RTK_PPP_LIFECYCLE=CORRECTED enables fixed arcs/history in B; default LEGACY.",
+"RTK_PPP_CLOCK=AUTO|LEGACY_SPP|PPP_COMMON (AUTO: B legacy; A/C common clock).",
 "Existing RTK_PPP_NF/SYSTEMS/GLO/EXSATS/OPTS options are unchanged.",
 "An explicit RTK_PPP_OBS retains legacy unattended behavior.",
 };
@@ -188,7 +190,7 @@ int main(int argc, char **argv) {
         "E:\\RTKLIB_Data\\tro\\VMF3_20260317.H00",
         "E:\\RTKLIB_Data\\tro\\VMF3_20260317.H06",
         "E:\\RTKLIB_Data\\tro\\orography_ell_5x5",
-        "E:\\RTKLIB_Data\\Tables\\igs20.atx",
+        "E:\\RTKLIB_Data\\Tables\\igs20_20261110.atx",
         "E:\\RTKLIB_Data\\PPP_Result\\K80-GNSS00GEO_R_20260760533_20M_01S_MO.pos"
     }};
     /* 环境变量名与path字段一一对应。
@@ -297,7 +299,6 @@ int main(int argc, char **argv) {
     printf("PPP_INPUT,SOURCE=%s\n",files.source==PC_SOURCE_TXT ? "ANDROID_TXT" : "RINEX_OBS");
     for(i=0;i<PC_FILE_COUNT;i++)
         printf("PPP_INPUT,%s=%s\n",i==PC_OBS && files.source==PC_SOURCE_TXT ? "TXT" : pc_file_keys[i],files.path[i]);
-    if(check_only) {puts("FILE_CHECK_OK (existence/readability only; not product coverage)");return 0;}
     /* 第4部分：整理输出与RINEX辅助路径。
      * 这里只复制字符串，不读取观测或产品。
      * TXT也执行这些公共赋值，但在分流处提前return，不调用postpos。 */
@@ -431,10 +432,27 @@ int main(int argc, char **argv) {
 
     {
         char config_error[256];
+        const char *gal_e5b=getenv("RTK_PPP_GAL_E5B");
+        if(gal_e5b && *gal_e5b) {
+            if(!strcmp(gal_e5b,"0"))prcopt.ppp_gal_e5b=0;
+            else if(!strcmp(gal_e5b,"1"))prcopt.ppp_gal_e5b=1;
+            else {fprintf(stderr,"RTK_PPP_GAL_E5B must be 0 or 1\n");return -1;}
+        }
         if (!smartphone_ppp_select(&prcopt,getenv("RTK_PPP_BASELINE"),
             getenv("RTK_PPP_LIFECYCLE"),config_error,sizeof(config_error))) {
             fprintf(stderr,"PPP configuration error: %s\n",config_error);
             return -1;
+        }
+        if(!smartphone_ppp_select_clock(&prcopt,getenv("RTK_PPP_CLOCK"),config_error,sizeof(config_error))) {
+            fprintf(stderr,"PPP configuration error: %s\n",config_error);return -1;
+        }
+        if(!smartphone_ppp_select_estimator(&prcopt,getenv("RTK_PPP_ESTIMATOR"),
+            getenv("RTK_PPP_RCB"),getenv("RTK_PPP_TROP"),getenv("RTK_PPP_UPDATE"),
+            config_error,sizeof(config_error))) {
+            fprintf(stderr,"PPP configuration error: %s\n",config_error);return -1;
+        }
+        if(!smartphone_ppp_select_profile(&prcopt,getenv("RTK_PPP_PROFILE"),config_error,sizeof(config_error))) {
+            fprintf(stderr,"PPP configuration error: %s\n",config_error);return -1;
         }
         /* 对所有覆盖后的最终参数做结构/取值检查，不只检查默认配置。
          * 检查通过不代表观测质量/精度合格，仍需查看真实结果及trace。 */
@@ -444,6 +462,23 @@ int main(int argc, char **argv) {
         }
     }
 
+    /* One preflight for both PC sources, before any result/state/trace file is
+     * opened. A failed check preserves existing solutions. No filter runs. */
+    {
+        char report_path[PC_PPP_PATH_CAP];FILE *report;int product_ok;
+        snprintf(report_path,sizeof(report_path),"%s.products.log",outfile);
+        report=fopen(report_path,"w");
+        if(!report){fprintf(stderr,"PRODUCT_CHECK_ERROR: cannot write %s\n",report_path);return 2;}
+        product_ok=ppp_product_check_files(&files,&prcopt,max_epochs,report);
+        if(fclose(report)!=0)product_ok=0;
+        printf("PRODUCT_CHECK_%s,report=%s\n",product_ok==2?"OK_WITH_WARNINGS":product_ok?"OK":"FAILED",report_path);
+        if(!product_ok) {
+            fprintf(stderr,"PRODUCT_CHECK_FAILED: no PPP started; inspect %s\n",report_path);
+            if(gui)MessageBoxA(NULL,report_path,"Product check failed - see report",MB_OK|MB_ICONERROR);
+            return 2;
+        }
+        if(check_only){puts("FILE_CHECK_OK (product coverage; no PPP run)");return 0;}
+    }
     if(!ppp_innovation_log_open(getenv("RTK_PPP_INNOVATION_DIAG")))
         fprintf(stderr,"INNOV_DIAG_OPEN_ERROR,estimator_unchanged=1\n");
 

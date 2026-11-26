@@ -95,11 +95,6 @@
 #define TSTEP    60.0             /* integration step glonass ephemeris (s) */
 #define RTOL_KEPLER 1E-13         /* relative tolerance for Kepler equation */
 
-#define DEFURASSR 0.15            /* default accuracy of ssr corr (m) */
-#define MAXECORSSR 10.0           /* max orbit correction of ssr (m) */
-#define MAXCCORSSR (1E-6*CLIGHT)  /* max clock correction of ssr (m) */
-#define MAXAGESSR 90.0            /* max age of ssr orbit and clock (s) */
-#define MAXAGESSR_HRCLK 10.0      /* max age of ssr high-rate clock (s) */
 #define STD_BRDCCLK 30.0          /* error of broadcast clock (m) */
 #define STD_GAL_NAPA 500.0        /* error of galileo ephemeris for NAPA (m) */
 
@@ -108,10 +103,10 @@
 /* ephemeris selections ------------------------------------------------------*/
 /* =============================================================================
  * 变量：eph_sel
- * 功能：星历选择标志数组，分别对应 GPS, GLO, GAL, QZS, BDS, IRN, SBS。
+ * 功能：星历选择标志数组，分别对应 GPS, GLO, GAL, QZS, BDS, IRN。
  * ============================================================================= */
-static int eph_sel[] = { /* GPS,GLO,GAL,QZS,BDS,IRN,SBS */
-    0,0,0,0,0,0,0
+static int eph_sel[] = { /* GPS,GLO,GAL,QZS,BDS,IRN */
+    0,0,0,0,0,0
 };
 
 /* =============================================================================
@@ -136,19 +131,6 @@ static double var_uraeph(int sys, int ura)
     else { /* GPS 系统的 URA 计算法 */
         return ura < 0 || 14 < ura ? SQR(6144.0) : SQR(ura_value[ura]);
     }
-}
-
-/* =============================================================================
- * 函数：var_urassr
- * 功能：将 SSR（状态空间表示，通常用于星星地通讯或精密单点定位）的 URA 转换为方差。
- * ============================================================================= */
-static double var_urassr(int ura)
-{
-    double std;
-    if (ura <= 0) return SQR(DEFURASSR);
-    if (ura >= 63) return SQR(5.4665);
-    std = (pow(3.0, (ura >> 3) & 7) * (1.0 + (ura & 7) / 4.0) - 1.0) * 1E-3;
-    return SQR(std);
 }
 
 /* =============================================================================
@@ -407,53 +389,6 @@ extern void geph2pos(gtime_t time, const geph_t* geph, double* rs, double* dts,
     *var = SQR(ERREPH_GLO); /* 赋予 GLONASS 广播星历默认的经验方差 */
 }
 /* =============================================================================
- * 函数：seph2clk
- * 功能：利用 SBAS（星基增强系统）的星历计算卫星钟差。
- * 解释：SBAS 卫星（如 WAAS, EGNOS, BDSBAS 等）播发的星历格式与 GPS 不同。
- * 它的钟差模型只有两个参数：af0 (时间偏移) 和 af1 (时间漂移)。
- * ============================================================================= */
-extern double seph2clk(gtime_t time, const seph_t* seph)
-{
-    char tstr[40];
-    trace(4, "seph2clk: time=%s sat=%2d\n", time2str(time, tstr, 3), seph->sat);
-
-    // 计算当前时间与星历参考时间 (t0) 的时间差 ts
-    double ts = timediff(time, seph->t0), t = ts;
-
-    // 迭代 2 次以消除钟差引起的时间闭合差 (光速传播时间)
-    for (int i = 0; i < 2; i++) {
-        t = ts - (seph->af0 + seph->af1 * t);
-    }
-    return seph->af0 + seph->af1 * t; // 返回秒为单位的钟差
-}
-
-/* =============================================================================
- * 函数：seph2pos
- * 功能：利用 SBAS 星历计算卫星三维坐标 (XYZ) 和钟差。
- * 解释：SBAS 卫星本身就是地球同步轨道卫星(GEO)，它的轨道不像 GPS 播发复杂的开普勒参数，
- * 而是直接播发某一时刻的位置、速度和加速度，通过简单的牛顿运动学公式(匀加速直线运动模型)推算位置。
- * ============================================================================= */
-extern void seph2pos(gtime_t time, const seph_t* seph, double* rs, double* dts,
-    double* var)
-{
-    double t;
-    int i;
-
-    char tstr[40];
-    trace(4, "seph2pos: time=%s sat=%2d\n", time2str(time, tstr, 3), seph->sat);
-
-    t = timediff(time, seph->t0); // 距离参考历元的时间差
-
-    // S = S0 + V*t + 1/2*A*t^2 (基于位置、速度、加速度的二次抛物线预报)
-    for (i = 0; i < 3; i++) {
-        rs[i] = seph->pos[i] + seph->vel[i] * t + seph->acc[i] * t * t / 2.0;
-    }
-    *dts = seph->af0 + seph->af1 * t; // 附带计算钟差
-
-    *var = var_uraeph(SYS_SBS, seph->sva); // 转换 URA 为方差
-}
-
-/* =============================================================================
  * 函数：seleph
  * 功能：在所有广播星历中，为指定的 GPS/Galileo/BDS/QZSS 卫星挑选“最合适”的星历。
  * 解释：由于导航电文每隔 2 小时才更新一次，程序需要遍历内存中所有的星历块，
@@ -538,31 +473,6 @@ static geph_t* selgeph(gtime_t time, int sat, int iode, const nav_t* nav)
 }
 
 /* =============================================================================
- * 函数：selseph
- * 功能：为 SBAS 卫星挑选最近的广播星历。
- * 解释：逻辑同上，针对 nav->seph 数组。
- * ============================================================================= */
-static seph_t* selseph(gtime_t time, int sat, const nav_t* nav)
-{
-    double t, tmax = MAXDTOE_SBS, tmin = tmax + 1.0;
-    int i, j = -1;
-
-    char tstr[40];
-    trace(4, "selseph : time=%s sat=%2d\n", time2str(time, tstr, 3), sat);
-
-    for (i = 0; i < nav->ns; i++) {
-        if (nav->seph[i].sat != sat) continue;
-        if ((t = fabs(timediff(nav->seph[i].t0, time))) > tmax) continue;
-        if (t <= tmin) { j = i; tmin = t; } /* toe closest to time */
-    }
-    if (j < 0) {
-        trace(3, "no sbas ephemeris     : %s sat=%2d\n", time2str(time, tstr, 0), sat);
-        return NULL;
-    }
-    return nav->seph + j;
-}
-
-/* =============================================================================
  * 函数：ephclk
  * 功能：利用广播星历计算单颗卫星钟差的“总调度器”。
  * 解释：根据卫星系统(sys)，调用对应的星历选择函数(seleph/selgeph等)，
@@ -573,7 +483,6 @@ static int ephclk(gtime_t time, gtime_t teph, int sat, const nav_t* nav,
 {
     eph_t* eph;
     geph_t* geph;
-    seph_t* seph;
     int sys;
 
     char tstr[40];
@@ -589,10 +498,6 @@ static int ephclk(gtime_t time, gtime_t teph, int sat, const nav_t* nav,
         if (!(geph = selgeph(teph, sat, -1, nav))) return 0;
         if (fabs(geph->taun) > 1) return 0; /* 剔除非法数据防止浮点数异常 */
         *dts = geph2clk(time, geph);
-    }
-    else if (sys == SYS_SBS) {
-        if (!(seph = selseph(teph, sat, nav))) return 0;
-        *dts = seph2clk(time, seph);
     }
     else return 0; // 不支持的系统
 
@@ -610,7 +515,6 @@ static int ephpos(gtime_t time, gtime_t teph, int sat, const nav_t* nav,
 {
     eph_t* eph;
     geph_t* geph;
-    seph_t* seph;
     double rst[3], dtst[1], tt = 1E-3;
     int i, sys;
 
@@ -636,13 +540,6 @@ static int ephpos(gtime_t time, gtime_t teph, int sat, const nav_t* nav,
         geph2pos(time, geph, rst, dtst, var);
         *svh = geph->svh;
     }
-    else if (sys == SYS_SBS) {
-        if (!(seph = selseph(teph, sat, nav))) return 0;
-        seph2pos(time, seph, rs, dts, var);
-        time = timeadd(time, tt);
-        seph2pos(time, seph, rst, dtst, var);
-        *svh = seph->svh;
-    }
     else return 0;
 
     /* satellite velocity and clock drift by differential approx */
@@ -655,158 +552,10 @@ static int ephpos(gtime_t time, gtime_t teph, int sat, const nav_t* nav,
 }
 
 /* =============================================================================
- * 函数：satpos_sbas
- * 功能：利用 SBAS 改正数计算更高精度的卫星位置和钟差。
- * 解释：首先用常规广播星历算出基础坐标，如果当前卫星存在 SBAS（星基增强）下发的
- * 长/快周期改正数据，则将其叠加到基础坐标和钟差上。
- * ============================================================================= */
-static int satpos_sbas(gtime_t time, gtime_t teph, int sat, const nav_t* nav,
-    double* rs, double* dts, double* var, int* svh)
-{
-    const sbssatp_t* sbs = NULL;
-    int i;
-
-    char tstr[40];
-    trace(4, "satpos_sbas: time=%s sat=%2d\n", time2str(time, tstr, 3), sat);
-
-    /* 1. 在 nav 结构体中搜索是否包含这颗卫星的 SBAS 改正信息 */
-    for (i = 0; i < nav->sbssat.nsat; i++) {
-        sbs = nav->sbssat.sat + i;
-        if (sbs->sat == sat) break;
-    }
-    if (i >= nav->sbssat.nsat) {
-        trace(2, "no sbas, use brdcast: %s sat=%2d\n", time2str(time, tstr, 0), sat);
-        // 如果没有 SBAS 数据，退化回使用纯广播星历 (ephpos)
-        if (!ephpos(time, teph, sat, nav, -1, rs, dts, var, svh)) return 0;
-        return 1;
-    }
-
-    /* 2. 首先用 SBAS 改正数据指向的星历期号(IODE)，算出一个基础广播星历轨道 */
-    if (!ephpos(time, teph, sat, nav, sbs->lcorr.iode, rs, dts, var, svh)) return 0;
-
-    /* 3. 应用 SBAS 卫星改正模型 (叠加长期轨道改正和快变钟差改正) */
-    if (sbssatcorr(time, sat, nav, rs, dts, var)) return 1;
-    *svh = -1;
-    return 0;
-}
-
-/* =============================================================================
- * 函数：satpos_ssr
- * 功能：利用 SSR（状态空间表示）改正数计算精密卫星位置和钟差（实时 PPP 核心！）。
- * 解释：SSR 改正数通常通过 NTRIP 网络流实时下发。这种模式允许我们在没有静态精密星历
- * (.SP3) 的情况下，也能利用广播星历 + SSR 实时算出厘米级的卫星轨道，从而实现实时 PPP。
- * SSR 播发的是径向(Radial)、切向(Along)、法向(Cross)的三维轨道残差，以及高频钟差残差。
- * ============================================================================= */
-static int satpos_ssr(gtime_t time, gtime_t teph, int sat, const nav_t* nav,
-    int opt, double* rs, double* dts, double* var, int* svh)
-{
-    const ssr_t* ssr;
-    eph_t* eph;
-    double t1, t2, t3, er[3], ea[3], ec[3], rc[3], deph[3], dclk, dant[3] = { 0 }, tk;
-    int i, sys;
-
-    char tstr[40];
-    trace(4, "satpos_ssr: time=%s sat=%2d\n", time2str(time, tstr, 3), sat);
-
-    ssr = nav->ssr + sat - 1;
-
-    // 检查是否有有效的 SSR 轨道和钟差更新
-    if (!ssr->t0[0].time) {
-        trace(2, "no ssr orbit correction: %s sat=%2d\n", time2str(time, tstr, 0), sat);
-        return 0;
-    }
-    if (!ssr->t0[1].time) {
-        trace(2, "no ssr clock correction: %s sat=%2d\n", time2str(time, tstr, 0), sat);
-        return 0;
-    }
-    /* 保证轨道改正和钟差改正的星历期号 (IOD) 是配套匹配的 */
-    if (ssr->iod[0] != ssr->iod[1]) {
-        trace(2, "inconsist ssr correction: %s sat=%2d iod=%d %d\n",
-            time2str(time, tstr, 0), sat, ssr->iod[0], ssr->iod[1]);
-        *svh = -1;
-        return 0;
-    }
-
-    // 计算当前时间与 SSR 历元的时差
-    t1 = timediff(time, ssr->t0[0]);
-    t2 = timediff(time, ssr->t0[1]);
-    t3 = timediff(time, ssr->t0[2]);
-
-    /* 如果数据超期 (Max Age)，则丢弃 */
-    if (fabs(t1) > MAXAGESSR || fabs(t2) > MAXAGESSR) {
-        trace(2, "age of ssr error: %s sat=%2d t=%.0f %.0f\n", time2str(time, tstr, 0),
-            sat, t1, t2);
-        *svh = -1;
-        return 0;
-    }
-    if (ssr->udi[0] >= 1.0) t1 -= ssr->udi[0] / 2.0;
-    if (ssr->udi[1] >= 1.0) t2 -= ssr->udi[1] / 2.0;
-
-    // 1. 利用时间漂移率，推算当前精确的轨道改正量 (deph) 和钟差改正量 (dclk)
-    for (i = 0; i < 3; i++) deph[i] = ssr->deph[i] + ssr->ddeph[i] * t1;
-    dclk = ssr->dclk[0] + ssr->dclk[1] * t2 + ssr->dclk[2] * t2 * t2;
-
-    /* 附加高频钟差改正 (HRCLK) */
-    if (ssr->iod[0] == ssr->iod[2] && ssr->t0[2].time && fabs(t3) < MAXAGESSR_HRCLK) {
-        dclk += ssr->hrclk;
-    }
-    // 粗差防爆检查
-    if (norm(deph, 3) > MAXECORSSR || fabs(dclk) > MAXCCORSSR) {
-        trace(3, "invalid ssr correction: %s deph=%.1f dclk=%.1f\n",
-            time2str(time, tstr, 0), norm(deph, 3), dclk);
-        *svh = -1;
-        return 0;
-    }
-
-    /* 2. 调用 ephpos 计算基础的广播星历卫星位置 rs */
-    if (!ephpos(time, teph, sat, nav, ssr->iode, rs, dts, var, svh)) return 0;
-
-    /* 重新计算相对论效应 (抵消广播星历里自带的狭义相对论钟差) */
-    sys = satsys(sat, NULL);
-    if (sys == SYS_GPS || sys == SYS_GAL || sys == SYS_QZS || sys == SYS_CMP) {
-        if (!(eph = seleph(teph, sat, ssr->iode, nav))) return 0;
-
-        tk = timediff(time, eph->toc);
-        dts[0] = eph->f0 + eph->f1 * tk + eph->f2 * tk * tk;
-        dts[1] = eph->f1 + 2.0 * eph->f2 * tk;
-
-        dts[0] -= 2.0 * dot3(rs, rs + 3) / CLIGHT / CLIGHT;
-    }
-
-    /* 3. 坐标转换：将卫星随体系 (径向ea, 切向er, 法向ec) 转换为地固坐标系 (ECEF) */
-    if (!normv3(rs + 3, ea)) return 0;
-    cross3(rs, rs + 3, rc);
-    if (!normv3(rc, ec)) {
-        *svh = -1;
-        return 0;
-    }
-    cross3(ea, ec, er);
-
-    /* SSR 天线相位中心偏移 (PCO) 改正 (通常用精密星历或 SSR 时要加 APC 改正) */
-    if (opt) {
-        satantoff(time, rs, sat, nav, dant);
-    }
-
-    /* 4. 将计算好的三维轨道残差 (deph) 投影到地固系，并叠加到基础轨道 rs 上！ */
-    for (i = 0; i < 3; i++) {
-        rs[i] += -(er[i] * deph[0] + ea[i] * deph[1] + ec[i] * deph[2]) + dant[i];
-    }
-    /* t_corr = t_sv - (dts(brdc) + dclk(ssr) / CLIGHT) */
-    dts[0] += dclk / CLIGHT; // 加上精密钟差改正
-
-    /* 方差降级：用 SSR 指定的精度(URA)替代广播星历的粗劣精度 */
-    *var = var_urassr(ssr->ura);
-
-    trace(5, "satpos_ssr: %s sat=%2d deph=%6.3f %6.3f %6.3f er=%6.3f %6.3f %6.3f dclk=%6.3f var=%6.3f\n",
-        time2str(time, tstr, 2), sat, deph[0], deph[1], deph[2], er[0], er[1], er[2], dclk, *var);
-
-    return 1;
-}
-/* =============================================================================
  * 函数：satpos (Satellite Position)
  * 功能：单颗卫星坐标与钟差计算的“终极路由器”。
  * 解释：它不负责具体的数学计算，而是根据你在配置中设定的 ephopt（星历选项），
- * 决定把计算任务分发给哪个底层函数（广播星历、SBAS、SSR 还是精密星历 SP3）。
+ * 决定使用广播星历或精密 SP3/CLK 产品。
  * ============================================================================= */
 extern int satpos(gtime_t time, gtime_t teph, int sat, int ephopt,
     const nav_t* nav, double* rs, double* dts, double* var,
@@ -820,9 +569,6 @@ extern int satpos(gtime_t time, gtime_t teph, int sat, int ephopt,
     /* 核心路由分发器：根据设定的星历类型调用不同的底层算法 */
     switch (ephopt) {
     case EPHOPT_BRDC: return ephpos(time, teph, sat, nav, -1, rs, dts, var, svh); /* 广播星历 */
-    case EPHOPT_SBAS: return satpos_sbas(time, teph, sat, nav, rs, dts, var, svh); /* SBAS增强星历 */
-    case EPHOPT_SSRAPC: return satpos_ssr(time, teph, sat, nav, 0, rs, dts, var, svh); /* SSR状态空间改正(天线相位中心) */
-    case EPHOPT_SSRCOM: return satpos_ssr(time, teph, sat, nav, 1, rs, dts, var, svh); /* SSR状态空间改正(卫星质心) */
     case EPHOPT_PREC:
         /* 精密星历 (PPP 模式的核心) */
         if (!peph2pos(time, sat, nav, 1, rs, dts, var)) break; else return 1;
@@ -918,7 +664,6 @@ extern void setseleph(int sys, int sel)
     case SYS_QZS: eph_sel[3] = sel; break;
     case SYS_CMP: eph_sel[4] = sel; break;
     case SYS_IRN: eph_sel[5] = sel; break;
-    case SYS_SBS: eph_sel[6] = sel; break;
     }
 }
 
@@ -936,7 +681,6 @@ extern int getseleph(int sys)
     case SYS_QZS: return eph_sel[3];
     case SYS_CMP: return eph_sel[4];
     case SYS_IRN: return eph_sel[5];
-    case SYS_SBS: return eph_sel[6];
     }
     return 0;
 }

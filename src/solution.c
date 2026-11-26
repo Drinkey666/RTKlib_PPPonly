@@ -1217,9 +1217,6 @@ static int outpos(uint8_t *buff, const char *s, const sol_t *sol,
     ecef2pos(sol->rr,pos);
     soltocov(sol,P);
     covenu(pos,P,Q);
-    if (opt->height==1) { /* geodetic height */
-        pos[2]-=geoidh(pos);
-    }
     if (opt->degf) {
         deg2dms(pos[0]*R2D,dms1,5);
         deg2dms(pos[1]*R2D,dms2,5);
@@ -1321,7 +1318,7 @@ extern int outnmea_rmc(uint8_t *buff, const sol_t *sol)
 extern int outnmea_gga(uint8_t *buff, const sol_t *sol)
 {
     gtime_t time;
-    double h,ep[6],pos[3],dms1[3],dms2[3],dop=1.0;
+    double ep[6],pos[3],dms1[3],dms2[3],dop=1.0;
     int solq;
     char *p=(char *)buff,*q,sum;
     
@@ -1339,14 +1336,13 @@ extern int outnmea_gga(uint8_t *buff, const sol_t *sol)
     if (time.sec>=0.995) {time.time++; time.sec=0.0;}
     time2epoch(time,ep);
     ecef2pos(sol->rr,pos);
-    h=geoidh(pos);
     deg2dms(fabs(pos[0])*R2D,dms1,7);
     deg2dms(fabs(pos[1])*R2D,dms2,7);
     p+=sprintf(p,"$%sGGA,%02.0f%02.0f%05.2f,%02.0f%010.7f,%s,%03.0f%010.7f,%s,"
                "%d,%02d,%.1f,%.3f,M,%.3f,M,%.1f,%04d",
                NMEA_TID,ep[3],ep[4],ep[5],dms1[0],dms1[1]+dms1[2]/60.0,
                pos[0]>=0?"N":"S",dms2[0],dms2[1]+dms2[2]/60.0,pos[1]>=0?"E":"W",
-               solq,sol->ns,dop,pos[2]-h,h,sol->age,sol->refstationid);
+               solq,sol->ns,dop,pos[2],0.0,sol->age,sol->refstationid);
     for (q=(char *)buff+1,sum=0;*q;q++) sum^=*q; /* check-sum */
     p+=sprintf(p,"*%02X\r\n",sum);
     return (int)(p-(char *)buff);
@@ -1537,7 +1533,7 @@ extern int outprcopts(uint8_t *buff, const prcopt_t *opt)
 *-----------------------------------------------------------------------------*/
 extern int outsolheads(uint8_t *buff, const solopt_t *opt)
 {
-    const char *s1[]={"WGS84","Tokyo"},*s2[]={"ellipsoidal","geodetic"};
+    const char *s1[]={"WGS84","Tokyo"};
     const char *s3[]={"GPST","UTC ","JST "},*sep=opt2sep(opt);
     const char *leg1="Q=1:fix,2:float,3:sbas,4:dgps,5:single,6:ppp";
     const char *leg2="ns=# of satellites";
@@ -1553,7 +1549,7 @@ extern int outsolheads(uint8_t *buff, const solopt_t *opt)
         p+=sprintf(p,"%s (",COMMENTH);
         if      (opt->posf==SOLF_XYZ) p+=sprintf(p,"x/y/z-ecef=WGS84");
         else if (opt->posf==SOLF_ENU) p+=sprintf(p,"e/n/u-baseline=WGS84");
-        else p+=sprintf(p,"lat/lon/height=%s/%s",s1[opt->datum],s2[opt->height]);
+        else p+=sprintf(p,"lat/lon/height=%s/ellipsoidal",s1[opt->datum]);
         p+=sprintf(p,",%s,%s)\r\n",leg1,leg2);
     }
     p+=sprintf(p,"%s  %-*s%s",COMMENTH,(opt->timef?16:8)+timeu+1,s3[opt->times],
